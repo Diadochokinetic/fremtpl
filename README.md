@@ -1,28 +1,8 @@
-# Risk modelling in non-life insurance with Python
-
-This notebook is intended to accompany any actuarial data scientist on their journey to perform risk modelling in non-life insurance with Python. It is based on this thesis: **TODO: add link to thesis (when done writing it)** and inspired by this [scikit-learn tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
-
-We will start by taking a look at the Method of Marginal Totals ([MMT by Bailey](https://www.casact.org/sites/default/files/database/proceed_proceed63_63004.pdf)), continue with Generalized Linear Models ([GLMs](https://en.wikipedia.org/wiki/Generalized_linear_model)) and go one step further towards Gradient Boosting Machines ([GBMs](https://en.wikipedia.org/wiki/Gradient_boosting)).
-
-The above mentioned models will be used to model the [pure premium](#purepremium) directly and as a product of separate models for [frequency](#frequency) and [severity](#severity).
-
-We will evaluate the models based on three different dimensions:
-
-- a variety of performance metrics
-- the prediction of the [total claim amount](#totalclaimamount)
-- the ability to rank risks
-
-Finally, different methods of explaining the models will be presented.
-
 # Risikomodellierung in der Schadenversicherung mit Python
 
-Dieses Notebook ist gedacht, um jeden aktuariellen Datenwissenschaftler auf seiner Reise zu begleiten, Risikomodellierung in der Schadenversicherung mit Python durchzuführen. Es basiert auf dieser Arbeit: **TODO: Link zur Arbeit hinzufügen (wenn sie fertig ist)** und ist inspiriert von diesem [scikit-learn Tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
+Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung in der Schadenverischerung mit Python". Zur Ausführung des Notebooks wird Python 3.10 oder höher benötigt. Die verwendeten Bibliotheken finden sich in der 'environment.yml' Datei. Am einfachsten gelingt ein Setup mittels [Mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html). Die Installation einer geeigneten Entwicklungsumgebung inklusive Jupyter Kernel kann mit `mamba env create -f environment.yml` erfolgen. Es wurde inspieriert durch das scikit-learn Tutorial [Tweedie regression on insurance claims](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
 
-Wir beginnen damit, uns die Methode der Marginalen Totale ([MMT von Bailey](https://www.casact.org/sites/default/files/database/proceed_proceed63_63004.pdf)) anzusehen, fahren fort mit Generalisierten Linearen Modellen ([GLMs](https://de.wikipedia.org/wiki/Generalisiertes_lineares_Modell)) und gehen einen Schritt weiter zu Gradient Boosting Maschinen ([GBMs](https://de.wikipedia.org/wiki/Gradient_Boosting)).
-
-Die oben genannten Modelle werden verwendet, um die [Reine Prämie](#purepremium) direkt und als Produkt separater Modelle für [Häufigkeit](#frequency) und [Schwere](#severity) zu modellieren.
-
-Wir werden die Modelle anhand von drei verschiedenen Dimensionen bewerten:
+Es werden verschiedene Modelltypen vorgestellt. Wir betrachten hierbei ältere Modelle, wie das Marginalsummenverfahren nach Bailey, die aktuell überlicherweise verwendeten Generalisierten Linearen Modelle (GLMs), sowie die potentiell für die Risikomodellierung interessanten Gradient Boosting Machines (GBMs). Es wird gezeigt, wie diese Modelle zur Ermittlung der Netto-Risikoprämie verwendet werden können. Dabei werden direkte Modellierungsansätze, sowie kombinierte Ansätze auf Basis der Schadenhäufigkeit und -höhe vorgestellt. Die entwickelten Modelle werden anhand verschiedener Dimensionen bewertet:
 
 - einer Vielzahl von Leistungsmetriken
 - der Vorhersage des [Gesamtschadenaufwands](#totalclaimamount)
@@ -30,9 +10,9 @@ Wir werden die Modelle anhand von drei verschiedenen Dimensionen bewerten:
 
 Schließlich werden verschiedene Methoden zur Erklärung der Modelle vorgestellt.
 
-## Data
+## Daten
 
-The data used in this notebook are the French Motor Third-Party Liability Claims datasets from [OpenML](https://www.openml.org/). They consist of two separate sets, one for the frequency: [freMTPL2freq](https://www.openml.org/d/41214) and one for the severity: [freMTPL2sev](https://www.openml.org/d/41214). For the purpose of this work, they will be merged into one dataset by aggegrating the claim amount per policy ID.
+Die in diesem Notebook verwendeten Daten sind der "French Motor Third-Party Liability Claims" Datensatz von [OpenML](https://www.openml.org/). Dieser besteht aus zwei separaten Datensätzen, einem für die Schadenhäufigkeit: [freMTPL2freq](https://www.openml.org/d/41214) und einem für die Schadenhöhe: [freMTPL2sev](https://www.openml.org/d/41214). Für die folgenden Modellierungszwecke werden die beiden Datensätze auf Basis der Policy-ID zusammengeführt. Eine Police kann hierbei mehrere Schäden haben, diese müssen vor der Zusammenführung aggregiert werden.
 
 
 ```python
@@ -57,21 +37,22 @@ for column_name in df.columns[df.dtypes.values == object]:
     df[column_name] = df[column_name].str.strip("'")
 ```
 
-### Data preparation
+### Datenaufbereitung
 
-Some steps need to be performed for all cases, others are specific to the model and or objective at hand.
+Es gibt einige Aufbereitungsschritte, die für beide Datensätze durchgeführt werden müssen, andere Schritte müssen nur für bestimmte Modelltypen durchgeführt werden.
 
-#### General steps
-Filter out claims with zero amount, as the severity model requires strictly positive target values.
+#### Allgemeine Schritte
+
+Die Schadenanzahl wird später als Gewicht in der Modellierung der Schadenhähe verwendet. Da hierbei nur strikt positive Werte verwendet werden können, wird die Schadenanzahl für Schäden ohne Aufwand auf 0 gesetzt.
 
 
 ```python
 df.loc[(df["ClaimAmount"] == 0) & (df["ClaimNb"] >= 1), "ClaimNb"] = 0
 ```
 
-Correct for unreasonable observations (that might be data error) and a few exceptionally large claim amounts.
+Außergewöhnlich hohe Werte für die Anzahl der Schäden, die Jahreseinheiten und die Schadenhöhe werden abgeschnitten. Dies ist notwendig, um die Modelle zu stabilisieren und zu verhindern, dass sie von Ausreißern dominiert werden.
 
-Note: In a real world scenario, we can't just clip the ClaimAmount and ignore the clipped part. We would need to distribute the excess claim amount over the other claims. There are several ways to do that. This is not done here for simplicity.
+Beachte: In einem realen Szenario können wir den Schadenaufwand nicht einfach kappen und den gekappten Teil ignorieren. Wir müssten den überschüssigen Schadenaufwand auf die anderen Schäden verteilen. Es gibt verschiedene Möglichkeiten, dies zu tun. Dies wird hier aus Gründen der Einfachheit nicht durchgeführt.
 
 
 ```python
@@ -80,7 +61,7 @@ df["Exposure"] = df["Exposure"].clip(upper=1)
 df["ClaimAmount"] = df["ClaimAmount"].clip(upper=200000)
 ```
 
-Defining the different target variables
+Bildung der verschiedenen Zielvariablen
 
 
 ```python
@@ -98,7 +79,7 @@ df["Frequency"] = df["ClaimNb"] / df["Exposure"]
 df["AvgClaimAmount"] = df["ClaimAmount"] / np.fmax(df["ClaimNb"], 1)
 ```
 
-Train-Test split
+Train-Test Split
 
 
 ```python
@@ -107,7 +88,7 @@ from sklearn.model_selection import train_test_split
 df_train, df_test = train_test_split(df, random_state=0)
 ```
 
-The Severity models are only trained on observations with at least one claim. Therefore, we need to filter for those observations.
+Die Modelle für die Schadenhöhe werden nur auf Beobachtungen mit mindestens einem Schaden trainiert. Daher müssen wir nach diesen Beobachtungen filtern.
 
 
 ```python
@@ -115,11 +96,11 @@ mask_train = df_train["ClaimAmount"] > 0
 mask_test = df_test["ClaimAmount"] > 0
 ```
 
-#### MMT specific steps
+#### Marginalsummenverfahren spezifische Schritte
 
-The implementation of the Method of Marginal Totals requires all features to be binary. For the features ["VehAge", "DrivAge", "VehBrand", "VehPower", "VehGas", "Region", "Area"] we can use the preprocessing done in the [scikit-learn tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html). For the features ["BonusMalus", "Density"] we need to create the binary features ourselves.
+Die Implementierung des Marginalsummenverfahrens erfordert, dass alle Merkmale binär sind. Für die Merkmale ["VehAge", "DrivAge", "VehBrand", "VehPower", "VehGas", "Region", "Area"] können wir das Aufbereitung aus dem [scikit-learn Tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) verwenden. Für die Merkmale ["BonusMalus", "Density"] müssen wir die binären Merkmale selbst erstellen.
 
-Note: In a real world scenario, feature engineering is a crucial part of the modelling process. It can be very tidiuous and time consuming. In this notebook, we will asume the transformed features are given and we will focus on the modelling part.
+Beachte: In einem realen Szenario ist die Merkmalskonstruktion ein entscheidender Teil des Modellierungsprozesses. Es kann sehr mühsam und zeitaufwändig sein. In diesem Notebook gehen wir davon aus, dass die transformierten Merkmale gegeben sind und konzentrieren uns auf den Modellierungsteil.
 
 
 ```python
@@ -1164,7 +1145,7 @@ else:
 
 
     
-![png](README_files/README_40_0.png)
+![png](README_files/README_39_0.png)
     
 
 
@@ -1507,7 +1488,7 @@ plot_risk_ranking(
 
 
     
-![png](README_files/README_49_0.png)
+![png](README_files/README_48_0.png)
     
 
 
@@ -1872,7 +1853,7 @@ plot_risk_ranking(
 
 
     
-![png](README_files/README_61_0.png)
+![png](README_files/README_60_0.png)
     
 
 
@@ -2156,7 +2137,7 @@ ax.set_title("Observed Frequency")
 
 
     
-![png](README_files/README_82_1.png)
+![png](README_files/README_81_1.png)
     
 
 
@@ -2190,7 +2171,7 @@ ax.set_title("Predicted frequency distribution");
 
 
     
-![png](README_files/README_85_0.png)
+![png](README_files/README_84_0.png)
     
 
 
@@ -2658,7 +2639,7 @@ ax.set_title("Predicted severity distribution");
 
 
     
-![png](README_files/README_104_0.png)
+![png](README_files/README_103_0.png)
     
 
 
@@ -2953,7 +2934,7 @@ plot_risk_ranking(
 
 
     
-![png](README_files/README_109_0.png)
+![png](README_files/README_108_0.png)
     
 
 
@@ -2982,7 +2963,7 @@ shap.summary_plot(
 
 
     
-![png](README_files/README_113_0.png)
+![png](README_files/README_112_0.png)
     
 
 
