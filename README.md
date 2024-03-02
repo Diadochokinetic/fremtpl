@@ -1,18 +1,22 @@
 # Risikomodellierung in der Schadenversicherung mit Python
 
-Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung in der Schadenverischerung mit Python". Zur Ausführung des Notebooks wird Python 3.10 oder höher benötigt. Die verwendeten Bibliotheken finden sich in der 'environment.yml' Datei. Am einfachsten gelingt ein Setup mittels [Mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html). Die Installation einer geeigneten Entwicklungsumgebung inklusive Jupyter Kernel kann mit `mamba env create -f environment.yml` erfolgen. Es wurde inspieriert durch das scikit-learn Tutorial [Tweedie regression on insurance claims](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
+Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung in der Schadenverischerung mit Python". Am einfachsten kann das Notebook interaktiv über Binder ausgeführt werden. Dazu einfach auf den folgenden Button klicken:
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Diadochokinetic/fremtpl/HEAD?labpath=Risikomodellierung+in+der+Schadenversicherung+mit+Python.ipynb)
+
+Alternativ kann auch eine eigene Jupyter-Umgebung mit den in `requirements.txt` hinterlegten Abhängigkeiten genutzt werden. Der grundlegende Aufbau wurde inspieriert durch das scikit-learn Tutorial [Tweedie regression on insurance claims](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
 
 Es werden verschiedene Modelltypen vorgestellt. Wir betrachten hierbei ältere Modelle, wie das Marginalsummenverfahren nach Bailey, die aktuell überlicherweise verwendeten Generalisierten Linearen Modelle (GLMs), sowie die potentiell für die Risikomodellierung interessanten Gradient Boosting Machines (GBMs). Es wird gezeigt, wie diese Modelle zur Ermittlung der Netto-Risikoprämie verwendet werden können. Dabei werden direkte Modellierungsansätze, sowie kombinierte Ansätze auf Basis der Schadenhäufigkeit und -höhe vorgestellt. Die entwickelten Modelle werden anhand verschiedener Dimensionen bewertet:
 
-- einer Vielzahl von Leistungsmetriken
-- der Vorhersage des [Gesamtschadenaufwands](#totalclaimamount)
-- der Fähigkeit, Risiken zu rangieren
+- verschiedene Metriken zur Vorhersagequalität
+- der Vorhersage des Gesamtschadenaufwands
+- der Fähigkeit, Risiken zu ordnen
 
 Schließlich werden verschiedene Methoden zur Erklärung der Modelle vorgestellt.
 
 ## Daten
 
-Die in diesem Notebook verwendeten Daten sind der "French Motor Third-Party Liability Claims" Datensatz von [OpenML](https://www.openml.org/). Dieser besteht aus zwei separaten Datensätzen, einem für die Schadenhäufigkeit: [freMTPL2freq](https://www.openml.org/d/41214) und einem für die Schadenhöhe: [freMTPL2sev](https://www.openml.org/d/41214). Für die folgenden Modellierungszwecke werden die beiden Datensätze auf Basis der Policy-ID zusammengeführt. Eine Police kann hierbei mehrere Schäden haben, diese müssen vor der Zusammenführung aggregiert werden.
+Die in diesem Notebook verwendeten Daten sind die "French Motor Third-Party Liability Claims" Datensätze von [OpenML](https://www.openml.org/). Diese bestehen aus einem separaten Datensatz für die Schadenhäufigkeit: [freMTPL2freq](https://www.openml.org/d/41214) und einem für die Schadenhöhe: [freMTPL2sev](https://www.openml.org/d/41214).
 
 
 ```python
@@ -25,7 +29,18 @@ df_freq.set_index("IDpol", inplace=True)
 
 # freMTPL2sev dataset from https://www.openml.org/d/41215
 df_sev = fetch_openml(data_id=41215, as_frame=True, parser="pandas").data
+```
 
+### Datenaufbereitung
+
+Es gibt einige Aufbereitungsschritte, die für beide Datensätze durchgeführt werden müssen, andere Schritte müssen nur für bestimmte Modelltypen durchgeführt werden.
+
+#### Allgemeine Schritte
+
+Für die folgenden Modellierungszwecke werden die beiden Datensätze auf Basis der Policy-ID zusammengeführt. Eine Police kann hierbei mehrere Schäden haben, diese müssen vor der Zusammenführung aggregiert werden.
+
+
+```python
 # sum ClaimAmount over identical IDs
 df_sev = df_sev.groupby("IDpol").sum()
 
@@ -36,12 +51,6 @@ df["ClaimAmount"] = df["ClaimAmount"].fillna(0)
 for column_name in df.columns[df.dtypes.values == object]:
     df[column_name] = df[column_name].str.strip("'")
 ```
-
-### Datenaufbereitung
-
-Es gibt einige Aufbereitungsschritte, die für beide Datensätze durchgeführt werden müssen, andere Schritte müssen nur für bestimmte Modelltypen durchgeführt werden.
-
-#### Allgemeine Schritte
 
 Die Schadenanzahl wird später als Gewicht in der Modellierung der Schadenhähe verwendet. Da hierbei nur strikt positive Werte verwendet werden können, wird die Schadenanzahl für Schäden ohne Aufwand auf 0 gesetzt.
 
@@ -79,14 +88,194 @@ df["Frequency"] = df["ClaimNb"] / df["Exposure"]
 df["AvgClaimAmount"] = df["ClaimAmount"] / np.fmax(df["ClaimNb"], 1)
 ```
 
-Train-Test Split
+Die Daten mit den angereicherten Zielvariablen sehen wie folgt aus:
+
+
+```python
+sample = df.sample(5, random_state=6)
+display(sample.T)
+```
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>IDpol</th>
+      <th>4027244</th>
+      <th>3014632</th>
+      <th>2022844</th>
+      <th>6066130</th>
+      <th>31135</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>ClaimNb</th>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>Exposure</th>
+      <td>0.54</td>
+      <td>0.63</td>
+      <td>0.05</td>
+      <td>0.74</td>
+      <td>0.57</td>
+    </tr>
+    <tr>
+      <th>Area</th>
+      <td>D</td>
+      <td>D</td>
+      <td>C</td>
+      <td>A</td>
+      <td>D</td>
+    </tr>
+    <tr>
+      <th>VehPower</th>
+      <td>7</td>
+      <td>5</td>
+      <td>8</td>
+      <td>4</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>VehAge</th>
+      <td>3</td>
+      <td>2</td>
+      <td>1</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>DrivAge</th>
+      <td>49</td>
+      <td>69</td>
+      <td>57</td>
+      <td>46</td>
+      <td>33</td>
+    </tr>
+    <tr>
+      <th>BonusMalus</th>
+      <td>53</td>
+      <td>76</td>
+      <td>50</td>
+      <td>50</td>
+      <td>50</td>
+    </tr>
+    <tr>
+      <th>VehBrand</th>
+      <td>B12</td>
+      <td>B2</td>
+      <td>B12</td>
+      <td>B12</td>
+      <td>B5</td>
+    </tr>
+    <tr>
+      <th>VehGas</th>
+      <td>Diesel</td>
+      <td>Diesel</td>
+      <td>Diesel</td>
+      <td>Regular</td>
+      <td>Diesel</td>
+    </tr>
+    <tr>
+      <th>Density</th>
+      <td>1287</td>
+      <td>678</td>
+      <td>106</td>
+      <td>25</td>
+      <td>1974</td>
+    </tr>
+    <tr>
+      <th>Region</th>
+      <td>R72</td>
+      <td>R23</td>
+      <td>R11</td>
+      <td>R91</td>
+      <td>R54</td>
+    </tr>
+    <tr>
+      <th>ClaimAmount</th>
+      <td>0.0</td>
+      <td>1204.0</td>
+      <td>1172.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>PurePremium</th>
+      <td>0.0</td>
+      <td>1911.111111</td>
+      <td>23440.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>Frequency</th>
+      <td>0.0</td>
+      <td>1.587302</td>
+      <td>20.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>AvgClaimAmount</th>
+      <td>0.0</td>
+      <td>1204.0</td>
+      <td>1172.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+
+```python
+# TODO - Entfernen, wenn Arbeit fertig.
+# sample.T.to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/dataset_final.tex",
+#     float_format="%.2f",
+#     caption=("Beispiele aus dem zusammengeführten Datensatz mit den Zielvariablen", "Datensatz mit Zielvariablen"),
+#     label="tab:dataset_final"
+# )
+```
+
+Train-Test Split mit den Standard Parametern
+
+- train_size=0.75
+- test_size=0.25
 
 
 ```python
 from sklearn.model_selection import train_test_split
 
 df_train, df_test = train_test_split(df, random_state=0)
+print(f"Train Samples: {len(df_train)}")
+print(f"Test Samples: {len(df_test)}")
 ```
+
+    Train Samples: 508509
+    Test Samples: 169504
+
 
 Die Modelle für die Schadenhöhe werden nur auf Beobachtungen mit mindestens einem Schaden trainiert. Daher müssen wir nach diesen Beobachtungen filtern.
 
@@ -98,7 +287,7 @@ mask_test = df_test["ClaimAmount"] > 0
 
 #### Marginalsummenverfahren spezifische Schritte
 
-Die Implementierung des Marginalsummenverfahrens erfordert, dass alle Merkmale binär sind. Für die Merkmale ["VehAge", "DrivAge", "VehBrand", "VehPower", "VehGas", "Region", "Area"] können wir das Aufbereitung aus dem [scikit-learn Tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) verwenden. Für die Merkmale ["BonusMalus", "Density"] müssen wir die binären Merkmale selbst erstellen.
+Die Implementierung des Marginalsummenverfahrens erfordert, dass alle Merkmale binär sind. Für die Merkmale ["VehAge", "DrivAge", "VehBrand", "VehPower", "VehGas", "Region", "Area"] können wir die Aufbereitung aus dem [scikit-learn Tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) verwenden. Für die Merkmale ["BonusMalus", "Density"] müssen wir die binären Merkmale selbst erstellen.
 
 Beachte: In einem realen Szenario ist die Merkmalskonstruktion ein entscheidender Teil des Modellierungsprozesses. Es kann sehr mühsam und zeitaufwändig sein. In diesem Notebook gehen wir davon aus, dass die transformierten Merkmale gegeben sind und konzentrieren uns auf den Modellierungsteil.
 
@@ -176,7 +365,7 @@ X_test_mmt = column_trans_mmt.transform(
 ).toarray()  # the implementation can't handle sparse matrix
 ```
 
-To prepare for the Explainability part, we will extract the feature names of the transformed features.
+Damit die nun neu erstellten binären Merkmale später erklärbar sind, speichern wir die Merkmalsnamen in einer Liste.
 
 
 ```python
@@ -208,9 +397,579 @@ onehot_features = column_trans_mmt.named_transformers_[
 feature_names_mmt.extend(onehot_features)
 ```
 
-#### GLM specific steps
+Aus den 9 urpsürnglichen Merkmalen werden 91 binär transformierte Merkmale.
 
-In difference to the MMT, the GLM can additionally handle continuous features. For the GLM we can use the preprocessing exactly as it is done in the [scikit-learn tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
+
+```python
+X_train_mmt.shape
+```
+
+
+
+
+    (508509, 91)
+
+
+
+Nicht jedes Merkmal hat hierbei die gleiche Anzahl an Kategorien und auch nicht jeden Kategorie hat stets viele Beobachtungen. In Region R43 gibt es z.B. weniger als 1000 Beobachtungen. In einem realen Szenario kann man an dieser Stelle überlegen, ob man die Regionen nicht weiter zusammenfasst.
+
+
+```python
+cols = [
+    "VehAge",
+    "DrivAge",
+    "VehBrand",
+    "VehPower",
+    "VehGas",
+    "Region",
+    "Area",
+    "BonusMalusBin",
+    "DensityBin",
+]
+
+df_train_mmt = pd.DataFrame(X_train_mmt, columns=feature_names_mmt)
+
+counts = {col: [] for col in cols}
+for col in df_train_mmt.columns:
+    for prefix in cols:
+        if col.startswith(prefix):
+            feature = col[len(prefix) + 1 :]
+            feature = feature.replace("_", "-")
+            feature = feature.replace("bin-", "")
+            count = df_train_mmt[col].sum()
+            counts[prefix].append((feature, count))
+
+df_counts = pd.concat(
+    {k: pd.DataFrame(v, columns=["Kategorie", "Anzahl"]) for k, v in counts.items()},
+    axis=1,
+)
+df_counts
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr>
+      <th></th>
+      <th colspan="2" halign="left">VehAge</th>
+      <th colspan="2" halign="left">DrivAge</th>
+      <th colspan="2" halign="left">VehBrand</th>
+      <th colspan="2" halign="left">VehPower</th>
+      <th colspan="2" halign="left">VehGas</th>
+      <th colspan="2" halign="left">Region</th>
+      <th colspan="2" halign="left">Area</th>
+      <th colspan="2" halign="left">BonusMalusBin</th>
+      <th colspan="2" halign="left">DensityBin</th>
+    </tr>
+    <tr>
+      <th></th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+      <th>Kategorie</th>
+      <th>Anzahl</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.0-1.0</td>
+      <td>43384.0</td>
+      <td>18.0-28.0</td>
+      <td>45915.0</td>
+      <td>B1</td>
+      <td>121823.0</td>
+      <td>4</td>
+      <td>86587.0</td>
+      <td>Diesel</td>
+      <td>249052.0</td>
+      <td>R11</td>
+      <td>52344.0</td>
+      <td>A</td>
+      <td>78022.0</td>
+      <td>(0, 55]</td>
+      <td>323094.0</td>
+      <td>(-0.001, 2.5]</td>
+      <td>11044.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1.0-2.0</td>
+      <td>53301.0</td>
+      <td>28.0-32.0</td>
+      <td>44642.0</td>
+      <td>B10</td>
+      <td>13232.0</td>
+      <td>5</td>
+      <td>93563.0</td>
+      <td>Regular</td>
+      <td>259457.0</td>
+      <td>R21</td>
+      <td>2240.0</td>
+      <td>B</td>
+      <td>56725.0</td>
+      <td>(55, 57]</td>
+      <td>16059.0</td>
+      <td>(2.5, 3.0]</td>
+      <td>15342.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2.0-3.0</td>
+      <td>44422.0</td>
+      <td>32.0-36.0</td>
+      <td>50617.0</td>
+      <td>B11</td>
+      <td>10154.0</td>
+      <td>6</td>
+      <td>111678.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R22</td>
+      <td>5949.0</td>
+      <td>C</td>
+      <td>143933.0</td>
+      <td>(57, 60]</td>
+      <td>19559.0</td>
+      <td>(3.0, 3.8]</td>
+      <td>43220.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3.0-4.0</td>
+      <td>37648.0</td>
+      <td>36.0-40.0</td>
+      <td>52248.0</td>
+      <td>B12</td>
+      <td>124757.0</td>
+      <td>7</td>
+      <td>108919.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R23</td>
+      <td>6658.0</td>
+      <td>D</td>
+      <td>113577.0</td>
+      <td>(60, 68]</td>
+      <td>41135.0</td>
+      <td>(3.8, 5.0]</td>
+      <td>99553.0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>4.0-6.0</td>
+      <td>61610.0</td>
+      <td>40.0-44.0</td>
+      <td>50563.0</td>
+      <td>B13</td>
+      <td>9188.0</td>
+      <td>8</td>
+      <td>35399.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R24</td>
+      <td>120359.0</td>
+      <td>E</td>
+      <td>102810.0</td>
+      <td>(68, 74]</td>
+      <td>18386.0</td>
+      <td>(5.0, 6.0]</td>
+      <td>89253.0</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>6.0-8.0</td>
+      <td>51547.0</td>
+      <td>44.0-48.0</td>
+      <td>49570.0</td>
+      <td>B14</td>
+      <td>3009.0</td>
+      <td>9</td>
+      <td>22654.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R25</td>
+      <td>8058.0</td>
+      <td>F</td>
+      <td>13442.0</td>
+      <td>(74, 86]</td>
+      <td>43693.0</td>
+      <td>(6.0, 6.5]</td>
+      <td>42159.0</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>8.0-10.0</td>
+      <td>48392.0</td>
+      <td>48.0-53.0</td>
+      <td>62082.0</td>
+      <td>B2</td>
+      <td>119846.0</td>
+      <td>10</td>
+      <td>23413.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R26</td>
+      <td>7919.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>(86, 100]</td>
+      <td>40754.0</td>
+      <td>(6.5, 7.0]</td>
+      <td>39628.0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>10.0-12.0</td>
+      <td>50887.0</td>
+      <td>53.0-57.0</td>
+      <td>44607.0</td>
+      <td>B3</td>
+      <td>40079.0</td>
+      <td>11</td>
+      <td>13763.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R31</td>
+      <td>20516.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>(100, 120]</td>
+      <td>4164.0</td>
+      <td>(7.0, 8.0]</td>
+      <td>73727.0</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>12.0-15.0</td>
+      <td>60700.0</td>
+      <td>57.0-65.0</td>
+      <td>53352.0</td>
+      <td>B4</td>
+      <td>18857.0</td>
+      <td>12</td>
+      <td>6176.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R41</td>
+      <td>9699.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>(120, 300]</td>
+      <td>1665.0</td>
+      <td>(8.0, 11.0]</td>
+      <td>94583.0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>15.0-100.0</td>
+      <td>56618.0</td>
+      <td>65.0-100.0</td>
+      <td>54913.0</td>
+      <td>B5</td>
+      <td>26145.0</td>
+      <td>13</td>
+      <td>2403.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R42</td>
+      <td>1654.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>B6</td>
+      <td>21419.0</td>
+      <td>14</td>
+      <td>1755.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R43</td>
+      <td>975.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>15</td>
+      <td>2199.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R52</td>
+      <td>29103.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>12</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R53</td>
+      <td>31549.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>13</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R54</td>
+      <td>14255.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>14</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R72</td>
+      <td>23490.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>15</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R73</td>
+      <td>12901.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>16</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R74</td>
+      <td>3370.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>17</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R82</td>
+      <td>63741.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>18</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R83</td>
+      <td>4001.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>19</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R91</td>
+      <td>26815.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>20</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R93</td>
+      <td>59500.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>21</th>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>R94</td>
+      <td>3413.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+  </tbody>
+</table>
+<p>22 rows × 18 columns</p>
+
+
+
+
+```python
+# TODO - Entfernen, wenn Arbeit fertig.
+# for col in cols:
+#     df_counts[col].dropna().to_latex(
+#     buf=f"/home/fabian/Projects/master-thesis/thesis/Tables/{col}_all_binary.tex",
+#     float_format="%.0f",
+#     multicolumn_format="c",
+#     na_rep="",
+#     index=False
+# )
+```
+
+#### GLM spezifische Schritte
+
+Im Gegensatz zum Marginalsummenverfahren, können GLMs auch kontinuierliche Merkmale verarbeiten. Für die GLM können wir das Preprocessing genau so verwenden, wie es im [scikit-learn Tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) vorgestellt wird.
 
 
 ```python
@@ -237,12 +996,44 @@ column_trans = ColumnTransformer(
     remainder="drop",
 )
 column_trans.fit(df)
-
-X_train_glm = column_trans.transform(df_train)
-X_test_glm = column_trans.transform(df_test)
 ```
 
-To prepare for the Explainability part, we will extract the feature names of the transformed features.
+
+
+
+<style>#sk-container-id-1 {color: black;background-color: white;}#sk-container-id-1 pre{padding: 0;}#sk-container-id-1 div.sk-toggleable {background-color: white;}#sk-container-id-1 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-1 label.sk-toggleable__label-arrow:before {content: "▸";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-1 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-1 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-1 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: "▾";}#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-1 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-1 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-1 div.sk-parallel-item::after {content: "";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-serial::before {content: "";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-1 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-1 div.sk-item {position: relative;z-index: 1;}#sk-container-id-1 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-1 div.sk-item::before, #sk-container-id-1 div.sk-parallel-item::before {content: "";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-1 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-1 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-1 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-1 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-1 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-1 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-1 div.sk-label-container {text-align: center;}#sk-container-id-1 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-1 div.sk-text-repr-fallback {display: none;}</style><div id="sk-container-id-1" class="sk-top-container"><div class="sk-text-repr-fallback"><pre>ColumnTransformer(transformers=[(&#x27;binned_numeric&#x27;,
+                                 KBinsDiscretizer(n_bins=10, random_state=0,
+                                                  subsample=200000),
+                                 [&#x27;VehAge&#x27;, &#x27;DrivAge&#x27;]),
+                                (&#x27;onehot_categorical&#x27;, OneHotEncoder(),
+                                 [&#x27;VehBrand&#x27;, &#x27;VehPower&#x27;, &#x27;VehGas&#x27;, &#x27;Region&#x27;,
+                                  &#x27;Area&#x27;]),
+                                (&#x27;passthrough_numeric&#x27;, &#x27;passthrough&#x27;,
+                                 [&#x27;BonusMalus&#x27;]),
+                                (&#x27;log_scaled_numeric&#x27;,
+                                 Pipeline(steps=[(&#x27;functiontransformer&#x27;,
+                                                  FunctionTransformer(func=&lt;ufunc &#x27;log&#x27;&gt;)),
+                                                 (&#x27;standardscaler&#x27;,
+                                                  StandardScaler())]),
+                                 [&#x27;Density&#x27;])])</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-1" type="checkbox" ><label for="sk-estimator-id-1" class="sk-toggleable__label sk-toggleable__label-arrow">ColumnTransformer</label><div class="sk-toggleable__content"><pre>ColumnTransformer(transformers=[(&#x27;binned_numeric&#x27;,
+                                 KBinsDiscretizer(n_bins=10, random_state=0,
+                                                  subsample=200000),
+                                 [&#x27;VehAge&#x27;, &#x27;DrivAge&#x27;]),
+                                (&#x27;onehot_categorical&#x27;, OneHotEncoder(),
+                                 [&#x27;VehBrand&#x27;, &#x27;VehPower&#x27;, &#x27;VehGas&#x27;, &#x27;Region&#x27;,
+                                  &#x27;Area&#x27;]),
+                                (&#x27;passthrough_numeric&#x27;, &#x27;passthrough&#x27;,
+                                 [&#x27;BonusMalus&#x27;]),
+                                (&#x27;log_scaled_numeric&#x27;,
+                                 Pipeline(steps=[(&#x27;functiontransformer&#x27;,
+                                                  FunctionTransformer(func=&lt;ufunc &#x27;log&#x27;&gt;)),
+                                                 (&#x27;standardscaler&#x27;,
+                                                  StandardScaler())]),
+                                 [&#x27;Density&#x27;])])</pre></div></div></div><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-2" type="checkbox" ><label for="sk-estimator-id-2" class="sk-toggleable__label sk-toggleable__label-arrow">binned_numeric</label><div class="sk-toggleable__content"><pre>[&#x27;VehAge&#x27;, &#x27;DrivAge&#x27;]</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-3" type="checkbox" ><label for="sk-estimator-id-3" class="sk-toggleable__label sk-toggleable__label-arrow">KBinsDiscretizer</label><div class="sk-toggleable__content"><pre>KBinsDiscretizer(n_bins=10, random_state=0, subsample=200000)</pre></div></div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-4" type="checkbox" ><label for="sk-estimator-id-4" class="sk-toggleable__label sk-toggleable__label-arrow">onehot_categorical</label><div class="sk-toggleable__content"><pre>[&#x27;VehBrand&#x27;, &#x27;VehPower&#x27;, &#x27;VehGas&#x27;, &#x27;Region&#x27;, &#x27;Area&#x27;]</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-5" type="checkbox" ><label for="sk-estimator-id-5" class="sk-toggleable__label sk-toggleable__label-arrow">OneHotEncoder</label><div class="sk-toggleable__content"><pre>OneHotEncoder()</pre></div></div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-6" type="checkbox" ><label for="sk-estimator-id-6" class="sk-toggleable__label sk-toggleable__label-arrow">passthrough_numeric</label><div class="sk-toggleable__content"><pre>[&#x27;BonusMalus&#x27;]</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-7" type="checkbox" ><label for="sk-estimator-id-7" class="sk-toggleable__label sk-toggleable__label-arrow">passthrough</label><div class="sk-toggleable__content"><pre>passthrough</pre></div></div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-8" type="checkbox" ><label for="sk-estimator-id-8" class="sk-toggleable__label sk-toggleable__label-arrow">log_scaled_numeric</label><div class="sk-toggleable__content"><pre>[&#x27;Density&#x27;]</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-9" type="checkbox" ><label for="sk-estimator-id-9" class="sk-toggleable__label sk-toggleable__label-arrow">FunctionTransformer</label><div class="sk-toggleable__content"><pre>FunctionTransformer(func=&lt;ufunc &#x27;log&#x27;&gt;)</pre></div></div></div><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-10" type="checkbox" ><label for="sk-estimator-id-10" class="sk-toggleable__label sk-toggleable__label-arrow">StandardScaler</label><div class="sk-toggleable__content"><pre>StandardScaler()</pre></div></div></div></div></div></div></div></div></div></div></div></div>
+
+
+
+Damit die nun zum Teil neu erstellten binären Merkmale später erklärbar sind, speichern wir die Merkmalsnamen in einer Liste.
 
 
 ```python
@@ -268,94 +1059,78 @@ feature_names_glm.append("BonusMalus")
 
 # For log_scaled_numeric
 feature_names_glm.append("Density_log")
+
+X_train_glm = pd.DataFrame(
+    column_trans.transform(df_train).toarray(),
+    columns=feature_names_glm,
+    index=df_train.index,
+)
+X_test_glm = pd.DataFrame(
+    column_trans.transform(df_test).toarray(),
+    columns=feature_names_glm,
+    index=df_test.index,
+)
 ```
 
-#### GBM specific steps
+#### GBM spezifische Schritte
 
-As an implementation for Gradient Boosting we use the XGBoost library. There is a scikit-learn compatible API for XGBoost. Unfortunately, not all features used in the following process are as easy to use with the sklearn API as they are with the native API. Therefore, we will use the native XGBoost Python API.
+Als Implementierung von Gradient Boosting Machines verwenden wir die XGBoost Bibliothek. Es gibt eine scikit-learn kompatible API für XGBoost. Leider sind nicht alle Funktionen, die im folgenden Prozess verwendet werden, so einfach mit der sklearn API zu verwenden wie mit der nativen API. Daher werden wir die native XGBoost Python API verwenden.
 
-Since XGBoost can handle categorical features, non-linear relationships and interactions out of the box, we will use the untransformed features to showcase these capabilities. Of course, we could also manually transform some or all of the features in a real world scenario.
+Da XGBoost kategorische Merkmale, nichtlineare Beziehungen und Interaktionen von Haus aus verarbeiten kann, verwenden wir die untransformierten Merkmale, um diese Fähigkeiten zu zeigen. Natürlich könnten wir in einem realen Szenario einige
 
-To use the native API efficienlty, we need to convert the data into a [DMatrix](https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.core). Each DMatrix is specific to the objective.
+Um die native API effizient zu verwenden, müssen wir die Daten in eine [DMatrix](https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.core) konvertieren. Jede DMatrix ist spezifisch für die jeweilige Zielvariable.
 
 
 ```python
-import xgboost as xgb
+from sklearn.preprocessing import OrdinalEncoder
 
-df_train_xgb = df_train.copy()
-df_test_xgb = df_test.copy()
-categorical_features = ["VehBrand", "VehPower", "VehGas", "Region", "Area"]
 numeric_features = ["BonusMalus", "VehAge", "DrivAge", "Density"]
+categorical_features = ["VehBrand", "VehPower", "VehGas", "Region", "Area"]
 feature_names_xgb = numeric_features + categorical_features
 
-# convert categorical features to category dtype
-df_train_xgb[categorical_features] = df_train_xgb[categorical_features].astype(
-    "category"
+column_trans_xgb = ColumnTransformer(
+    [
+        ("passthrough", "passthrough", numeric_features),
+        ("label", OrdinalEncoder(), categorical_features),
+    ],
+    remainder="drop",
 )
-df_test_xgb[categorical_features] = df_test_xgb[categorical_features].astype("category")
 
-# init DMatrix for different objectives
-# frequency
-X_train_xgb_freq = xgb.DMatrix(
-    df_train_xgb[categorical_features + numeric_features],
-    label=df_train_xgb["Frequency"],
-    weight=df_train_xgb["Exposure"],
-    enable_categorical=True,
+column_trans_xgb.fit(df_train)
+
+X_train_xgb = pd.DataFrame(
+    column_trans_xgb.transform(df_train),
+    columns=feature_names_xgb,
+    index=df_train.index,
 )
-X_test_xgb_freq = xgb.DMatrix(
-    df_test_xgb[categorical_features + numeric_features],
-    label=df_test_xgb["Frequency"],
-    weight=df_test_xgb["Exposure"],
-    enable_categorical=True,
-)
-# severity
-X_train_xgb_sev = xgb.DMatrix(
-    df_train_xgb.loc[mask_train, categorical_features + numeric_features],
-    label=df_train_xgb.loc[mask_train, "AvgClaimAmount"],
-    weight=df_train_xgb.loc[mask_train, "ClaimNb"],
-    enable_categorical=True,
-)
-X_test_xgb_sev = xgb.DMatrix(
-    df_test_xgb.loc[mask_test, categorical_features + numeric_features],
-    label=df_test_xgb.loc[mask_test, "AvgClaimAmount"],
-    weight=df_test_xgb.loc[mask_test, "ClaimNb"],
-    enable_categorical=True,
-)
-# pure premium
-X_train_xgb_pure = xgb.DMatrix(
-    df_train_xgb[categorical_features + numeric_features],
-    label=df_train_xgb["PurePremium"],
-    weight=df_train_xgb["Exposure"],
-    enable_categorical=True,
-)
-X_test_xgb_pure = xgb.DMatrix(
-    df_test_xgb[categorical_features + numeric_features],
-    label=df_test_xgb["PurePremium"],
-    weight=df_test_xgb["Exposure"],
-    enable_categorical=True,
+X_test_xgb = pd.DataFrame(
+    column_trans_xgb.transform(df_test), columns=feature_names_xgb, index=df_test.index
 )
 ```
 
-## Evaluation Methods
+## Evaluierungsverfahren
 
-As mentioned above, we will evaluate the models based on three different dimensions. The first one is the performance of the models. The second one is the prediction of the total claim amount. The third one is the ability to rank risks.
+Wie oben erwähnt, werden die Modelle anhand von drei verschiedenen Dimensionen bewertet. Die erste ist die Vorhersagekraft der Modelle. Die zweite ist die Vorhersage des Gesamtschadenaufwands. Die dritte ist die Fähigkeit, Risiken zu ordnen.
 
-### Performance metrics
+### Metriken zur Vorhersagekraft
 
-The models will be evaluated based on the objective:
 
-- All objectives:
-    - [Mean Absolute Error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html#sklearn.metrics.mean_absolute_error)
-    - [Mean Squared Error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html#sklearn.metrics.mean_squared_error)
-    - [D² explained](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.d2_tweedie_score.html#sklearn.metrics.d2_tweedie_score)
-- Pure Premium:
-    - [Mean Tweedie Deviance with various power parameters](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_tweedie_deviance.html#sklearn.metrics.mean_tweedie_deviance) 
-- Frequency
-    - [Mean Poisson Deviance](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.)
-- Severity:
-    - [Mean Gamma Deviance](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_gamma_deviance.html#sklearn.metrics.mean_gamma_deviance)
+Die Modelle werden basierend auf der jeweiligen Zielvariablen bewertet:
 
-For ease of use, the evaluation will be done with a function based on the objective.
+- Alle Zielvariablen:
+    - [Mittlerer absoluter Fehler](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html#sklearn.metrics.mean_absolute_error)
+    - [Mittlerer quadratischer Fehler](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html#sklearn.metrics.mean_squared_error)
+    - [D² erklärt](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.d2_tweedie_score.html#sklearn.metrics.d2_tweedie_score)
+- Nettorisikoprämie:
+    - [Mittlere Tweedie-Abweichung mit verschiedenen Exponentialparametern](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_tweedie_deviance.html#sklearn.metrics.mean_tweedie_deviance)*
+- Schadenhäufigkeit    
+    - [Mittlere Poisson-Abweichung](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.)
+- Schadenhöhe:
+    - [Mittlere Gamma-Abweichung](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_gamma_deviance.html#sklearn.metrics.mean_gamma_deviance)
+
+Zur Vereinfachung wird die Bewertung mit einer Funktion basierend auf der jeweiligen Zielvariable durchgeführt.
+
+\* Da wir a-priori nicht wissen, welcher Exponentialparameter der Tweedie-Verteilung am besten geeignet ist, verwenden wir mehrere Exponentialparameter und erwarten, dass das beste Modell über alle Exponentialparameter hinweg das beste Ergebnis liefert.
 
 
 ```python
@@ -382,13 +1157,40 @@ def score_estimator(
     weights,
     tweedie_powers=None,
 ):
-    """Evaluate an estimator on train and test sets with different metrics"""
+    """Evaluate an estimator on train and test sets with different metrics
+
+    Parameters
+    ----------
+    estimator : scikit-learn compatible object
+        The object to use to predict the data.
+    X_train : ndarray
+        The input samples for training.
+    X_test : ndarray
+        The input samples for testing.
+    df_train : DataFrame
+        The target values for training.
+    df_test : DataFrame
+        The target values for testing.
+    target : str
+        The target column to predict.
+    weights : str
+        The column with the weights.
+    tweedie_powers : list of floats or None
+        The list of exponents for the tweedie loss function.
+        If None, the tweedie loss function is not used.
+
+    Returns
+    -------
+    res : DataFrame
+        A DataFrame with the scores of the estimator.
+
+    """
 
     metrics = [
         ("mean abs. error", mean_absolute_error),
         ("mean squared error", mean_squared_error),
     ]
-    if tweedie_powers:
+    if target == "PurePremium":
         metrics += [("D² explained", partial(d2_tweedie_score, power=1.9))]
         metrics += [
             (
@@ -419,7 +1221,8 @@ def score_estimator(
                 # Score the model consisting of the product of frequency and
                 # severity models.
                 est_freq, est_sev = estimator
-                y_pred = est_freq.predict(X) * est_sev.predict(X)
+                X_freq, X_sev = X
+                y_pred = est_freq.predict(X_freq) * est_sev.predict(X_sev)
             else:
                 y_pred = estimator.predict(X)
 
@@ -437,20 +1240,21 @@ def score_estimator(
     return res
 ```
 
-### Total Claim Amount
+### Gesamter Schadenaufwand
 
-The total claim amount of the prediction should be as close as possible to the total claim amount of the actual data. If the total claim amount of the prediction is too high, the insurer will charge too much premium and might lose customers. If the total claim amount of the prediction is too low, the insurer will not charge enough premium and might go bankrupt.
+Der Gesamtschadenaufwand der Vorhersage sollte so nah wie möglich am Gesamtschadenaufwand der tatsächlichen Daten liegen. Wenn der Gesamtschadenaufwand der Vorhersage zu hoch ist, wird der Versicherer zu viel Prämie verlangen und könnte Kunden verlieren. Wenn der Gesamtschadenaufwand der Vorhersage zu niedrig ist, wird der Versicherer nicht genug Prämie verlangen und könnte bankrott gehen.
 
-We will compare $\sum_{i=1}^{n} ClaimAmount_{i}$ with $\sum_{i=1}^{n} PurePremiumPred_i \cdot Exposure_i$. Where in the case of the Frequency and Severity models, the $PurePremiumPred$ is calculated as $FreqPred_i \cdot SevPred_i$.
+Wir vergleichen $\sum_{i=1}^{n} ClaimAmount_{i}$ mit $\sum_{i=1}^{n} PurePremiumPred_i \cdot Exposure_i$. Im Fall der Häufigkeits- und Schadenhöhenmodelle wird der $PurePremiumPred$ als $FreqPred_i \cdot SevPred_i$ berechnet.
 
-### Risk Ranking
+### Risikodifferenzierung
 
-The ability to rank risks is important for the insurer to be able to charge the right premium for each risk.
+Die Fähigkeit Risiken zu differenzieren ist essentiell für den Versicherer, um für jedes Risiko die richtige Prämie zu verlangen. Wir verwenden den Gini-Koeffzienten als quantitatives Maß in Kombination mit den korrespondierenden Lorenzkurven zur visuellen Darstellung.
 
 
 ```python
 from sklearn.metrics import auc
 from matplotlib import pyplot as plt
+from matplotlib import cm
 
 %matplotlib inline
 
@@ -476,14 +1280,14 @@ def gini_score(cumulated_samples, cumulated_claim_amount):
 def plot_lorenz_curve(y_true, y_pred, exposure, label, ax):
     cumulated_samples, cumulated_claim_amount = lorenz_curve(y_true, y_pred, exposure)
     gini = gini_score(cumulated_samples, cumulated_claim_amount)
-    label += " (Gini index: {:.3f})".format(gini)
+    label += " (Gini-Koeffizient: {:.3f})".format(gini)
     ax.plot(cumulated_samples, cumulated_claim_amount, linestyle="-", label=label)
 
 
 def plot_oracle(y_true, exposure, ax):
     cumulated_samples, cumulated_claim_amount = lorenz_curve(y_true, y_true, exposure)
     gini = gini_score(cumulated_samples, cumulated_claim_amount)
-    label = "Oracle (Gini index: {:.3f})".format(gini)
+    label = "Orakel (Gini-Koeffizient: {:.3f})".format(gini)
     ax.plot(
         cumulated_samples,
         cumulated_claim_amount,
@@ -494,32 +1298,62 @@ def plot_oracle(y_true, exposure, ax):
 
 
 def plot_random(ax):
-    ax.plot([0, 1], [0, 1], linestyle="--", color="black", label="Random baseline")
+    label = "Zufällige Referenzlinie (Gini-Koeffizient: 0)"
+    ax.plot([0, 1], [0, 1], linestyle="--", color="black", label=label)
 
 
-def plot_config(ax):
+def plot_config(ax, xlabel, ylabel):
     ax.set(
-        title="Lorenz Curves",
-        xlabel="Fraction of policyholders\n(ordered by model from safest to riskiest)",
-        ylabel="Fraction of total claim amount",
+        title="Lorenzkurven",
+        xlabel=xlabel,
+        ylabel=ylabel,
     )
     ax.legend(loc="upper left")
 
 
-def plot_risk_ranking(y_true, exposure, model_predicitons):
-    _, ax = plt.subplots(figsize=(8, 8))
+def plot_risk_ranking(
+    y_true,
+    exposure,
+    model_predicitons,
+    xlabel="Anteil an Versicherungsnehmern\n(vom Modell geordnet nach steigendem Risiko)",
+    ylabel="Anteil des gesamten Schadenaufwands",
+    plot=None,
+):
+    fig, ax = plt.subplots(figsize=(8, 8))
     plot_random(ax)
     plot_oracle(y_true, exposure, ax)
     for label, y_pred in model_predicitons.items():
         plot_lorenz_curve(y_true, y_pred, exposure, label, ax)
-    plot_config(ax)
+    plot_config(ax, xlabel, ylabel)
+
+    if plot is not None:
+        fig.savefig(plot, bbox_inches="tight")
 ```
 
-## Modeling the Pure Premium directly
+Basisplot mit den Referenzwerten Zufall und Orakel-Modell.
 
-### Method of Marginal Totals
 
-To my knowledge, there is no Python implementation of the Method of Marginal Totals. Therefore, we will implement it ourselves.
+```python
+plot_risk_ranking(
+    df_train["PurePremium"],
+    df_train["Exposure"],
+    {},
+)
+```
+
+
+    
+![png](README_files/README_40_0.png)
+    
+
+
+## Modellierung der Schadenhäufigkeit
+
+Die Anzahl der Schäden folgt einem Poissonprozess. Auch die auf die Jahreseinheiten normierte Schadenhäufigkeit folgt einem Poissonprozess und kann entsprechend modelliert werden. Die Jahreseinheiten werden hierbei in der Modellierung als Gewichte verwendet.
+
+### Marginalsummenverfahren
+
+In den üblichen Machine Learning Bibliotheken gibt es keine direkte Implementierung des Marginalsummenverfahrens. Das ist in der Praxis auch nicht zwingend notwendig, da das MSV über ein GLM mit Poisson-Verteilung modelliert werden kann. Der Vollständigkeit halber wird das MSV hier dennoch vorgestellt.
 
 
 ```python
@@ -543,11 +1377,17 @@ class MarginalTotalsRegression:
     min_y_change : float, default=0.01
         Minimum change in y to continue iterations.
 
-    baselines : list of int, default=None
+    baselines : list of int, default=[0]
         List of baseline features per group. The factors are 1 by design.
 
     verbose : int, default=0
         Controls verbosity of output.
+
+    basevalue_name : list of str, default=["$\gamma_0$"]
+        Name of the base value.
+
+    feature_names : list of str, default=None
+        Names of features. If None, feature names are set to ["feature_1", "feature_2", ...].
 
     Attributes
     ----------
@@ -562,6 +1402,9 @@ class MarginalTotalsRegression:
 
     n_iter_ : int
         Number of iterations performed.
+
+    results_ : pd.DataFrame
+        Results of the iterations. The first column is the base value. The following columns are the factors.
 
     total_ : float
         Total sum of y.
@@ -598,15 +1441,33 @@ class MarginalTotalsRegression:
         self,
         max_iter=100,
         min_factor_change=0.001,
-        min_y_change=0.01,
-        baselines=None,
+        min_y_change=0.001,
+        baselines=[0],
         verbose=0,
+        basevalue_name="basevalue",
+        feature_names=None,
     ):
         self.max_iter = max_iter
         self.min_factor_change = min_factor_change
         self.min_y_change = min_y_change
         self.baselines = baselines if baselines is not None else []
         self.verbose = verbose
+        self.basevalue_name = basevalue_name
+        self.feature_names = feature_names
+
+    def _get_feature_names(self):
+        """Get feature names. If not set, set to default names.
+
+        Returns
+        -------
+        feature_names : list of str
+            Names of features.
+        """
+        if self.feature_names is None:
+            self.feature_names = [
+                f"feature_{i}" for i in range(1, self.factors_.shape[0] + 1)
+            ]
+        return self.feature_names
 
     def fit(self, X, y, sample_weight=None):
         """Fit the model to data matrix X and target(s) y.
@@ -628,6 +1489,7 @@ class MarginalTotalsRegression:
 
         # init factors
         self.factors_ = np.ones(X.shape[1])
+        self.updated_factors_ = np.ones(X.shape[1])
         self.factors_change_ = np.zeros(X.shape[1])
 
         # calculate marginal totals of original data
@@ -642,8 +1504,21 @@ class MarginalTotalsRegression:
             np.prod(X_factor, axis=1, where=X_factor > 0) * sample_weight
         )
 
+        # init results
+        self.results_ = pd.DataFrame(
+            columns=[self.basevalue_name] + self._get_feature_names()
+        )
+
         for i in range(1, self.max_iter + 1):
             self.n_iter_ = i
+
+            # update y mean
+            X_factor = np.multiply(self.factors_, X)
+            updated_y_mean = self.total_ / np.sum(
+                np.prod(X_factor, axis=1, where=X_factor > 0) * sample_weight
+            )
+            self.y_change_ = np.absolute(self.y_mean_ - updated_y_mean)
+            self.y_mean_ = updated_y_mean
 
             # update factors
             for feature in range(X.shape[1]):
@@ -666,29 +1541,32 @@ class MarginalTotalsRegression:
                         * self.y_mean_
                     )
 
-                    updated_factor = (
+                    self.updated_factors_[feature] = (
                         self.marginal_totals_[feature] / calc_marginal_total
                     )
                     self.factors_change_[feature] = np.absolute(
-                        self.factors_[feature] - updated_factor
+                        self.factors_[feature] - self.updated_factors_[feature]
                     )
-                    self.factors_[feature] = updated_factor
+                    self.factors_[feature] = self.updated_factors_[feature]
 
-            # update y mean
-            X_factor = np.multiply(self.factors_, X)
-            updated_y_mean = self.total_ / np.sum(
-                np.prod(X_factor, axis=1, where=X_factor > 0) * sample_weight
+            # update results
+            self.results_ = pd.concat(
+                [
+                    self.results_ if not self.results_.empty else None,
+                    pd.DataFrame(
+                        [np.append(self.y_mean_, self.factors_)],
+                        columns=self.results_.columns,
+                    ),
+                ],
+                ignore_index=True,
             )
-            self.y_change_ = np.absolute(self.y_mean_ - updated_y_mean)
-            self.y_mean_ = updated_y_mean
-
             if self.verbose > 1:
                 print(f"Iteration {i} - y mean: {self.y_mean_}")
 
             if self.verbose > 2:
                 print(
                     f"Iteration {i} - max absolute factor change:"
-                    f" {np.max(np.absolute(self.factors_change_))}, y change:"
+                    f" {np.max(self.factors_change_)}, y change:"
                     f" {self.y_change_}"
                 )
 
@@ -723,22 +1601,24 @@ class MarginalTotalsRegression:
         return np.prod(X_factor, axis=1, where=X_factor != 0) * self.y_mean_
 ```
 
-For simplicity we will use the first feature in each group as the reference category. In a real world scenario, we would choose the reference category with some heuristic.
+Der Einfachheit halber verwenden wir das erste Merkmal in jeder Gruppe als Referenzkategorie. In einem realen Szenario würden wir die Referenzkategorie mit einer Heuristik wählen.
 
-Warning! The above implementation is very slow. It takes ~ 400 iterations and ~ 50 minutes to converge. You might want to skip this part by setting `run_mmt = False` in the below cell.
+Achtung! Die obige Implementierung ist sehr langsam. Es dauert ~ 320 Iterationen und ~ 30 Minuten, um zu konvergieren. Sie können diesen Teil überspringen, indem Sie `run_mmt = False` in der untenstehenden Zelle setzen. Die Ergebnisse für das MSV können der Thesis entnommen werden.
 
 
 ```python
-run_mmt = True
+run_mmt = False
 ```
 
 
 ```python
 if run_mmt:
     mmt = MarginalTotalsRegression(
-        max_iter=1000, baselines=[0, 10, 20, 31, 43, 45, 67, 73, 82]
+        max_iter=1000,
+        baselines=[0, 10, 20, 31, 43, 45, 67, 73, 82],
+        feature_names=feature_names_mmt,
     )
-    mmt.fit(X_train_mmt, df_train["PurePremium"], sample_weight=df_train["Exposure"])
+    mmt.fit(X_train_mmt, df_train["Frequency"], sample_weight=df_train["Exposure"])
 
     scores_mmt = score_estimator(
         mmt,
@@ -746,17 +1626,24 @@ if run_mmt:
         X_test_mmt,
         df_train,
         df_test,
-        target="PurePremium",
+        target="Frequency",
         weights="Exposure",
-        tweedie_powers=tweedie_powers,
     )
 
     scores_mmt
 ```
 
-Luckily, the Method of Marignal Totals can be [derived from a Poisson GLM](https://www.cambridge.org/core/journals/astin-bulletin-journal-of-the-iaa/article/on-automobile-insurance-ratemaking/8986C8F3B46597B172F2FCAFCC170B2C). We can speed up the process by calculating a Poisson GLM and then transform the coefficients into the MMT factors.
+Basiswert und Faktoren in den letzten Iterationen.
 
-Note: The GLM needs to be fitted with intercept and without regularization. Otherwise, the coefficients will not be the same as the MMT factors.
+
+```python
+if run_mmt:
+    mmt.results_.tail()
+```
+
+### Generalisierte Lineare Modelle
+
+Glücklicherweise sind wir nicht an die obige, langsame Implementierung des MSV gebunden. Die Faktoren, die sich aus dem MSV ergebenen, können auch aus einem [Poisson GLM abgeleitet](https://www.cambridge.org/core/journals/astin-bulletin-journal-of-the-iaa/article/on-automobile-insurance-ratemaking/8986C8F3B46597B172F2FCAFCC170B2C) werden. Hierbei ist es wichtig, dass das Poisson GLM mit Interzept und ohne Regularisierung trainiert wird. Zur Durchführung dieser Transformation nutzen wir die folgende Hilfsklasse. Diese kann unabhängig der Zielvariablen für die Transformation von Koeffizienten und Interzept in Faktoren verwendet werden.
 
 
 ```python
@@ -851,6 +1738,8 @@ class AdditiveToMultiplicativeModel:
         return np.prod(X_factor, axis=1, where=X_factor > 0) * self.y_mean_
 ```
 
+Für Poisson GLMs können wir die Implementierung aus der scikit-learn Bibliothek verwenden. Interzept und Koeffizienten können dann einfach in die MSV-Faktoren umgewandelt werden.
+
 
 ```python
 from sklearn.linear_model import PoissonRegressor
@@ -861,7 +1750,7 @@ glm_poisson_multiplicative = AdditiveToMultiplicativeModel(
     category_splits=[10, 20, 31, 43, 45, 67, 73, 82],
 )
 glm_poisson_multiplicative.fit(
-    X_train_mmt, df_train["PurePremium"], sample_weight=df_train["Exposure"]
+    X_train_mmt, df_train["Frequency"], sample_weight=df_train["Exposure"]
 )
 
 score_glm_poisson_multiplicative = score_estimator(
@@ -870,368 +1759,1715 @@ score_glm_poisson_multiplicative = score_estimator(
     X_test_mmt,
     df_train,
     df_test,
-    target="PurePremium",
+    target="Frequency",
     weights="Exposure",
-    tweedie_powers=tweedie_powers,
 )
 
-if run_mmt:
-    scores = pd.concat(
-        [
-            score_glm_poisson_multiplicative,
-            scores_mmt,
-        ],
-        axis=1,
-        sort=True,
-        keys=(
-            "GLM Poisson Multiplicative",
-            "MMT Compound",
-        ),
-    )
-
-else:
-    scores = pd.concat(
-        [
-            score_glm_poisson_multiplicative,
-        ],
-        axis=1,
-        sort=True,
-        keys=("GLM Poisson Multiplicative",),
-    )
-
-print("Evaluation of the PurePremium models:")
-display(scores.T.loc[(slice(None), "train"), :])
-display(scores.T.loc[(slice(None), "test"), :])
+score_glm_poisson_multiplicative
 ```
 
-    Evaluation of the PurePremium models:
 
 
 
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
-      <th></th>
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
       <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
       <th>D² explained</th>
-      <th>mean Tweedie dev p=1.5000</th>
-      <th>mean Tweedie dev p=1.7000</th>
-      <th>mean Tweedie dev p=1.8000</th>
-      <th>mean Tweedie dev p=1.9000</th>
-      <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
+      <td>0.0493</td>
+      <td>0.0466</td>
+    </tr>
+    <tr>
+      <th>mean Poisson dev</th>
+      <td>0.4550</td>
+      <td>0.4543</td>
+    </tr>
+    <tr>
       <th>mean abs. error</th>
+      <td>0.1375</td>
+      <td>0.1373</td>
+    </tr>
+    <tr>
       <th>mean squared error</th>
-    </tr>
-    <tr>
-      <th></th>
-      <th>subset</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>GLM Poisson Multiplicative</th>
-      <th>train</th>
-      <td>0.0176</td>
-      <td>75.9181</td>
-      <td>36.6830</td>
-      <td>30.2968</td>
-      <td>33.7784</td>
-      <td>201.5103</td>
-      <td>1914.5149</td>
-      <td>19047.4474</td>
-      <td>273.0280</td>
-      <td>3.294525e+07</td>
-    </tr>
-    <tr>
-      <th>MMT Compound</th>
-      <th>train</th>
-      <td>0.0176</td>
-      <td>75.9187</td>
-      <td>36.6833</td>
-      <td>30.2970</td>
-      <td>33.7785</td>
-      <td>201.5104</td>
-      <td>1914.5150</td>
-      <td>19047.4474</td>
-      <td>273.0252</td>
-      <td>3.294524e+07</td>
+      <td>0.2437</td>
+      <td>0.2235</td>
     </tr>
   </tbody>
 </table>
-<p>2 rows × 10 columns</p>
+<p>4 rows × 2 columns</p>
 
 
 
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>metric</th>
-      <th>D² explained</th>
-      <th>mean Tweedie dev p=1.5000</th>
-      <th>mean Tweedie dev p=1.7000</th>
-      <th>mean Tweedie dev p=1.8000</th>
-      <th>mean Tweedie dev p=1.9000</th>
-      <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
-      <th>mean abs. error</th>
-      <th>mean squared error</th>
-    </tr>
-    <tr>
-      <th></th>
-      <th>subset</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>GLM Poisson Multiplicative</th>
-      <th>test</th>
-      <td>0.0138</td>
-      <td>76.3513</td>
-      <td>36.9076</td>
-      <td>30.4466</td>
-      <td>33.8750</td>
-      <td>201.5573</td>
-      <td>1914.3855</td>
-      <td>19045.5795</td>
-      <td>272.1904</td>
-      <td>3.211235e+07</td>
-    </tr>
-    <tr>
-      <th>MMT Compound</th>
-      <th>test</th>
-      <td>0.0138</td>
-      <td>76.3538</td>
-      <td>36.9087</td>
-      <td>30.4473</td>
-      <td>33.8754</td>
-      <td>201.5576</td>
-      <td>1914.3857</td>
-      <td>19045.5797</td>
-      <td>272.1873</td>
-      <td>3.211235e+07</td>
-    </tr>
-  </tbody>
-</table>
-<p>2 rows × 10 columns</p>
-
-
-Both models yield very similiar performance metrics.
-
-
-```python
-if run_mmt:
-    train = {
-        "subset": "train",
-        "observed": df_train["ClaimAmount"].values.sum(),
-        "MMT Compound": np.sum(df_train["Exposure"] * mmt.predict(X_train_mmt)),
-        "GLM Poisson Multiplicative": np.sum(
-            df_train["Exposure"] * glm_poisson_multiplicative.predict(X_train_mmt)
-        ),
-    }
-
-    test = {
-        "subset": "test",
-        "observed": df_test["ClaimAmount"].values.sum(),
-        "MMT Compound": np.sum(df_test["Exposure"] * mmt.predict(X_test_mmt)),
-        "GLM Poisson Multiplicative": np.sum(
-            df_test["Exposure"] * glm_poisson_multiplicative.predict(X_test_mmt)
-        ),
-    }
-
-else:
-    train = {
-        "subset": "train",
-        "observed": df_train["ClaimAmount"].values.sum(),
-        "GLM Poisson Multiplicative": np.sum(
-            df_train["Exposure"] * glm_poisson_multiplicative.predict(X_train_mmt)
-        ),
-    }
-
-    test = {
-        "subset": "test",
-        "observed": df_test["ClaimAmount"].values.sum(),
-        "GLM Poisson Multiplicative": np.sum(
-            df_test["Exposure"] * glm_poisson_multiplicative.predict(X_test_mmt)
-        ),
-    }
-
-pd.DataFrame([train, test]).set_index("subset").T
-```
-
-
-
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>observed</th>
-      <td>3.917618e+07</td>
-      <td>1.299546e+07</td>
-    </tr>
-    <tr>
-      <th>MMT Compound</th>
-      <td>3.917618e+07</td>
-      <td>1.312350e+07</td>
-    </tr>
-    <tr>
-      <th>GLM Poisson Multiplicative</th>
-      <td>3.917618e+07</td>
-      <td>1.312356e+07</td>
-    </tr>
-  </tbody>
-</table>
-<p>3 rows × 2 columns</p>
-
-
-
-Both models yield very similiar predicted total claim amounts.
-
-
-```python
-if run_mmt:
-    plot_risk_ranking(
-        df_test["PurePremium"],
-        df_test["Exposure"],
-        {
-            "MMT Compound": mmt.predict(X_test_mmt),
-            "GLM Poisson Multiplicative": glm_poisson_multiplicative.predict(
-                X_test_mmt
-            ),
-        },
-    )
-
-else:
-    plot_risk_ranking(
-        df_test["PurePremium"],
-        df_test["Exposure"],
-        {
-            "GLM Poisson Multiplicative": glm_poisson_multiplicative.predict(
-                X_test_mmt
-            ),
-        },
-    )
-```
-
-
-    
-![png](README_files/README_39_0.png)
-    
-
-
-Both models yield very similiar risk rankings.
-
-
-```python
-if run_mmt:
-    print(f"MMT base value: {mmt.y_mean_}")
-    print(f"GLM base value: {glm_poisson_multiplicative.y_mean_}")
-    print(f"MMT factors: \n{mmt.factors_}")
-    print(f"GLM factors: \n{glm_poisson_multiplicative.factors_}")
-
-else:
-    print(f"GLM base value: {glm_poisson_multiplicative.y_mean_}")
-    print(f"GLM factors: \n{glm_poisson_multiplicative.factors_}")
-```
-
-    MMT base value: 51.41807004211584
-    GLM base value: 51.419792189259965
-    MMT factors: 
-    [1.         1.17293338 1.22672794 1.04199219 1.05020153 1.16276324
-     0.97144947 0.92413547 0.98385921 0.77450802 1.         0.61884899
-     0.75065171 0.87330993 0.94227677 0.95362269 1.11770816 1.0403446
-     0.99327089 1.22570093 1.         1.21036751 1.42739206 0.85135648
-     1.13657208 0.83613174 1.13097297 1.20192806 1.1375874  1.06445281
-     0.86151534 1.         0.88439281 1.11807215 1.1078048  0.99524317
-     1.29093792 1.4330771  1.36799336 1.41238061 1.57934963 1.03537415
-     0.83834402 1.         0.85855896 1.         2.58912259 1.44766405
-     0.80456414 1.12512055 1.23572152 1.13268556 0.93204103 1.15750961
-     0.68774532 0.82054051 0.90637322 1.16449631 1.0266706  1.12157314
-     0.64568316 1.23428304 1.31975709 0.63057076 1.04878532 1.3017169
-     2.20070983 1.         0.62024556 0.63097206 0.71978672 0.73232685
-     0.54197505 1.         1.40762173 1.9383843  2.26228215 2.54746816
-     2.68101553 4.27599568 6.60158372 7.83174798 1.         1.15503498
-     1.43736668 2.25954367 2.29165667 2.49993439 2.68745904 2.57241589
-     2.66573251]
-    GLM factors: 
-    [1.         1.17299844 1.2268207  1.04208271 1.05032034 1.16292599
-     0.97157915 0.92428738 0.98402896 0.77462115 1.         0.61875489
-     0.75041755 0.87288199 0.94172147 0.95296882 1.11691244 1.03959945
-     0.99261036 1.2248045  1.         1.21028819 1.42730088 0.85135907
-     1.13651797 0.83609886 1.13093442 1.20188417 1.13757249 1.06446263
-     0.86145731 1.         0.88437102 1.11802341 1.10772705 0.99517377
-     1.2908731  1.43302781 1.36785715 1.41205105 1.578987   1.03507092
-     0.83834935 1.         0.85855399 1.         2.58823514 1.44794147
-     0.80432974 1.12423913 1.23456822 1.1321468  0.93192141 1.15677107
-     0.6876611  0.82053015 0.90588279 1.16373441 1.02613829 1.12093077
-     0.64535068 1.23361681 1.31938899 0.62989772 1.04861527 1.3014986
-     2.2003932  1.         0.61358248 0.62181098 0.70344713 0.71380504
-     0.52794864 1.         1.40662679 1.93712771 2.26069448 2.54550313
-     2.67885144 4.27192978 6.59530116 7.82327839 1.         1.15671859
-     1.4393947  2.28678057 2.32847779 2.55157679 2.75348142 2.63755498
-     2.73835578]
-
-
-Further, the base values and factors of models are very similiar. There are small differences in the last factors. This is due to the iterative nature of the MMT implementation. This could be reduced by decreasing the thresholds for the early stopping criteria even further. Nevertheless, we can replace the MMT with a Poisson GLM and save a lot of compute time.
-
-### Generalized Linear Models
-
-For modelling the PurePremium with Generalized Linear Models, a good idea is to use a Tweedie distribution with a power parameter between 1 and 2. The closer the power parameter is to 1, the more the distribution looks like a Poisson distribution. The closer the power parameter is to 2, the more the distribution looks like a Gamma distribution. These Tweedie distributions are continuous and allow for zero inflation. This is typical for insurance data.
-
-Another practical approach is to use a Poisson distribution. Despite being a discrete distribution, it can be used for continuous data. The Poisson distribution is a special case of the Tweedie distribution with a power parameter of 1.
-
-Note: For simplicity we will choose the power paramater a priori with a value of 1.9. Ideally, we would choose the power parameter based on the data by minimizing the log-likelihood over a grid of power parameters.
+Alternativ kann man auch ein Poisson GLM trainieren, ohne dass die Koeffizienten in MMT-Faktoren umgewandelt werden müssen. Dies bietet zum einem die Möglichkeit, numerische Merkmale direkt zu verwenden und zum anderen die Möglichkeit, Regularisierung zu verwenden. Das folgende Modell macht von beiden Möglichkeiten Gebrauch.
 
 
 ```python
 from sklearn.linear_model import PoissonRegressor
-from sklearn.linear_model import TweedieRegressor
 
-np.random.seed(0)
+glm_poisson_freq = PoissonRegressor(alpha=1e-4, solver="newton-cholesky")
+glm_poisson_freq.fit(
+    X_train_glm, df_train["Frequency"], sample_weight=df_train["Exposure"]
+)
+
+scores_glm_poisson_freq = score_estimator(
+    glm_poisson_freq,
+    X_train_glm,
+    X_test_glm,
+    df_train,
+    df_test,
+    target="Frequency",
+    weights="Exposure",
+)
+
+scores_glm_poisson_freq
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
+      <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>D² explained</th>
+      <td>0.0448</td>
+      <td>0.0427</td>
+    </tr>
+    <tr>
+      <th>mean Poisson dev</th>
+      <td>0.4572</td>
+      <td>0.4561</td>
+    </tr>
+    <tr>
+      <th>mean abs. error</th>
+      <td>0.1379</td>
+      <td>0.1378</td>
+    </tr>
+    <tr>
+      <th>mean squared error</th>
+      <td>0.2441</td>
+      <td>0.2246</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+
+### Gradient Boosting Modelle
+
+Im nächsten Abschnitt trainieren wir ein Gradient Boosting Modell mit einer Poisson Verlustfunktion.
+
+#### Hyperparameter Optimierung
+
+Gradient Boosting funktioniert für diese Modellierungsaufgabe nicht sehr gut mit den Standard Hyperparametern. Die Hyperparameter müssen üblicherweise optimiert werden. Wir nehmen die folgenden Hyperparameter als gegeben an.
+
+
+```python
+best_params_xgb_poisson = {
+    "alpha": 1.994140493625288,
+    "colsample_bytree": 0.6340734410360876,
+    "lambda": 0.008013593648196619,
+    "learning_rate": 0.022071505695314412,
+    "max_depth": 7,
+    "min_child_weight": 145,
+    "subsample": 0.9302303532384276,
+}
+boost_rounds_poisson = 945
+```
+
+
+```python
+import xgboost as xgb
+
+xgb_poisson_freq = xgb.XGBRegressor(
+    objective="count:poisson",
+    tree_method="hist",
+    device="cuda",
+    n_estimators=boost_rounds_poisson,
+    n_jobs=-1,
+    **best_params_xgb_poisson,
+)
+
+xgb_poisson_freq.fit(
+    X_train_xgb, df_train["Frequency"], sample_weight=df_train["Exposure"]
+)
+
+scores_xgb_poisson_freq = score_estimator(
+    xgb_poisson_freq,
+    X_train_xgb,
+    X_test_xgb,
+    df_train,
+    df_test,
+    target="Frequency",
+    weights="Exposure",
+)
+
+scores_xgb_poisson_freq
+```
+
+    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [18:28:49] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
+    Potential solutions:
+    - Use a data structure that matches the device ordinal in the booster.
+    - Set the device for booster before call to inplace_predict.
+    
+    This warning will only be shown once.
+    
+      warnings.warn(smsg, UserWarning)
+
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
+      <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>D² explained</th>
+      <td>0.0849</td>
+      <td>0.0644</td>
+    </tr>
+    <tr>
+      <th>mean Poisson dev</th>
+      <td>0.4379</td>
+      <td>0.4458</td>
+    </tr>
+    <tr>
+      <th>mean abs. error</th>
+      <td>0.1355</td>
+      <td>0.1361</td>
+    </tr>
+    <tr>
+      <th>mean squared error</th>
+      <td>0.2414</td>
+      <td>0.2224</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+
+### Vorhersagekraft Schadenhäufigkeit
+
+Wir haben bereits beim Training der obigen Modelle vereinzelt die Scores sehen können. Im Folgenden betrachten wir die Ergebnisse der Vorhersagemetriken gesamtheitlich.
+
+
+```python
+if run_mmt:
+    scores = pd.concat(
+        [
+            scores_mmt,
+            score_glm_poisson_multiplicative,
+            scores_glm_poisson_freq,
+            scores_xgb_poisson_freq,
+        ],
+        axis=1,
+        sort=True,
+        keys=(
+            "Marginalsummenverfahren",
+            "GLM Poisson Multiplikativ",
+            "GLM Poisson",
+            "XGBoost Poisson",
+        ),
+    )
+
+else:
+    scores = pd.concat(
+        [
+            score_glm_poisson_multiplicative,
+            scores_glm_poisson_freq,
+            scores_xgb_poisson_freq,
+        ],
+        axis=1,
+        sort=True,
+        keys=("GLM Poisson Multiplikativ", "GLM Poisson", "XGBoost Poisson"),
+    )
+```
+
+Trainingsdaten
+
+
+```python
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Poisson dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>GLM Poisson Multiplikativ</th>
+      <td>0.0493</td>
+      <td>0.4550</td>
+      <td>0.1375</td>
+      <td>0.2437</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson</th>
+      <td>0.0448</td>
+      <td>0.4572</td>
+      <td>0.1379</td>
+      <td>0.2441</td>
+    </tr>
+    <tr>
+      <th>XGBoost Poisson</th>
+      <td>0.0849</td>
+      <td>0.4379</td>
+      <td>0.1355</td>
+      <td>0.2414</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 4 columns</p>
+
+
+
+
+```python
+# scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_frequency_train.tex",
+#     float_format="%.4f",
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
+# )
+```
+
+Testdaten
+
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Poisson dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>GLM Poisson Multiplikativ</th>
+      <td>0.0466</td>
+      <td>0.4543</td>
+      <td>0.1373</td>
+      <td>0.2235</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson</th>
+      <td>0.0427</td>
+      <td>0.4561</td>
+      <td>0.1378</td>
+      <td>0.2246</td>
+    </tr>
+    <tr>
+      <th>XGBoost Poisson</th>
+      <td>0.0644</td>
+      <td>0.4458</td>
+      <td>0.1361</td>
+      <td>0.2224</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 4 columns</p>
+
+
+
+
+```python
+# scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_frequency_test.tex",
+#     float_format="%.4f",
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
+# )
+```
+
+### Gesamtzahl der Schäden
+
+
+```python
+if run_mmt:
+    train_index = [
+        "Trainingsdaten",
+        "Marginalsummenverfahren",
+        "GLM Poisson Multiplikativ",
+        "GLM Poisson",
+        "XGBoost Poisson",
+    ]
+    test_index = [
+        "Testdaten",
+        "Marginalsummenverfahren",
+        "GLM Poisson Multiplikativ",
+        "GLM Poisson",
+        "XGBoost Poisson",
+    ]
+    train_mean_freq = [
+        np.average(df_train["Frequency"], weights=df_train["Exposure"]),
+        np.average(mmt.predict(X_train_mmt), weights=df_train["Exposure"]),
+        np.average(
+            glm_poisson_multiplicative.predict(X_train_mmt),
+            weights=df_train["Exposure"],
+        ),
+        np.average(glm_poisson_freq.predict(X_train_glm), weights=df_train["Exposure"]),
+        np.average(xgb_poisson_freq.predict(X_train_xgb), weights=df_train["Exposure"]),
+    ]
+    test_mean_freq = [
+        np.average(df_test["Frequency"], weights=df_test["Exposure"]),
+        np.average(mmt.predict(X_test_mmt), weights=df_test["Exposure"]),
+        np.average(
+            glm_poisson_multiplicative.predict(X_test_mmt), weights=df_test["Exposure"]
+        ),
+        np.average(glm_poisson_freq.predict(X_test_glm), weights=df_test["Exposure"]),
+        np.average(xgb_poisson_freq.predict(X_test_xgb), weights=df_test["Exposure"]),
+    ]
+    train_ClaimNb = [
+        df_train["ClaimNb"].sum(),
+        (mmt.predict(X_train_mmt) * df_train["Exposure"]).sum(),
+        (glm_poisson_multiplicative.predict(X_train_mmt) * df_train["Exposure"]).sum(),
+        (glm_poisson_freq.predict(X_train_glm) * df_train["Exposure"]).sum(),
+        (xgb_poisson_freq.predict(X_train_xgb) * df_train["Exposure"]).sum(),
+    ]
+    test_ClaimNb = [
+        df_test["ClaimNb"].sum(),
+        (mmt.predict(X_test_mmt) * df_test["Exposure"]).sum(),
+        (glm_poisson_multiplicative.predict(X_test_mmt) * df_test["Exposure"]).sum(),
+        (glm_poisson_freq.predict(X_test_glm) * df_test["Exposure"]).sum(),
+        (xgb_poisson_freq.predict(X_test_xgb) * df_test["Exposure"]).sum(),
+    ]
+else:
+    train_index = [
+        "Trainingsdaten",
+        "GLM Poisson Multiplikativ",
+        "GLM Poisson",
+        "XGBoost Poisson",
+    ]
+    test_index = [
+        "Testdaten",
+        "GLM Poisson Multiplikativ",
+        "GLM Poisson",
+        "XGBoost Poisson",
+    ]
+    train_mean_freq = [
+        np.average(df_train["Frequency"], weights=df_train["Exposure"]),
+        np.average(
+            glm_poisson_multiplicative.predict(X_train_mmt),
+            weights=df_train["Exposure"],
+        ),
+        np.average(glm_poisson_freq.predict(X_train_glm), weights=df_train["Exposure"]),
+        np.average(xgb_poisson_freq.predict(X_train_xgb), weights=df_train["Exposure"]),
+    ]
+    test_mean_freq = [
+        np.average(df_test["Frequency"], weights=df_test["Exposure"]),
+        np.average(
+            glm_poisson_multiplicative.predict(X_test_mmt), weights=df_test["Exposure"]
+        ),
+        np.average(glm_poisson_freq.predict(X_test_glm), weights=df_test["Exposure"]),
+        np.average(xgb_poisson_freq.predict(X_test_xgb), weights=df_test["Exposure"]),
+    ]
+    train_ClaimNb = [
+        df_train["ClaimNb"].sum(),
+        (glm_poisson_multiplicative.predict(X_train_mmt) * df_train["Exposure"]).sum(),
+        (glm_poisson_freq.predict(X_train_glm) * df_train["Exposure"]).sum(),
+        (xgb_poisson_freq.predict(X_train_xgb) * df_train["Exposure"]).sum(),
+    ]
+    test_ClaimNb = [
+        df_test["ClaimNb"].sum(),
+        (glm_poisson_multiplicative.predict(X_test_mmt) * df_test["Exposure"]).sum(),
+        (glm_poisson_freq.predict(X_test_glm) * df_test["Exposure"]).sum(),
+        (xgb_poisson_freq.predict(X_test_xgb) * df_test["Exposure"]).sum(),
+    ]
+
+train_freq_summary = pd.DataFrame(
+    {
+        "Mittlere Häufigkeit": train_mean_freq,
+        "Anzahl Schadenfälle": [int(ClaimNb) for ClaimNb in train_ClaimNb],
+    },
+    index=train_index,
+)
+test_freq_summary = pd.DataFrame(
+    {
+        "Mittlere Häufigkeit": test_mean_freq,
+        "Anzahl Schadenfälle": [int(ClaimNb) for ClaimNb in test_ClaimNb],
+    },
+    index=test_index,
+)
+```
+
+
+```python
+train_freq_summary
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Mittlere Häufigkeit</th>
+      <th>Anzahl Schadenfälle</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Trainingsdaten</th>
+      <td>0.073724</td>
+      <td>19800</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson Multiplikativ</th>
+      <td>0.073716</td>
+      <td>19797</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson</th>
+      <td>0.073724</td>
+      <td>19800</td>
+    </tr>
+    <tr>
+      <th>XGBoost Poisson</th>
+      <td>0.073732</td>
+      <td>19801</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+
+
+```python
+# train_freq_summary.to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/freq_summary_train.tex",
+#     float_format="%.4f",
+#     multicolumn_format="c",
+#     na_rep="",
+# )
+```
+
+
+```python
+test_freq_summary
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Mittlere Häufigkeit</th>
+      <th>Anzahl Schadenfälle</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Testdaten</th>
+      <td>0.073570</td>
+      <td>6606</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson Multiplikativ</th>
+      <td>0.073809</td>
+      <td>6627</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson</th>
+      <td>0.073890</td>
+      <td>6634</td>
+    </tr>
+    <tr>
+      <th>XGBoost Poisson</th>
+      <td>0.073780</td>
+      <td>6624</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+
+
+```python
+# test_freq_summary.to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/freq_summary_test.tex",
+#     float_format="%.4f",
+#     multicolumn_format="c",
+#     na_rep="",
+# )
+```
+
+
+```python
+if run_mmt:
+    model_predictions = {
+        "GLM Poisson Multiplikativ": glm_poisson_multiplicative.predict(X_test_mmt),
+        "GLM Poisson": glm_poisson_freq.predict(X_test_glm),
+        "XGBoost Poisson": xgb_poisson_freq.predict(X_test_xgb),
+        "Marginalsummenverfahren": mmt.predict(X_test_mmt),
+    }
+else:
+    model_predictions = {
+        "GLM Poisson Multiplikativ": glm_poisson_multiplicative.predict(X_test_mmt),
+        "GLM Poisson": glm_poisson_freq.predict(X_test_glm),
+        "XGBoost Poisson": xgb_poisson_freq.predict(X_test_xgb),
+    }
+```
+
+
+```python
+fig, ax = plt.subplots(figsize=(12, 6))
+
+for label, y_pred in model_predictions.items():
+    ax.hist(
+        y_pred,
+        bins=100,
+        density=True,
+        alpha=0.3,
+        label=label,
+        range=(0, 0.5),
+    )
+
+ax.set(
+    title="Verteilung der Vorhersagen",
+    xlabel="Schadenhäufigkeit",
+    ylabel="Dichte",
+)
+ax.legend(loc="upper right")
+```
+
+
+
+
+    <matplotlib.legend.Legend at 0x7f0ee23fc9d0>
+
+
+
+
+    
+![png](README_files/README_72_1.png)
+    
+
+
+
+```python
+fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(12, 8))
+
+colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+for (label, y_pred), color, ax in zip(model_predictions.items(), colors, axs.flatten()):
+    ax.hist(
+        y_pred,
+        bins=100,
+        density=True,
+        color=color,
+        label=label,
+        range=(0, 0.5),
+    )
+    ax.legend(loc="upper right")
+    ax.set_ylim(0, 21)
+```
+
+
+    
+![png](README_files/README_73_0.png)
+    
+
+
+#### Risikodifferenzierung
+
+
+```python
+if run_mmt:
+    plot_risk_ranking(
+        df_test["Frequency"],
+        df_test["Exposure"],
+        {
+            "GLM Poisson Multiplikativ": glm_poisson_multiplicative.predict(X_test_mmt),
+            "GLM Poisson": glm_poisson_freq.predict(X_test_glm),
+            "XGBoost Poisson": xgb_poisson_freq.predict(X_test_xgb),
+            "Marginalsummenverfahren": mmt.predict(X_test_mmt),
+        },
+        ylabel="Anteil der gesamten Schäden",
+    )
+
+else:
+    plot_risk_ranking(
+        df_test["Frequency"],
+        df_test["Exposure"],
+        {
+            "GLM Poisson Multiplikativ": glm_poisson_multiplicative.predict(X_test_mmt),
+            "GLM Poisson": glm_poisson_freq.predict(X_test_glm),
+            "XGBoost Poisson": xgb_poisson_freq.predict(X_test_xgb),
+        },
+        ylabel="Anteil der gesamten Schäden",
+    )
+```
+
+
+    
+![png](README_files/README_75_0.png)
+    
+
+
+## Modellierung der Schadenhöhe
+
+Für die Modellierung kommen in der Theorie verschiedene rechtsschiefe, stets positive Verteilungen für die Schadenhöhe in Frage. In der Praxis hat sich die Gammaverteilung bewährt.
+
+Beachte:
+- Wir nutzen die obigen Filtermasken, um die Schäden $(-\infty, 0]$ herauszufiltern.
+- Die Anzahl der Schäden wird als Geweicht in der Modellierung verwendet.
+- Aus Performancegründen betrachten wir nur das multiplikative Poisson GLM, auf eine erneute Anwendung des MSV wird verzichtet.
+
+### Generalsierte Lineare Modelle
+
+Wir nutzen hierbei eine Gamma GLM in seiner nativen Form und transformiert in ein multiplikatives Modell.
+
+
+```python
+from sklearn.linear_model import GammaRegressor
+
+glm_gamma_sev = GammaRegressor(alpha=10.0, solver="newton-cholesky")
+glm_gamma_sev.fit(
+    X_train_glm[mask_train.values],
+    df_train.loc[mask_train, "AvgClaimAmount"],
+    sample_weight=df_train.loc[mask_train, "ClaimNb"],
+)
+
+glm_gamma_multiplicative = AdditiveToMultiplicativeModel(
+    GammaRegressor(alpha=10, max_iter=1000),
+    baselines=[0, 10, 20, 31, 43, 45, 67, 73, 82],
+    category_splits=[10, 20, 31, 43, 45, 67, 73, 82],
+)
+glm_gamma_multiplicative.fit(
+    X_train_mmt[mask_train.values],
+    df_train.loc[mask_train, "AvgClaimAmount"],
+    sample_weight=df_train.loc[mask_train, "ClaimNb"],
+)
+
+scores_glm_gamma_sev = score_estimator(
+    glm_gamma_sev,
+    X_train_glm[mask_train.values],
+    X_test_glm[mask_test.values],
+    df_train[mask_train],
+    df_test[mask_test],
+    target="AvgClaimAmount",
+    weights="ClaimNb",
+)
+
+scores_glm_gamma_multiplicative = score_estimator(
+    glm_gamma_multiplicative,
+    X_train_mmt[mask_train.values],
+    X_test_mmt[mask_test.values],
+    df_train[mask_train],
+    df_test[mask_test],
+    target="AvgClaimAmount",
+    weights="ClaimNb",
+)
+
+display(scores_glm_gamma_sev)
+display(scores_glm_gamma_multiplicative)
+```
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
+      <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>D² explained</th>
+      <td>3.900000e-03</td>
+      <td>4.400000e-03</td>
+    </tr>
+    <tr>
+      <th>mean Gamma dev</th>
+      <td>1.435100e+00</td>
+      <td>1.394700e+00</td>
+    </tr>
+    <tr>
+      <th>mean abs. error</th>
+      <td>1.756746e+03</td>
+      <td>1.744042e+03</td>
+    </tr>
+    <tr>
+      <th>mean squared error</th>
+      <td>5.801770e+07</td>
+      <td>5.030677e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
+      <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>D² explained</th>
+      <td>1.000000e-03</td>
+      <td>5.000000e-04</td>
+    </tr>
+    <tr>
+      <th>mean Gamma dev</th>
+      <td>1.439300e+00</td>
+      <td>1.400200e+00</td>
+    </tr>
+    <tr>
+      <th>mean abs. error</th>
+      <td>1.755518e+03</td>
+      <td>1.743285e+03</td>
+    </tr>
+    <tr>
+      <th>mean squared error</th>
+      <td>5.803309e+07</td>
+      <td>5.033476e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+### Gradient Boosting Modelle
+
+Analog zur Modellierung der Schadenhäufigkeit nutzen wir eine GBM mit Gamma Verlustfunktion. Die Hyperparameter nehmen wir wieder als geben an.
+
+
+```python
+best_params_xgb_gamma = {
+    "alpha": 0.6399765728900835,
+    "colsample_bytree": 0.30104790017247346,
+    "lambda": 0.0012592046178894732,
+    "learning_rate": 0.07456133834046624,
+    "max_depth": 3,
+    "min_child_weight": 281,
+    "subsample": 0.6532237673584566,
+}
+boost_rounds_gamma = 141
+```
+
+GBMs sind nicht parametrisierte Modelle. D.h. sie treffen keine Annahme über die Verteilung der Zielvariablen. Daher kann es bei unsymmetrischen Verlustfunktionen passieren, dass das 1. Moment der Verteilung der Zielvariablen, nicht dem 1. Moment der Vorhersage entspricht. Im Konktext der Schadenhöhe ist das ein Problem. Eine massive Über- oder Unterschätzung des Durchschnittsschadens kann zu Problemen in der Kundenaquise oder massivem Verlust für den Versicherer führen. Entsprechend kann es notwendig sein, dass man das Niveau nach der Baumbildung noch einmal kallibriert. Hierzu wird der folgende Wrapper genutzt.
+
+
+```python
+class CalibratedRegressor:
+    """Wrapper to calibrate the output of a regression estimator based
+    on the training data.
+
+    Parameters
+    ----------
+    estimator : estimator
+        The trained estimator object.
+    X : array-like of shape (n_samples, n_features)
+        The training data.
+    y : array-like of shape (n_samples,)
+        The target values.
+    weights : array-like of shape (n_samples,), default=None
+        Individual weights for each sample. If None, uniform weights are used.
+    """
+
+    def __init__(self, estimator, X, y, weights=None):
+        self.estimator = estimator
+        self.X = X
+        self.y = y
+        self.weights = weights if weights is not None else np.ones(X.shape[0])
+        self.factor = self._get_factor()
+
+    def _get_factor(self):
+        """Compute the factor for calibration.
+
+        The factor for calibration is the ratio of the sum of the target
+        variable to the sum of the predictions of the regression estimator on
+        the training data.
+        """
+        y_sum = np.sum(self.y * self.weights)
+        predt = np.sum(self.estimator.predict(self.X) * self.weights)
+        return y_sum / predt
+
+    def predict(self, X, **kwargs):
+        """Predict using the calibrated regression estimator.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input samples.
+        **kwargs : dict
+            Additional keyword arguments are passed to the predict method of the
+            estimator.
+
+        Returns
+        -------
+        y : ndarray of shape (n_samples,)
+            The predicted values.
+        """
+
+        return self.estimator.predict(X, **kwargs) * self.factor
+```
+
+
+```python
+xgb_gamma_sev = xgb.XGBRegressor(
+    objective="reg:gamma",
+    tree_method="hist",
+    device="cuda",
+    n_estimators=boost_rounds_gamma,
+    n_jobs=-1,
+    **best_params_xgb_gamma,
+)
+
+xgb_gamma_sev.fit(
+    X_train_xgb[mask_train.values],
+    df_train.loc[mask_train, "AvgClaimAmount"],
+    sample_weight=df_train.loc[mask_train, "ClaimNb"],
+)
+
+xgb_gamma_sev_calibrated = CalibratedRegressor(
+    xgb_gamma_sev,
+    X_train_xgb[mask_train.values],
+    df_train.loc[mask_train, "AvgClaimAmount"],
+    weights=df_train.loc[mask_train, "ClaimNb"],
+)
+
+scores_xgb_gamma_sev = score_estimator(
+    xgb_gamma_sev,
+    X_train_xgb[mask_train.values],
+    X_test_xgb[mask_test.values],
+    df_train[mask_train],
+    df_test[mask_test],
+    target="AvgClaimAmount",
+    weights="ClaimNb",
+)
+
+scores_xgb_gamma_sev_calibrated = score_estimator(
+    xgb_gamma_sev_calibrated,
+    X_train_xgb[mask_train.values],
+    X_test_xgb[mask_test.values],
+    df_train[mask_train],
+    df_test[mask_test],
+    target="AvgClaimAmount",
+    weights="ClaimNb",
+)
+
+display(scores_xgb_gamma_sev)
+display(scores_xgb_gamma_sev_calibrated)
+```
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
+      <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>D² explained</th>
+      <td>4.640000e-02</td>
+      <td>8.800000e-03</td>
+    </tr>
+    <tr>
+      <th>mean Gamma dev</th>
+      <td>1.373900e+00</td>
+      <td>1.388600e+00</td>
+    </tr>
+    <tr>
+      <th>mean abs. error</th>
+      <td>1.683039e+03</td>
+      <td>1.670748e+03</td>
+    </tr>
+    <tr>
+      <th>mean squared error</th>
+      <td>5.773907e+07</td>
+      <td>5.027763e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
+      <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>D² explained</th>
+      <td>4.630000e-02</td>
+      <td>1.030000e-02</td>
+    </tr>
+    <tr>
+      <th>mean Gamma dev</th>
+      <td>1.374100e+00</td>
+      <td>1.386500e+00</td>
+    </tr>
+    <tr>
+      <th>mean abs. error</th>
+      <td>1.749944e+03</td>
+      <td>1.739230e+03</td>
+    </tr>
+    <tr>
+      <th>mean squared error</th>
+      <td>5.771594e+07</td>
+      <td>5.026899e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+Die Schadenhöhe ist eine sehr schwierige Modellierungsaufgabe, so dass die Scores der Metriken nicht sonderlich überwältigen. Daher macht es Sinn, hier zusätzlich ein Dummy-Modell, das konstant den Mittelwert vorhersagt, als Referenz zu betrachten.
+
+
+```python
+from sklearn.dummy import DummyRegressor
+
+dummy_sev = DummyRegressor(strategy="mean")
+dummy_sev.fit(
+    X_train_glm[mask_train.values],
+    df_train.loc[mask_train, "AvgClaimAmount"],
+    sample_weight=df_train.loc[mask_train, "ClaimNb"],
+)
+
+scores_dummy = score_estimator(
+    dummy_sev,
+    X_train_glm[mask_train.values],
+    X_test_glm[mask_test.values],
+    df_train[mask_train],
+    df_test[mask_test],
+    target="AvgClaimAmount",
+    weights="ClaimNb",
+)
+
+scores_dummy
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
+      <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>D² explained</th>
+      <td>0.000000e+00</td>
+      <td>-0.000000e+00</td>
+    </tr>
+    <tr>
+      <th>mean Gamma dev</th>
+      <td>1.440800e+00</td>
+      <td>1.400900e+00</td>
+    </tr>
+    <tr>
+      <th>mean abs. error</th>
+      <td>1.756687e+03</td>
+      <td>1.744497e+03</td>
+    </tr>
+    <tr>
+      <th>mean squared error</th>
+      <td>5.803882e+07</td>
+      <td>5.033764e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
+
+
+### Vorhersagekraft der Schadenhöhe
+
+
+```python
+scores = pd.concat(
+    [
+        scores_glm_gamma_sev,
+        scores_glm_gamma_multiplicative,
+        scores_xgb_gamma_sev,
+        scores_xgb_gamma_sev_calibrated,
+        scores_dummy,
+    ],
+    axis=1,
+    sort=True,
+    keys=(
+        "GLM Gamma",
+        "GLM Gamma Multiplikativ",
+        "XGBoost Gamma",
+        "XGBoost Gamma kalibriert",
+        "Dummy",
+    ),
+)
+```
+
+
+```python
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Gamma dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>GLM Gamma</th>
+      <td>0.0039</td>
+      <td>1.4351</td>
+      <td>1756.7459</td>
+      <td>5.801770e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Gamma Multiplikativ</th>
+      <td>0.0010</td>
+      <td>1.4393</td>
+      <td>1755.5178</td>
+      <td>5.803309e+07</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma</th>
+      <td>0.0464</td>
+      <td>1.3739</td>
+      <td>1683.0390</td>
+      <td>5.773907e+07</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma kalibriert</th>
+      <td>0.0463</td>
+      <td>1.3741</td>
+      <td>1749.9435</td>
+      <td>5.771594e+07</td>
+    </tr>
+    <tr>
+      <th>Dummy</th>
+      <td>0.0000</td>
+      <td>1.4408</td>
+      <td>1756.6873</td>
+      <td>5.803882e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 4 columns</p>
+
+
+
+
+```python
+# scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_severity_train.tex",
+#     # float_format="%.4f",
+#     formatters=[
+#         "{:.4f}".format,
+#         "{:.4f}".format,
+#         "{:.0f}".format,
+#         "{:.3E}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=["$D^2$", "$D_G$", "$MAE$", "$MSE$"],
+# )
+```
+
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Gamma dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>GLM Gamma</th>
+      <td>0.0044</td>
+      <td>1.3947</td>
+      <td>1744.0418</td>
+      <td>5.030677e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Gamma Multiplikativ</th>
+      <td>0.0005</td>
+      <td>1.4002</td>
+      <td>1743.2855</td>
+      <td>5.033476e+07</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma</th>
+      <td>0.0088</td>
+      <td>1.3886</td>
+      <td>1670.7478</td>
+      <td>5.027763e+07</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma kalibriert</th>
+      <td>0.0103</td>
+      <td>1.3865</td>
+      <td>1739.2299</td>
+      <td>5.026899e+07</td>
+    </tr>
+    <tr>
+      <th>Dummy</th>
+      <td>-0.0000</td>
+      <td>1.4009</td>
+      <td>1744.4968</td>
+      <td>5.033764e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 4 columns</p>
+
+
+
+
+```python
+# scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_severity_test.tex",
+#        formatters=[
+#         "{:.4f}".format,
+#         "{:.4f}".format,
+#         "{:.0f}".format,
+#         "{:.3E}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=["$D^2$", "$D_G$", "$MAE$", "$MSE$"],
+# )
+```
+
+### Gesamt- und Durchschnittsschaden
+
+
+```python
+train_index = [
+    "Trainingsdaten",
+    "GLM Gamma",
+    "GLM Gamma Multiplikativ",
+    "XGBoost Gamma",
+    "XGBoost Gamma kalibriert",
+    "DummyRegressor",
+]
+
+test_index = [
+    "Testdaten",
+    "GLM Gamma",
+    "GLM Gamma Multiplikativ",
+    "XGBoost Gamma",
+    "XGBoost Gamma kalibriert",
+    "DummyRegressor",
+]
+
+train_mean_sev = [
+    df_train.loc[mask_train, "AvgClaimAmount"].mean(),
+    glm_gamma_sev.predict(X_train_glm).mean(),
+    glm_gamma_multiplicative.predict(X_train_mmt).mean(),
+    xgb_gamma_sev.predict(X_train_xgb).mean(),
+    xgb_gamma_sev_calibrated.predict(X_train_xgb).mean(),
+    dummy_sev.predict(X_train_glm).mean(),
+]
+
+test_mean_sev = [
+    df_test.loc[mask_test, "AvgClaimAmount"].mean(),
+    glm_gamma_sev.predict(X_test_glm).mean(),
+    glm_gamma_multiplicative.predict(X_test_mmt).mean(),
+    xgb_gamma_sev.predict(X_test_xgb).mean(),
+    xgb_gamma_sev_calibrated.predict(X_test_xgb).mean(),
+    dummy_sev.predict(X_test_glm).mean(),
+]
+
+train_ClaimAmount = [
+    df_train["ClaimAmount"].sum(),
+    (glm_gamma_sev.predict(X_train_glm) * df_train["ClaimNb"]).sum(),
+    (glm_gamma_multiplicative.predict(X_train_mmt) * df_train["ClaimNb"]).sum(),
+    (xgb_gamma_sev.predict(X_train_xgb) * df_train["ClaimNb"]).sum(),
+    (xgb_gamma_sev_calibrated.predict(X_train_xgb) * df_train["ClaimNb"]).sum(),
+    (dummy_sev.predict(X_train_glm) * df_train["ClaimNb"]).sum(),
+]
+
+test_ClaimAmount = [
+    df_test["ClaimAmount"].sum(),
+    (glm_gamma_sev.predict(X_test_glm) * df_test["ClaimNb"]).sum(),
+    (glm_gamma_multiplicative.predict(X_test_mmt) * df_test["ClaimNb"]).sum(),
+    (xgb_gamma_sev.predict(X_test_xgb) * df_test["ClaimNb"]).sum(),
+    (xgb_gamma_sev_calibrated.predict(X_test_xgb) * df_test["ClaimNb"]).sum(),
+    (dummy_sev.predict(X_test_glm) * df_test["ClaimNb"]).sum(),
+]
+
+train_min_sev = [
+    df_train.loc[mask_train, "AvgClaimAmount"].min(),
+    glm_gamma_sev.predict(X_train_glm).min(),
+    glm_gamma_multiplicative.predict(X_train_mmt).min(),
+    xgb_gamma_sev.predict(X_train_xgb).min(),
+    xgb_gamma_sev_calibrated.predict(X_train_xgb).min(),
+    dummy_sev.predict(X_train_glm).min(),
+]
+
+test_min_sev = [
+    df_test.loc[mask_test, "AvgClaimAmount"].min(),
+    glm_gamma_sev.predict(X_test_glm).min(),
+    glm_gamma_multiplicative.predict(X_test_mmt).min(),
+    xgb_gamma_sev.predict(X_test_xgb).min(),
+    xgb_gamma_sev_calibrated.predict(X_test_xgb).min(),
+    dummy_sev.predict(X_test_glm).min(),
+]
+
+train_max_sev = [
+    df_train.loc[mask_train, "AvgClaimAmount"].max(),
+    glm_gamma_sev.predict(X_train_glm).max(),
+    glm_gamma_multiplicative.predict(X_train_mmt).max(),
+    xgb_gamma_sev.predict(X_train_xgb).max(),
+    xgb_gamma_sev_calibrated.predict(X_train_xgb).max(),
+    dummy_sev.predict(X_train_glm).max(),
+]
+
+test_max_sev = [
+    df_test.loc[mask_test, "AvgClaimAmount"].max(),
+    glm_gamma_sev.predict(X_test_glm).max(),
+    glm_gamma_multiplicative.predict(X_test_mmt).max(),
+    xgb_gamma_sev.predict(X_test_xgb).max(),
+    xgb_gamma_sev_calibrated.predict(X_test_xgb).max(),
+    dummy_sev.predict(X_test_glm).max(),
+]
+
+train_sev_summary = pd.DataFrame(
+    {
+        "Mittlerer Schadenhöhe": train_mean_sev,
+        "Gesamte Schadenhöhe": train_ClaimAmount,
+        "Minimale Schadenhöhe": train_min_sev,
+        "Maximale Schadenhöhe": train_max_sev,
+    },
+    index=train_index,
+)
+
+test_sev_summary = pd.DataFrame(
+    {
+        "Mittlerer Schadenhöhe": test_mean_sev,
+        "Gesamte Schadenhöhe": test_ClaimAmount,
+        "Minimale Schadenhöhe": test_min_sev,
+        "Maximale Schadenhöhe": test_max_sev,
+    },
+    index=test_index,
+)
+```
+
+
+```python
+train_sev_summary
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Mittlerer Schadenhöhe</th>
+      <th>Gesamte Schadenhöhe</th>
+      <th>Minimale Schadenhöhe</th>
+      <th>Maximale Schadenhöhe</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Trainingsdaten</th>
+      <td>1951.209522</td>
+      <td>3.917618e+07</td>
+      <td>1.000000</td>
+      <td>200000.000000</td>
+    </tr>
+    <tr>
+      <th>GLM Gamma</th>
+      <td>1940.946696</td>
+      <td>3.915529e+07</td>
+      <td>1849.768720</td>
+      <td>3371.625147</td>
+    </tr>
+    <tr>
+      <th>GLM Gamma Multiplikativ</th>
+      <td>1976.438476</td>
+      <td>3.914687e+07</td>
+      <td>1953.151061</td>
+      <td>2003.999926</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma</th>
+      <td>1865.106445</td>
+      <td>3.722511e+07</td>
+      <td>1100.803467</td>
+      <td>3599.080322</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma kalibriert</th>
+      <td>1962.861572</td>
+      <td>3.917618e+07</td>
+      <td>1158.499634</td>
+      <td>3787.718018</td>
+    </tr>
+    <tr>
+      <th>DummyRegressor</th>
+      <td>1978.594850</td>
+      <td>3.917618e+07</td>
+      <td>1978.594850</td>
+      <td>1978.594850</td>
+    </tr>
+  </tbody>
+</table>
+<p>6 rows × 4 columns</p>
+
+
+
+
+```python
+# train_sev_summary.to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/sev_summary_train.tex",
+#     formatters=[
+#         "{:.0f}".format,
+#         "{:.3E}".format,
+#         "{:.0f}".format,
+#         "{:.0f}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=[
+#         "Mittelwert",
+#         "Gesamt",
+#         "Min",
+#         "Max",
+#     ],
+# )
+```
+
+
+```python
+test_sev_summary
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Mittlerer Schadenhöhe</th>
+      <th>Gesamte Schadenhöhe</th>
+      <th>Minimale Schadenhöhe</th>
+      <th>Maximale Schadenhöhe</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Testdaten</th>
+      <td>1927.976907</td>
+      <td>1.299546e+07</td>
+      <td>1.490000</td>
+      <td>200000.000000</td>
+    </tr>
+    <tr>
+      <th>GLM Gamma</th>
+      <td>1940.701088</td>
+      <td>1.306552e+07</td>
+      <td>1849.922470</td>
+      <td>3389.341044</td>
+    </tr>
+    <tr>
+      <th>GLM Gamma Multiplikativ</th>
+      <td>1976.421931</td>
+      <td>1.306042e+07</td>
+      <td>1954.137289</td>
+      <td>2003.491999</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma</th>
+      <td>1864.413452</td>
+      <td>1.240900e+07</td>
+      <td>1135.186890</td>
+      <td>3494.851562</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma kalibriert</th>
+      <td>1962.132568</td>
+      <td>1.305939e+07</td>
+      <td>1194.685181</td>
+      <td>3678.026367</td>
+    </tr>
+    <tr>
+      <th>DummyRegressor</th>
+      <td>1978.594850</td>
+      <td>1.307060e+07</td>
+      <td>1978.594850</td>
+      <td>1978.594850</td>
+    </tr>
+  </tbody>
+</table>
+<p>6 rows × 4 columns</p>
+
+
+
+
+```python
+# test_sev_summary.to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/sev_summary_test.tex",
+#     formatters=[
+#         "{:.0f}".format,
+#         "{:.3E}".format,
+#         "{:.0f}".format,
+#         "{:.0f}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=[
+#         "Mittelwert",
+#         "Gesamt",
+#         "Min",
+#         "Max",
+#     ],
+# )
+```
+
+
+```python
+model_predictions = {
+    "GLM Gamma": glm_gamma_sev.predict(X_test_glm),
+    "GLM Gamma Multiplikativ": glm_gamma_multiplicative.predict(X_test_mmt),
+    "XGBoost Gamma": xgb_gamma_sev.predict(X_test_xgb),
+    "XGBoost Gamma kalibriert": xgb_gamma_sev_calibrated.predict(X_test_xgb),
+}
+```
+
+
+```python
+fig, ax = plt.subplots(figsize=(12, 6))
+
+for label, y_pred in model_predictions.items():
+    ax.hist(
+        y_pred,
+        bins=100,
+        density=True,
+        alpha=0.4,
+        label=label,
+        range=(1000, 3000),
+    )
+
+ax.set(
+    title="Verteilung der Vorhersagen",
+    xlabel="Schadenhöhe",
+    ylabel="Dichte",
+)
+ax.legend(loc="upper right")
+
+# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/dist_sev_predictions.png")
+```
+
+
+
+
+    <matplotlib.legend.Legend at 0x7f0ee0e7ee30>
+
+
+
+
+    
+![png](README_files/README_99_1.png)
+    
+
+
+
+```python
+fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(12, 8))
+
+colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+ylims = [0.03, 0.045, 0.0025, 0.0025]
+
+for (label, y_pred), color, ax, ylim in zip(
+    model_predictions.items(), colors, axs.flatten(), ylims
+):
+    ax.hist(
+        y_pred,
+        bins=100,
+        density=True,
+        color=color,
+        label=label,
+        range=(1000, 3000),
+    )
+    ax.legend(loc="upper right")
+    ax.set_ylim(0, ylim)
+```
+
+
+    
+![png](README_files/README_100_0.png)
+    
+
+
+### Risikodifferenzierung
+
+Da sich die Kalibrierung der GBM nur auf das Niveau auswirkt, genügt die Darstellung eines der beiden Modelle, da sie vollständig überlappen.
+
+
+```python
+plot_risk_ranking(
+    df_test["AvgClaimAmount"],
+    df_test["ClaimNb"],
+    {
+        "GLM Gamma": glm_gamma_sev.predict(X_test_glm),
+        "GLM Gamma Multiplikativ": glm_gamma_multiplicative.predict(X_test_mmt),
+        "XGBoost Gamma": xgb_gamma_sev.predict(X_test_xgb),
+    },
+    # plot="/home/fabian/Projects/master-thesis/thesis/Figures/lorenz_curve_severity.png",
+)
+```
+
+
+    
+![png](README_files/README_102_0.png)
+    
+
+
+## Modellierung der Nettorisikoprämie
+
+### Direkte Modellierung
+
+#### Generalisierte Lineare Modelle
+
+Für die direkte Modellierung der Nettorisikoprämie eignen sich GLMs auf Basis der Tweedie Familie mit einem Exponentialparameter $1<p<2$. Je näher der Parameter bei 1 liegt, desto mehr ähnelt die Verteilung einer Poisson Verteilung. Für Werte nahe der 2, nähert man sich der Gamma Verteilung an.
+
+Die Praxis zeigt, dass obwohl es sich bei der Poisson Verteilung um eine diskrete Verteilung handelt, man auch mittels Poisson GLMs gute Ergebnisse für die Nettorisikoprämie erzielen kann. Wir betrachten im Folgenden Poisson und Tweedie GLMs. Auf die Transformation in multiplikative Modelle wird der übersichtlichkeit halber verzichtet. Diese ist analog den Modellierungen für die Schadenhäufigkeit und -höhe möglich. Für den Exponentialparameter nehmen für das Modelltraining den Wert 1.9 an. In einem realen Szenario sollte man hier über die Behandlung als Hyperparameter oder geschäftspolitische Entscheidung nachdenken.
+
+
+```python
+from sklearn.linear_model import TweedieRegressor
 
 glm_tweedie_pure = TweedieRegressor(power=1.9, alpha=0.1, solver="newton-cholesky")
 glm_tweedie_pure.fit(
     X_train_glm, df_train["PurePremium"], sample_weight=df_train["Exposure"]
 )
 
-glm_poisson_pure = PoissonRegressor(
-    alpha=0.1, fit_intercept=True, solver="newton-cholesky"
-)
-# glm_poisson_pure = PoissonRegressor(alpha=0, fit_intercept=True, max_iter=10000)
+glm_poisson_pure = PoissonRegressor(alpha=0.1, solver="newton-cholesky")
 glm_poisson_pure.fit(
-    X_train_glm.toarray(), df_train["PurePremium"], sample_weight=df_train["Exposure"]
+    X_train_glm, df_train["PurePremium"], sample_weight=df_train["Exposure"]
 )
-
 
 tweedie_powers = [1.5, 1.7, 1.8, 1.9, 1.99, 1.999, 1.9999]
 
@@ -1266,16 +3502,17 @@ scores = pd.concat(
     axis=1,
     sort=True,
     keys=(
-        "GLM Tweedie PurePremium",
-        "GLM Poisson PurePremium",
+        "GLM Tweedie",
+        "GLM Poisson",
     ),
 )
-print("Evaluation of the PurePremium models:")
-display(scores.T.loc[(slice(None), "train"), :])
-display(scores.T.loc[(slice(None), "test"), :])
 ```
 
-    Evaluation of the PurePremium models:
+
+```python
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
 
 
 
@@ -1283,7 +3520,6 @@ display(scores.T.loc[(slice(None), "test"), :])
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>metric</th>
       <th>D² explained</th>
       <th>mean Tweedie dev p=1.5000</th>
       <th>mean Tweedie dev p=1.7000</th>
@@ -1295,25 +3531,10 @@ display(scores.T.loc[(slice(None), "test"), :])
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
-    <tr>
-      <th></th>
-      <th>subset</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
   </thead>
   <tbody>
     <tr>
-      <th>GLM Tweedie PurePremium</th>
-      <th>train</th>
+      <th>GLM Tweedie</th>
       <td>0.0164</td>
       <td>76.4077</td>
       <td>36.8288</td>
@@ -1326,8 +3547,7 @@ display(scores.T.loc[(slice(None), "test"), :])
       <td>3.295505e+07</td>
     </tr>
     <tr>
-      <th>GLM Poisson PurePremium</th>
-      <th>train</th>
+      <th>GLM Poisson</th>
       <td>0.0168</td>
       <td>76.1431</td>
       <td>36.7659</td>
@@ -1345,11 +3565,18 @@ display(scores.T.loc[(slice(None), "test"), :])
 
 
 
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>metric</th>
       <th>D² explained</th>
       <th>mean Tweedie dev p=1.5000</th>
       <th>mean Tweedie dev p=1.7000</th>
@@ -1361,25 +3588,10 @@ display(scores.T.loc[(slice(None), "test"), :])
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
-    <tr>
-      <th></th>
-      <th>subset</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
   </thead>
   <tbody>
     <tr>
-      <th>GLM Tweedie PurePremium</th>
-      <th>test</th>
+      <th>GLM Tweedie</th>
       <td>0.0137</td>
       <td>76.4088</td>
       <td>36.9227</td>
@@ -1392,8 +3604,7 @@ display(scores.T.loc[(slice(None), "test"), :])
       <td>3.213056e+07</td>
     </tr>
     <tr>
-      <th>GLM Poisson PurePremium</th>
-      <th>test</th>
+      <th>GLM Poisson</th>
       <td>0.0142</td>
       <td>76.2371</td>
       <td>36.8694</td>
@@ -1410,103 +3621,8 @@ display(scores.T.loc[(slice(None), "test"), :])
 <p>2 rows × 10 columns</p>
 
 
-Both models yield very similiar performance metrics.
 
-
-```python
-train = {
-    "subset": "train",
-    "observed": df_train["ClaimAmount"].values.sum(),
-    "GLM Tweedie PurePremium": np.sum(
-        df_train["Exposure"] * glm_tweedie_pure.predict(X_train_glm)
-    ),
-    "GLM Poisson PurePremium": np.sum(
-        df_train["Exposure"] * glm_poisson_pure.predict(X_train_glm)
-    ),
-}
-
-test = {
-    "subset": "test",
-    "observed": df_test["ClaimAmount"].values.sum(),
-    "GLM Tweedie PurePremium": np.sum(
-        df_test["Exposure"] * glm_tweedie_pure.predict(X_test_glm)
-    ),
-    "GLM Poisson PurePremium": np.sum(
-        df_test["Exposure"] * glm_poisson_pure.predict(X_test_glm)
-    ),
-}
-
-pd.DataFrame([train, test]).set_index("subset").T
-```
-
-
-
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>observed</th>
-      <td>3.917618e+07</td>
-      <td>1.299546e+07</td>
-    </tr>
-    <tr>
-      <th>GLM Tweedie PurePremium</th>
-      <td>3.951751e+07</td>
-      <td>1.325198e+07</td>
-    </tr>
-    <tr>
-      <th>GLM Poisson PurePremium</th>
-      <td>3.917618e+07</td>
-      <td>1.314235e+07</td>
-    </tr>
-  </tbody>
-</table>
-<p>3 rows × 2 columns</p>
-
-
-
-Both models are slightly overerstimating the total claim amount. The Tweedie model is a bit worse than the Poisson model.
-
-
-```python
-plot_risk_ranking(
-    df_test["PurePremium"],
-    df_test["Exposure"],
-    {
-        "GLM Tweedie PurePremium": glm_tweedie_pure.predict(X_test_glm),
-        "GLM Poisson PurePremium": glm_poisson_pure.predict(X_test_glm),
-    },
-)
-```
-
-
-    
-![png](README_files/README_48_0.png)
-    
-
-
-The risk ranking of the Poisson model is better than the risk ranking of the Tweedie model. This might be due to a poor a priori choice of the power parameter. Parameter tuning might improve the risk ranking of the Tweedie model.
-
-#### Parameter Estimates
-
-In actuarial science it is common to evaluate the parameter estimates of GLMs with statistical tests. Tools like SAS (proc genmod) and R (GLM) provide these tests out of the box. In Python there are several libraries to compute GLMs with different focus. The statsmodels library is the most similar to SAS and R. It provides statistical tests for the parameter estimates. However, scikit-learn doesn't provide statistical tests for the parameter estimates. The focus of this library is more on machine learning than on statistical inference.
-
-If you need to calculate statistical tests for the parameter estimates, you can use the statsmodels library. However, keep in mind that the tests are limitied to unregularized GLMs with intercept. An alternative approach is to use bootstrapping to calculate confidence intervals for the parameter estimates. This approach is model agnostic and can be used for any GLM.
-
-With respect to the following chapter (Gradient Boosting Machines), we will skip this, because GBMs are non-parametric.
-
-### Gradient Boosting Machines
-
-#### Hyperparameter Tuning
-
-Gradient Boosting doesn't necessarily work well out of the box. It has several hyperparameters that need to be tuned. We will use the following sets of hyperparameters, that have been obtained by using a random search optimization. The number of boost rounds has been obtained by using early stopping.
+#### Gradient Boosting Modelle
 
 
 ```python
@@ -1522,89 +3638,36 @@ best_params_xgb_tweedie = {
 boost_rounds_tweedie = 281
 ```
 
-#### Under-/Overestimation of the total claim amount / pure premium
-
-Gradient Boosting regression is a *non-parametric* method, i.e. it does not make any assumption on the shape of the regression function. It is therefore not guaranteed that the predicted total claim amount/pure premium will be equal to the true total claim amount /pure premium. This is especially the case for asymmetric loss functions, as we will see later. Therefore we use a wrapper to calibrate the predictions of the Gradient Boosting regressor.
-
 
 ```python
-class CalibratedRegressionBooster:
-    """Wrapper to calibrate the output of an XGBoost regressor based
-    on the training data.
-
-    Parameters
-    ----------
-    booster : xgboost.Booster
-        The trained XGBoost booster object.
-    dtrain : xgboost.DMatrix
-        The XGBoost training data.
-    """
-
-    def __init__(self, booster, dtrain):
-        self.booster = booster
-        self.dtrain = dtrain
-        self.factor = self._get_factor()
-
-    def _get_factor(self):
-        """Compute the factor for calibration.
-
-        The factor for calibration is the ratio of the sum of the target
-        variable to the sum of the predictions of the XGBoost model on
-        the training data.
-        """
-        y_sum = np.sum(self.dtrain.get_label() * self.dtrain.get_weight())
-        predt = np.sum(self.booster.predict(self.dtrain) * self.dtrain.get_weight())
-        return y_sum / predt
-
-    def predict(self, X):
-        """Predict using the calibrated XGBoost model.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input samples.
-
-        Returns
-        -------
-        y : ndarray of shape (n_samples,)
-            The predicted values.
-        """
-
-        return self.booster.predict(X) * self.factor
-```
-
-Analogously to the GLM, we will use a Tweedie distribution with a power parameter of 1.9. Furthermore, we will take advantage of cuda accelerated training. This speeds up the training significantly and is a big deal in the context of GBMs, since they are very compute intensive. If you don't have a cuda device (typically Nvidia GPUs), you can either set the device to "cpu" or remove the device parameter.
-
-Note: In contrast to GLMs, a Poisson model is not possible, because the implementation is specific to counting objectives and not able to handle continuous data.
-
-
-```python
-xgb_tweedie_pure = xgb.train(
-    params={
-        **best_params_xgb_tweedie,
-        "tree_method": "hist",
-        "device": "cuda",
-        "tweedie_variance_power": 1.9,
-        "objective": "reg:tweedie",
-    },
-    dtrain=X_train_xgb_pure,
-    num_boost_round=boost_rounds_tweedie,
-    maximize=False,
-    verbose_eval=False,
+xgb_tweedie_pure = xgb.XGBRegressor(
+    objective="reg:tweedie",
+    tweedie_variance_power=1.9,
+    tree_method="hist",
+    device="cuda",
+    n_estimators=boost_rounds_tweedie,
+    n_jobs=-1,
+    **best_params_xgb_tweedie,
 )
 
-xgb_tweedie_pure_calibrated = CalibratedRegressionBooster(
+xgb_tweedie_pure.fit(
+    X_train_xgb, df_train["PurePremium"], sample_weight=df_train["Exposure"]
+)
+
+xgb_tweedie_pure_calibrated = CalibratedRegressor(
     xgb_tweedie_pure,
-    X_train_xgb_pure,
+    X_train_xgb,
+    df_train["PurePremium"],
+    weights=df_train["Exposure"],
 )
 
 
 score_xgb_tweedie_pure = score_estimator(
     xgb_tweedie_pure,
-    X_train_xgb_pure,
-    X_test_xgb_pure,
-    df_train_xgb,
-    df_test_xgb,
+    X_train_xgb,
+    X_test_xgb,
+    df_train,
+    df_test,
     target="PurePremium",
     weights="Exposure",
     tweedie_powers=tweedie_powers,
@@ -1612,10 +3675,10 @@ score_xgb_tweedie_pure = score_estimator(
 
 score_xgb_tweedie_pure_calibrated = score_estimator(
     xgb_tweedie_pure_calibrated,
-    X_train_xgb_pure,
-    X_test_xgb_pure,
-    df_train_xgb,
-    df_test_xgb,
+    X_train_xgb,
+    X_test_xgb,
+    df_train,
+    df_test,
     target="PurePremium",
     weights="Exposure",
     tweedie_powers=tweedie_powers,
@@ -1629,16 +3692,17 @@ scores = pd.concat(
     axis=1,
     sort=True,
     keys=(
-        "XGB Tweedie PurePremium",
-        "XGB Tweedie PurePremium Calibrated",
+        "XGB Tweedie",
+        "XGB Tweedie Kalibriert",
     ),
 )
-print("Evaluation of the PurePremium models:")
-display(scores.T.loc[(slice(None), "train"), :])
-display(scores.T.loc[(slice(None), "test"), :])
 ```
 
-    Evaluation of the PurePremium models:
+
+```python
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
 
 
 
@@ -1646,7 +3710,6 @@ display(scores.T.loc[(slice(None), "test"), :])
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>metric</th>
       <th>D² explained</th>
       <th>mean Tweedie dev p=1.5000</th>
       <th>mean Tweedie dev p=1.7000</th>
@@ -1658,49 +3721,33 @@ display(scores.T.loc[(slice(None), "test"), :])
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
-    <tr>
-      <th></th>
-      <th>subset</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
   </thead>
   <tbody>
     <tr>
-      <th>XGB Tweedie PurePremium</th>
-      <th>train</th>
-      <td>0.0261</td>
-      <td>73.9650</td>
-      <td>35.9380</td>
-      <td>29.8334</td>
-      <td>33.4888</td>
-      <td>201.3199</td>
-      <td>1914.3322</td>
-      <td>19047.2661</td>
-      <td>256.6825</td>
-      <td>3.293930e+07</td>
+      <th>XGB Tweedie</th>
+      <td>0.0243</td>
+      <td>74.3993</td>
+      <td>36.1011</td>
+      <td>29.9335</td>
+      <td>33.5504</td>
+      <td>201.3598</td>
+      <td>1914.3704</td>
+      <td>19047.3041</td>
+      <td>258.9600</td>
+      <td>3.294002e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie PurePremium Calibrated</th>
-      <th>train</th>
-      <td>0.0255</td>
-      <td>73.9567</td>
-      <td>35.9629</td>
-      <td>29.8569</td>
-      <td>33.5083</td>
-      <td>201.3354</td>
-      <td>1914.3473</td>
-      <td>19047.2811</td>
-      <td>273.4426</td>
-      <td>3.293726e+07</td>
+      <th>XGB Tweedie Kalibriert</th>
+      <td>0.0239</td>
+      <td>74.3910</td>
+      <td>36.1186</td>
+      <td>29.9504</td>
+      <td>33.5645</td>
+      <td>201.3710</td>
+      <td>1914.3813</td>
+      <td>19047.3150</td>
+      <td>273.5062</td>
+      <td>3.293848e+07</td>
     </tr>
   </tbody>
 </table>
@@ -1708,11 +3755,18 @@ display(scores.T.loc[(slice(None), "test"), :])
 
 
 
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>metric</th>
       <th>D² explained</th>
       <th>mean Tweedie dev p=1.5000</th>
       <th>mean Tweedie dev p=1.7000</th>
@@ -1724,935 +3778,54 @@ display(scores.T.loc[(slice(None), "test"), :])
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
-    <tr>
-      <th></th>
-      <th>subset</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
   </thead>
   <tbody>
     <tr>
-      <th>XGB Tweedie PurePremium</th>
-      <th>test</th>
+      <th>XGB Tweedie</th>
       <td>0.0160</td>
-      <td>75.8405</td>
-      <td>36.7131</td>
-      <td>30.3259</td>
-      <td>33.7999</td>
-      <td>201.5081</td>
-      <td>1914.3382</td>
-      <td>19045.5330</td>
-      <td>255.6866</td>
-      <td>3.211108e+07</td>
+      <td>75.8406</td>
+      <td>36.7134</td>
+      <td>30.3264</td>
+      <td>33.8004</td>
+      <td>201.5086</td>
+      <td>1914.3387</td>
+      <td>19045.5335</td>
+      <td>257.8162</td>
+      <td>3.211121e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie PurePremium Calibrated</th>
-      <th>test</th>
-      <td>0.0165</td>
-      <td>75.7024</td>
-      <td>36.6647</td>
-      <td>30.2967</td>
-      <td>33.7820</td>
-      <td>201.4965</td>
-      <td>1914.3271</td>
-      <td>19045.5219</td>
-      <td>272.4632</td>
-      <td>3.210983e+07</td>
+      <th>XGB Tweedie Kalibriert</th>
+      <td>0.0164</td>
+      <td>75.7436</td>
+      <td>36.6799</td>
+      <td>30.3062</td>
+      <td>33.7881</td>
+      <td>201.5006</td>
+      <td>1914.3310</td>
+      <td>19045.5259</td>
+      <td>272.3598</td>
+      <td>3.211026e+07</td>
     </tr>
   </tbody>
 </table>
 <p>2 rows × 10 columns</p>
 
 
-The performance metrics of both models are very similiar.
+
+### Frequency-Severity Modellierung
+
+Für die Frequency-Severity Modellierung betrachten wir drei Kombinationen
+
+- GLM Poisson * GLM Gamma
+- XGB Poisson * XGB Gamma (kalibriert)
+- XGB Poisson * GLM Gamma 
 
 
 ```python
-train = {
-    "subset": "train",
-    "observed": df_train["ClaimAmount"].values.sum(),
-    "XGB Tweedie PurePremium": np.sum(
-        df_train["Exposure"] * xgb_tweedie_pure.predict(X_train_xgb_pure)
-    ),
-    "XGB Tweedie PurePremium Calibrated": np.sum(
-        df_train["Exposure"] * xgb_tweedie_pure_calibrated.predict(X_train_xgb_pure)
-    ),
-}
-
-test = {
-    "subset": "test",
-    "observed": df_test["ClaimAmount"].values.sum(),
-    "XGB Tweedie PurePremium": np.sum(
-        df_test["Exposure"] * xgb_tweedie_pure.predict(X_test_xgb_pure)
-    ),
-    "XGB Tweedie PurePremium Calibrated": np.sum(
-        df_test["Exposure"] * xgb_tweedie_pure_calibrated.predict(X_test_xgb_pure)
-    ),
-}
-
-pd.DataFrame([train, test]).set_index("subset").T
-```
-
-
-
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>observed</th>
-      <td>3.917618e+07</td>
-      <td>1.299546e+07</td>
-    </tr>
-    <tr>
-      <th>XGB Tweedie PurePremium</th>
-      <td>3.405701e+07</td>
-      <td>1.138845e+07</td>
-    </tr>
-    <tr>
-      <th>XGB Tweedie PurePremium Calibrated</th>
-      <td>3.917617e+07</td>
-      <td>1.310027e+07</td>
-    </tr>
-  </tbody>
-</table>
-<p>3 rows × 2 columns</p>
-
-
-
-The raw XGB Tweedie model severly undererstimates the total claim amount. The calibrated XGB Tweedie model is very comparable to the multiplicate models and the Poisson GLM.
-
-
-```python
-plot_risk_ranking(
-    df_test["PurePremium"],
-    df_test["Exposure"],
-    {
-        "XGB Tweedie PurePremium": xgb_tweedie_pure.predict(X_test_xgb_pure),
-        "XGB Tweedie PurePremium Calibrated": xgb_tweedie_pure_calibrated.predict(
-            X_test_xgb_pure
-        ),
-    },
-)
-```
-
-
-    
-![png](README_files/README_60_0.png)
-    
-
-
-The risk ranking of the XGB Tweedie model is similiar to the multiplicative models and the GLM Poisson model. As we can see, the calibration has no effect on the risk ranking and the two curves are overlapping.
-
-## Modelling the Pure Premium via Frequency and Severity
-
-### Frequency model -- Poisson distribution
-
-The number of claims (``ClaimNb``) is a positive integer (0 included).
-Thus, this target can be modelled by a Poisson distribution.
-It is then assumed to be the number of discrete events occurring with a
-constant rate in a given time interval (``Exposure``, in units of years).
-Here we model the frequency ``y = ClaimNb / Exposure``, which is still a
-(scaled) Poisson distribution, and use ``Exposure`` as `sample_weight`.
-
-Let us keep in mind that despite the seemingly large number of data points in
-this dataset, the number of evaluation points where the claim amount is
-non-zero is quite small:
-
-
-
-
-
-```python
-len(df_test)
-```
-
-
-
-
-    169504
-
-
-
-
-```python
-len(df_test[df_test["ClaimAmount"] > 0])
-```
-
-
-
-
-    6237
-
-
-
-
-```python
-best_params_xgb_poisson = {
-    "alpha": 1.994140493625288,
-    "colsample_bytree": 0.6340734410360876,
-    "lambda": 0.008013593648196619,
-    "learning_rate": 0.022071505695314412,
-    "max_depth": 7,
-    "min_child_weight": 145,
-    "subsample": 0.9302303532384276,
-}
-boost_rounds_poisson = 945
-```
-
-As a consequence, we expect a significant variability in our
-evaluation upon random resampling of the train test split.
-
-The parameters of the GLM model are estimated by minimizing the Poisson deviance
-on the training set via a Newton solver. Some of the features are collinear
-(e.g. because we did not drop any categorical level in the `OneHotEncoder`),
-we use a weak L2 penalization to avoid numerical issues.
-
-For the XGBoost regressor, we use a Poisson objective function and the optimized
-hyperparameters. For the frequency model, we will only lookt at the raw model.
-Furthermore, we take advantage of cuda accelarated training. If you don't have a
-cuda device available, you can set "device": "cpu" instead.
-
-
-```python
-from sklearn.linear_model import PoissonRegressor
-
-glm_poisson_freq = PoissonRegressor(alpha=1e-4, solver="newton-cholesky")
-glm_poisson_freq.fit(
-    X_train_glm, df_train["Frequency"], sample_weight=df_train["Exposure"]
-)
-
-xgb_poisson_freq = xgb.train(
-    params={
-        **best_params_xgb_poisson,
-        "objective": "count:poisson",
-        "tree_method": "hist",
-        "device": "cuda",
-    },
-    dtrain=X_train_xgb_freq,
-    num_boost_round=boost_rounds_poisson,
-    maximize=False,
-    verbose_eval=False,
-)
-
-
-scores_glm_poisson_freq = score_estimator(
-    glm_poisson_freq,
-    X_train_glm,
-    X_test_glm,
-    df_train,
-    df_test,
-    target="Frequency",
-    weights="Exposure",
-)
-
-scores_xgb_poisson_freq = score_estimator(
-    xgb_poisson_freq,
-    X_train_xgb_freq,
-    X_test_xgb_freq,
-    df_train_xgb,
-    df_test_xgb,
-    target="Frequency",
-    weights="Exposure",
-)
-
-scores = pd.concat(
-    [scores_glm_poisson_freq, scores_xgb_poisson_freq],
-    axis=1,
-    sort=True,
-    keys=("GLM Poisson Frequency", "XGB Poisson Frequency"),
-)
-
-print("Evaluation of Frequency Models:")
-scores
-```
-
-    Evaluation of Frequency Models:
-
-
-
-
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr>
-      <th></th>
-      <th colspan="2" halign="left">GLM Poisson Frequency</th>
-      <th colspan="2" halign="left">XGB Poisson Frequency</th>
-    </tr>
-    <tr>
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-    <tr>
-      <th>metric</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>D² explained</th>
-      <td>0.0448</td>
-      <td>0.0427</td>
-      <td>0.0875</td>
-      <td>0.0644</td>
-    </tr>
-    <tr>
-      <th>mean Poisson dev</th>
-      <td>0.4572</td>
-      <td>0.4561</td>
-      <td>0.4367</td>
-      <td>0.4458</td>
-    </tr>
-    <tr>
-      <th>mean abs. error</th>
-      <td>0.1379</td>
-      <td>0.1378</td>
-      <td>0.1354</td>
-      <td>0.1361</td>
-    </tr>
-    <tr>
-      <th>mean squared error</th>
-      <td>0.2441</td>
-      <td>0.2246</td>
-      <td>0.2413</td>
-      <td>0.2224</td>
-    </tr>
-  </tbody>
-</table>
-<p>4 rows × 4 columns</p>
-
-
-
-The XGBoost frequency model has a slightly better performance than the GLM model on the mean Poisson deviance and explained deviance, the other metrics are almost the same.
-
-#### Frequency Predicitions
-
-Let's take a look at the predicitons of the two different models.
-
-
-```python
-pred_glm_poisson_freq = glm_poisson_freq.predict(X_test_glm)
-pred_xgb_poisson_freq = xgb_poisson_freq.predict(X_test_xgb_freq)
-```
-
-Mean Claim Frequencies
-
-To compare the predicted mean claim frequency with the true observed mean claim frequency, we need to take the Exposure into account.
-
-
-```python
-print(
-    "mean frequency observed:"
-    f" {np.average(df_test.Frequency, weights=df_test.Exposure):.4f}"
-)
-print(
-    "mean frequency predicted by GLM:"
-    f" {np.average(pred_glm_poisson_freq, weights=df_test.Exposure):.4f}"
-)
-print(
-    "mean frequency predicted by XGB:"
-    f" {np.average(pred_xgb_poisson_freq, weights=df_test.Exposure):.4f}"
-)
-```
-
-    mean frequency observed: 0.0736
-    mean frequency predicted by GLM: 0.0739
-    mean frequency predicted by XGB: 0.0738
-
-
-Both models slightly overerstimate the mean claim frequency.
-
-Min/Max Number of Claims
-
-
-```python
-print(
-    f"min/max claims observed: {(df_test.Frequency * df_test.Exposure).min():.4f},"
-    f" {(df_test.Frequency * df_test.Exposure).max():.4f}"
-)
-print(
-    "min/max claims predicted by GLM:"
-    f" {(pred_glm_poisson_freq * df_test.Exposure).min():.4f},"
-    f" {(pred_glm_poisson_freq * df_test.Exposure).max():.4f}"
-)
-print(
-    "min/max claims predicted by XGB:"
-    f" {(pred_xgb_poisson_freq * df_test.Exposure).min():.4f},"
-    f" {(pred_xgb_poisson_freq * df_test.Exposure).max():.4f}"
-)
-```
-
-    min/max claims observed: 0.0000, 4.0000
-    min/max claims predicted by GLM: 0.0001, 3.7430
-    min/max claims predicted by XGB: 0.0000, 0.7717
-
-
-XGBoost doesn't capure the tail of the distribution as well as the GLM model.
-
-Plot the observed frequencies.
-
-
-```python
-fig, ax = plt.subplots(figsize=(12, 8))
-ax.hist(
-    df_test["Frequency"],
-    bins=100,
-    label="Observed frequency",
-    density=True,
-    alpha=0.8,
-    range=(0.5, 10),
-)
-
-ax.set_title("Observed Frequency")
-```
-
-
-
-
-    Text(0.5, 1.0, 'Observed Frequency')
-
-
-
-
-    
-![png](README_files/README_81_1.png)
-    
-
-
-The observed Frequencies have a high density at 0. To actually see anything, we ignore the 0 frequencies. We can observe that there is another high density at exactly 1.
-
-Plot the predicted frequencies.
-
-
-```python
-fig, ax = plt.subplots(figsize=(12, 8))
-ax.hist(
-    pred_glm_poisson_freq,
-    bins=100,
-    label="GLM predicted frequency",
-    density=True,
-    range=(0, 0.5),
-    alpha=0.7,
-)
-ax.hist(
-    pred_xgb_poisson_freq,
-    bins=100,
-    label="XGB predicted frequency",
-    density=True,
-    range=(0, 0.5),
-    alpha=0.7,
-)
-
-ax.legend()
-ax.set_title("Predicted frequency distribution");
-```
-
-
-    
-![png](README_files/README_84_0.png)
-    
-
-
-Both distributions look very similiar. The areas of high density from the XGBoost predictions looks slighlty left shifted compared to the GLM predictions. The GLM has a longer tail (although it is capped here, we know that from the earlier analysis of the max ClaimNb).
-
-### Severity Model -  Gamma distribution
-The mean claim amount or severity (`AvgClaimAmount`) can be empirically
-shown to follow approximately a Gamma distribution. We fit a GLM, an XGBoost and a calibrated XGBoost model for the severity with the same features as the frequency model.
-
-Note:
-
-- We filter out ``ClaimAmount == 0`` as the Gamma distribution has support
-  on $(0, \infty)$, not $[0, \infty)$.
-- We use ``ClaimNb`` as `sample_weight` to account for policies that contain
-  more than one claim.
-
-
-
-
-```python
-best_params_xgb_gamma = {
-    "alpha": 0.6399765728900835,
-    "colsample_bytree": 0.30104790017247346,
-    "lambda": 0.0012592046178894732,
-    "learning_rate": 0.07456133834046624,
-    "max_depth": 3,
-    "min_child_weight": 281,
-    "subsample": 0.6532237673584566,
-}
-boost_rounds_gamma = 141
-```
-
-
-```python
-from sklearn.linear_model import GammaRegressor
-
-glm_gamma_sev = GammaRegressor(alpha=10.0, solver="newton-cholesky")
-glm_gamma_sev.fit(
-    X_train_glm[mask_train.values],
-    df_train.loc[mask_train, "AvgClaimAmount"],
-    sample_weight=df_train.loc[mask_train, "ClaimNb"],
-)
-
-xgb_gamma_sev = xgb.train(
-    params={
-        **best_params_xgb_gamma,
-        "objective": "reg:gamma",
-        "tree_method": "hist",
-        "device": "cuda",
-    },
-    dtrain=X_train_xgb_sev,
-    num_boost_round=boost_rounds_gamma,
-    maximize=False,
-    verbose_eval=False,
-)
-
-xgb_gamma_sev_calibrated = CalibratedRegressionBooster(
-    xgb_gamma_sev,
-    X_train_xgb_sev,
-)
-
-
-scores_glm_gamma_sev = score_estimator(
-    glm_gamma_sev,
-    X_train_glm[mask_train.values],
-    X_test_glm[mask_test.values],
-    df_train[mask_train],
-    df_test[mask_test],
-    target="AvgClaimAmount",
-    weights="ClaimNb",
-)
-
-scores_xgb_gamma_sev = score_estimator(
-    xgb_gamma_sev,
-    X_train_xgb_sev,
-    X_test_xgb_sev,
-    df_train_xgb[mask_train],
-    df_test_xgb[mask_test],
-    target="AvgClaimAmount",
-    weights="ClaimNb",
-)
-
-scores_xgb_gamma_sev_calibrated = score_estimator(
-    xgb_gamma_sev_calibrated,
-    X_train_xgb_sev,
-    X_test_xgb_sev,
-    df_train_xgb[mask_train],
-    df_test_xgb[mask_test],
-    target="AvgClaimAmount",
-    weights="ClaimNb",
-)
-
-scores = pd.concat(
-    [scores_glm_gamma_sev, scores_xgb_gamma_sev, scores_xgb_gamma_sev_calibrated],
-    axis=1,
-    sort=True,
-    keys=("GLM Gamma Severity", "XGB Gamma Severity", "XGB Gamma Severity Calibrated"),
-)
-print("Evaluation of Severity models:")
-scores
-```
-
-    Evaluation of Severity models:
-
-
-
-
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr>
-      <th></th>
-      <th colspan="2" halign="left">GLM Gamma Severity</th>
-      <th colspan="2" halign="left">XGB Gamma Severity</th>
-      <th colspan="2" halign="left">XGB Gamma Severity Calibrated</th>
-    </tr>
-    <tr>
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
-      <th>train</th>
-      <th>test</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-    <tr>
-      <th>metric</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>D² explained</th>
-      <td>3.900000e-03</td>
-      <td>4.400000e-03</td>
-      <td>5.940000e-02</td>
-      <td>7.000000e-03</td>
-      <td>5.910000e-02</td>
-      <td>9.200000e-03</td>
-    </tr>
-    <tr>
-      <th>mean Gamma dev</th>
-      <td>1.435100e+00</td>
-      <td>1.394700e+00</td>
-      <td>1.355200e+00</td>
-      <td>1.391100e+00</td>
-      <td>1.355700e+00</td>
-      <td>1.388000e+00</td>
-    </tr>
-    <tr>
-      <th>mean abs. error</th>
-      <td>1.756746e+03</td>
-      <td>1.744042e+03</td>
-      <td>1.670198e+03</td>
-      <td>1.661536e+03</td>
-      <td>1.747626e+03</td>
-      <td>1.741168e+03</td>
-    </tr>
-    <tr>
-      <th>mean squared error</th>
-      <td>5.801770e+07</td>
-      <td>5.030677e+07</td>
-      <td>5.765112e+07</td>
-      <td>5.029665e+07</td>
-      <td>5.761767e+07</td>
-      <td>5.028730e+07</td>
-    </tr>
-  </tbody>
-</table>
-<p>4 rows × 6 columns</p>
-
-
-
-
-
-Those values of the metrics are not necessarily easy to interpret. It can be
-insightful to compare them with a model that does not use any input
-features and always predicts a constant value, i.e. the average claim
-amount, in the same setting:
-
-
-
-
-```python
-from sklearn.dummy import DummyRegressor
-
-dummy_sev = DummyRegressor(strategy="mean")
-dummy_sev.fit(
-    X_train_glm[mask_train.values],
-    df_train.loc[mask_train, "AvgClaimAmount"],
-    sample_weight=df_train.loc[mask_train, "ClaimNb"],
-)
-
-scores_dummy = score_estimator(
-    dummy_sev,
-    X_train_glm[mask_train.values],
-    X_test_glm[mask_test.values],
-    df_train[mask_train],
-    df_test[mask_test],
-    target="AvgClaimAmount",
-    weights="ClaimNb",
-)
-
-scores = pd.concat(
-    [
-        scores_glm_gamma_sev,
-        scores_xgb_gamma_sev,
-        scores_xgb_gamma_sev_calibrated,
-        scores_dummy,
-    ],
-    axis=1,
-    sort=True,
-    keys=(
-        "GLM Gamma Severity",
-        "XGB Gamma Severity",
-        "XGB Gamma Severity Calibrated",
-        "Dummy severity",
-    ),
-)
-print("Evaluation of Severity models:")
-scores
-```
-
-    Evaluation of Severity models:
-
-
-
-
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr>
-      <th></th>
-      <th colspan="2" halign="left">GLM Gamma Severity</th>
-      <th colspan="2" halign="left">XGB Gamma Severity</th>
-      <th colspan="2" halign="left">XGB Gamma Severity Calibrated</th>
-      <th colspan="2" halign="left">Dummy severity</th>
-    </tr>
-    <tr>
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
-      <th>train</th>
-      <th>test</th>
-      <th>train</th>
-      <th>test</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-    <tr>
-      <th>metric</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>D² explained</th>
-      <td>3.900000e-03</td>
-      <td>4.400000e-03</td>
-      <td>5.940000e-02</td>
-      <td>7.000000e-03</td>
-      <td>5.910000e-02</td>
-      <td>9.200000e-03</td>
-      <td>0.000000e+00</td>
-      <td>-0.000000e+00</td>
-    </tr>
-    <tr>
-      <th>mean Gamma dev</th>
-      <td>1.435100e+00</td>
-      <td>1.394700e+00</td>
-      <td>1.355200e+00</td>
-      <td>1.391100e+00</td>
-      <td>1.355700e+00</td>
-      <td>1.388000e+00</td>
-      <td>1.440800e+00</td>
-      <td>1.400900e+00</td>
-    </tr>
-    <tr>
-      <th>mean abs. error</th>
-      <td>1.756746e+03</td>
-      <td>1.744042e+03</td>
-      <td>1.670198e+03</td>
-      <td>1.661536e+03</td>
-      <td>1.747626e+03</td>
-      <td>1.741168e+03</td>
-      <td>1.756687e+03</td>
-      <td>1.744497e+03</td>
-    </tr>
-    <tr>
-      <th>mean squared error</th>
-      <td>5.801770e+07</td>
-      <td>5.030677e+07</td>
-      <td>5.765112e+07</td>
-      <td>5.029665e+07</td>
-      <td>5.761767e+07</td>
-      <td>5.028730e+07</td>
-      <td>5.803882e+07</td>
-      <td>5.033764e+07</td>
-    </tr>
-  </tbody>
-</table>
-<p>4 rows × 8 columns</p>
-
-
-
-We conclude that the claim amount is very challenging to predict. All models are able to leverage at least some information from the input features to improve upon the mean baseline in terms of D². The differences on the other metrics are very small. The most noteworthy difference is the mean absolute error, where the uncalibrated XGB model is better than the GLM and the calibrated XGB model. Nevertheless, the calibration is necessary, as we will see in the next evaluations.
-
-#### Severity Predictions
-
-
-```python
-pred_glm_gamma_sev = glm_gamma_sev.predict(X_test_glm[mask_test])
-pred_xgb_gamma_sev = xgb_gamma_sev.predict(X_test_xgb_sev)
-pred_xgb_gamma_sev_calibrated = xgb_gamma_sev_calibrated.predict(X_test_xgb_sev)
-```
-
-Mean Severity
-
-
-```python
-print(
-    "Mean AvgClaim Amount per policy:              %.2f "
-    % df_test["AvgClaimAmount"].mean()
-)
-print(
-    "Mean AvgClaim Amount | NbClaim > 0:           %.2f"
-    % df_test["AvgClaimAmount"][df_test["AvgClaimAmount"] > 0].mean()
-)
-print(
-    "Predicted Mean AvgClaim Amount (GLM) | NbClaim > 0: %.2f"
-    % pred_glm_gamma_sev.mean()
-)
-print(
-    "Predicted Mean AvgClaim Amount (XGB) | NbClaim > 0: %.2f"
-    % pred_xgb_gamma_sev.mean()
-)
-print(
-    "Predicted Mean AvgClaim Amount (XGB calibrated) | NbClaim > 0: %.2f"
-    % pred_xgb_gamma_sev_calibrated.mean()
-)
-print(
-    "Predicted Mean AvgClaim Amount (dummy) | NbClaim > 0: %.2f"
-    % dummy_sev.predict(X_test_glm).mean()
-)
-```
-
-    Mean AvgClaim Amount per policy:              70.94 
-    Mean AvgClaim Amount | NbClaim > 0:           1927.98
-    Predicted Mean AvgClaim Amount (GLM) | NbClaim > 0: 1975.26
-    Predicted Mean AvgClaim Amount (XGB) | NbClaim > 0: 1863.25
-    Predicted Mean AvgClaim Amount (XGB calibrated) | NbClaim > 0: 1977.72
-    Predicted Mean AvgClaim Amount (dummy) | NbClaim > 0: 1978.59
-
-
-The uncalibrated XGBoost model severly underestimates the AvgClaim Amount and as a result the total ClaimAmount. This would lead to a loss for the insurance company. The calibrated XGBoost model is much better in this regard.
-
-
-```python
-print("Total ClaimAmount:           %.2f" % df_test["ClaimAmount"].sum())
-print(
-    "Predicted total ClaimAmount (GLM): %.2f"
-    % (pred_glm_gamma_sev * df_test.loc[mask_test, "ClaimNb"]).sum()
-)
-print(
-    "Predicted total ClaimAmount (XGB): %.2f"
-    % (pred_xgb_gamma_sev * df_test.loc[mask_test, "ClaimNb"]).sum()
-)
-print(
-    "Predicted total ClaimAmount (XGB calibrated) | NbClaim > 0: %.2f"
-    % (pred_xgb_gamma_sev_calibrated * df_test.loc[mask_test, "ClaimNb"]).sum()
-)
-print(
-    "Predicted total ClaimAmount (dummy) | NbClaim > 0: %.2f"
-    % (
-        dummy_sev.predict(X_test_glm[mask_test]) * df_test.loc[mask_test, "ClaimNb"]
-    ).sum()
-)
-```
-
-    Total ClaimAmount:           12995459.05
-    Predicted total ClaimAmount (GLM): 13065517.22
-    Predicted total ClaimAmount (XGB): 12319012.61
-    Predicted total ClaimAmount (XGB calibrated) | NbClaim > 0: 13075833.89
-    Predicted total ClaimAmount (dummy) | NbClaim > 0: 13070597.58
-
-
-Note: Of course, we don't know the real ClaimNb in a real world scenario. We would need to to use the frequency model here.
-
-Min/Max Claim Severity
-
-
-```python
-print(
-    f"min/max severity observed: {df_test.loc[mask_test, 'AvgClaimAmount'].min():.4f},"
-    f" {df_test.loc[mask_test, 'AvgClaimAmount'].max():.4f}"
-)
-print(
-    f"min/max severity predicted by GLM: {pred_glm_gamma_sev.min():.4f},"
-    f" {pred_glm_gamma_sev.max():.4f}"
-)
-print(
-    f"min/max severity predicted by XGB: {pred_xgb_gamma_sev.min():.4f},"
-    f" {pred_xgb_gamma_sev.max():.4f}"
-)
-print(
-    "min/max severity predicted by XGB calibrated:"
-    f" {pred_xgb_gamma_sev_calibrated.min():.4f},"
-    f" {pred_xgb_gamma_sev_calibrated.max():.4f}"
-)
-```
-
-    min/max severity observed: 1.4900, 200000.0000
-    min/max severity predicted by GLM: 1854.6965, 3155.0947
-    min/max severity predicted by XGB: 1098.5482, 3422.7051
-    min/max severity predicted by XGB calibrated: 1166.0377, 3632.9797
-
-
-None of the models seems to catch the tail of the observed AvgClaimAmount distribution. Furthermore, both XGBoost models seem to span over a wider range of AvgClaimAmounts than the GLM model.
-
-Plot the predicted severities.
-
-
-```python
-fig, ax = plt.subplots(figsize=(12, 8))
-ax.hist(
-    pred_glm_gamma_sev,
-    bins=100,
-    label="GLM predicted severity",
-    density=True,
-    alpha=0.7,
-    range=(1000, 3000),
-)
-ax.hist(
-    pred_xgb_gamma_sev,
-    bins=100,
-    label="XGB predicted severity",
-    density=True,
-    alpha=0.7,
-    range=(1000, 3000),
-)
-ax.hist(
-    pred_xgb_gamma_sev_calibrated,
-    bins=100,
-    label="XGB predicted severity calibrated",
-    density=True,
-    alpha=0.7,
-    range=(1000, 3000),
-)
-
-ax.legend()
-ax.set_title("Predicted severity distribution");
-```
-
-
-    
-![png](README_files/README_103_0.png)
-    
-
-
-The resulting distributions of the XGBoost models and the GLM look very differently. The XGBoost distributions are almost looking Gaussian.
-
-Combined Product Model
-
-
-```python
-scores_glm_product_pure = score_estimator(
+scores_glm_product = score_estimator(
     (glm_poisson_freq, glm_gamma_sev),
-    X_train_glm,
-    X_test_glm,
+    (X_train_glm, X_train_glm),
+    (X_test_glm, X_test_glm),
     df_train,
     df_test,
     target="PurePremium",
@@ -2660,23 +3833,23 @@ scores_glm_product_pure = score_estimator(
     tweedie_powers=tweedie_powers,
 )
 
-scores_xgb_product_pure = score_estimator(
-    (xgb_poisson_freq, xgb_gamma_sev),
-    X_train_xgb_pure,
-    X_test_xgb_pure,
-    df_train_xgb,
-    df_test_xgb,
+scores_xgb_product = score_estimator(
+    (xgb_poisson_freq, xgb_gamma_sev_calibrated),
+    (X_train_xgb, X_train_xgb),
+    (X_test_xgb, X_test_xgb),
+    df_train,
+    df_test,
     target="PurePremium",
     weights="Exposure",
     tweedie_powers=tweedie_powers,
 )
 
-scores_xgb_product_pure_calibrated = score_estimator(
-    (xgb_poisson_freq, xgb_gamma_sev_calibrated),
-    X_train_xgb_pure,
-    X_test_xgb_pure,
-    df_train_xgb,
-    df_test_xgb,
+scores_xgb_glm_product = score_estimator(
+    (xgb_poisson_freq, glm_gamma_sev),
+    (X_train_xgb, X_train_glm),
+    (X_test_xgb, X_test_glm),
+    df_train,
+    df_test,
     target="PurePremium",
     weights="Exposure",
     tweedie_powers=tweedie_powers,
@@ -2684,195 +3857,19 @@ scores_xgb_product_pure_calibrated = score_estimator(
 
 scores = pd.concat(
     [
-        scores_glm_product_pure,
-        scores_xgb_product_pure,
-        scores_xgb_product_pure_calibrated,
+        scores_glm_product,
+        scores_xgb_product,
+        scores_xgb_glm_product,
     ],
     axis=1,
     sort=True,
-    keys=(
-        "GLM Product PurePremium",
-        "XGB Product PurePremium",
-        "XGB Product PurePremium Calibrated",
-    ),
+    keys=("GLM Produkt", "XGB Produkt", "XGB/GLM Produkt"),
 )
-print("Evaluation of PurePremium models:")
-scores
 ```
-
-    Evaluation of PurePremium models:
-
-
-
-
-
-<table border="1" class="dataframe">
-  <thead>
-    <tr>
-      <th></th>
-      <th colspan="2" halign="left">GLM Product PurePremium</th>
-      <th colspan="2" halign="left">XGB Product PurePremium</th>
-      <th colspan="2" halign="left">XGB Product PurePremium Calibrated</th>
-    </tr>
-    <tr>
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
-      <th>train</th>
-      <th>test</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-    <tr>
-      <th>metric</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>D² explained</th>
-      <td>1.480000e-02</td>
-      <td>1.460000e-02</td>
-      <td>2.950000e-02</td>
-      <td>1.980000e-02</td>
-      <td>2.910000e-02</td>
-      <td>1.990000e-02</td>
-    </tr>
-    <tr>
-      <th>mean Tweedie dev p=1.5000</th>
-      <td>7.669930e+01</td>
-      <td>7.617050e+01</td>
-      <td>7.284740e+01</td>
-      <td>7.462810e+01</td>
-      <td>7.288520e+01</td>
-      <td>7.461270e+01</td>
-    </tr>
-    <tr>
-      <th>mean Tweedie dev p=1.7000</th>
-      <td>3.695740e+01</td>
-      <td>3.683980e+01</td>
-      <td>3.557640e+01</td>
-      <td>3.631440e+01</td>
-      <td>3.560110e+01</td>
-      <td>3.630870e+01</td>
-    </tr>
-    <tr>
-      <th>mean Tweedie dev p=1.8000</th>
-      <td>3.046010e+01</td>
-      <td>3.040530e+01</td>
-      <td>2.962650e+01</td>
-      <td>3.009710e+01</td>
-      <td>2.964500e+01</td>
-      <td>3.009340e+01</td>
-    </tr>
-    <tr>
-      <th>mean Tweedie dev p=1.9000</th>
-      <td>3.387580e+01</td>
-      <td>3.385000e+01</td>
-      <td>3.337020e+01</td>
-      <td>3.366870e+01</td>
-      <td>3.338350e+01</td>
-      <td>3.366620e+01</td>
-    </tr>
-    <tr>
-      <th>mean Tweedie dev p=1.9900</th>
-      <td>2.015716e+02</td>
-      <td>2.015414e+02</td>
-      <td>2.012479e+02</td>
-      <td>2.014287e+02</td>
-      <td>2.012576e+02</td>
-      <td>2.014269e+02</td>
-    </tr>
-    <tr>
-      <th>mean Tweedie dev p=1.9990</th>
-      <td>1.914573e+03</td>
-      <td>1.914370e+03</td>
-      <td>1.914264e+03</td>
-      <td>1.914263e+03</td>
-      <td>1.914273e+03</td>
-      <td>1.914261e+03</td>
-    </tr>
-    <tr>
-      <th>mean Tweedie dev p=1.9999</th>
-      <td>1.904751e+04</td>
-      <td>1.904556e+04</td>
-      <td>1.904720e+04</td>
-      <td>1.904546e+04</td>
-      <td>1.904721e+04</td>
-      <td>1.904546e+04</td>
-    </tr>
-    <tr>
-      <th>mean abs. error</th>
-      <td>2.730119e+02</td>
-      <td>2.722128e+02</td>
-      <td>2.615408e+02</td>
-      <td>2.619166e+02</td>
-      <td>2.687343e+02</td>
-      <td>2.691818e+02</td>
-    </tr>
-    <tr>
-      <th>mean squared error</th>
-      <td>3.295040e+07</td>
-      <td>3.212197e+07</td>
-      <td>3.292924e+07</td>
-      <td>3.210380e+07</td>
-      <td>3.292839e+07</td>
-      <td>3.210343e+07</td>
-    </tr>
-  </tbody>
-</table>
-<p>10 rows × 6 columns</p>
-
-
 
 
 ```python
-train = {
-    "subset": "train",
-    "observed": df_train["ClaimAmount"].values.sum(),
-    "GLM Product PurePremium": np.sum(
-        df_train["Exposure"]
-        * glm_poisson_freq.predict(X_train_glm)
-        * glm_gamma_sev.predict(X_train_glm)
-    ),
-    "XGB Product PurePremium": np.sum(
-        df_train["Exposure"]
-        * xgb_poisson_freq.predict(X_train_xgb_pure)
-        * xgb_gamma_sev.predict(X_train_xgb_pure)
-    ),
-    "XGB Product PurePremium Calibrated": np.sum(
-        df_train["Exposure"]
-        * xgb_poisson_freq.predict(X_train_xgb_pure)
-        * xgb_gamma_sev_calibrated.predict(X_train_xgb_pure)
-    ),
-}
-
-test = {
-    "subset": "test",
-    "observed": df_test["ClaimAmount"].values.sum(),
-    "GLM Product PurePremium": np.sum(
-        df_test["Exposure"]
-        * glm_poisson_freq.predict(X_test_glm)
-        * glm_gamma_sev.predict(X_test_glm)
-    ),
-    "XGB Product PurePremium": np.sum(
-        df_test["Exposure"]
-        * xgb_poisson_freq.predict(X_test_xgb_pure)
-        * xgb_gamma_sev.predict(X_test_xgb_pure)
-    ),
-    "XGB Product PurePremium Calibrated": np.sum(
-        df_test["Exposure"]
-        * xgb_poisson_freq.predict(X_test_xgb_pure)
-        * xgb_gamma_sev_calibrated.predict(X_test_xgb_pure)
-    ),
-}
-
-pd.DataFrame([train, test]).set_index("subset").T
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 ```
 
 
@@ -2881,37 +3878,682 @@ pd.DataFrame([train, test]).set_index("subset").T
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Tweedie dev p=1.5000</th>
+      <th>mean Tweedie dev p=1.7000</th>
+      <th>mean Tweedie dev p=1.8000</th>
+      <th>mean Tweedie dev p=1.9000</th>
+      <th>mean Tweedie dev p=1.9900</th>
+      <th>mean Tweedie dev p=1.9990</th>
+      <th>mean Tweedie dev p=1.9999</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>observed</th>
+      <th>GLM Produkt</th>
+      <td>0.0148</td>
+      <td>76.6993</td>
+      <td>36.9574</td>
+      <td>30.4601</td>
+      <td>33.8758</td>
+      <td>201.5716</td>
+      <td>1914.5735</td>
+      <td>19047.5057</td>
+      <td>273.0119</td>
+      <td>3.295040e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Produkt</th>
+      <td>0.0274</td>
+      <td>73.3240</td>
+      <td>35.7610</td>
+      <td>29.7420</td>
+      <td>33.4426</td>
+      <td>201.2956</td>
+      <td>1914.3094</td>
+      <td>19047.2434</td>
+      <td>269.0106</td>
+      <td>3.293048e+07</td>
+    </tr>
+    <tr>
+      <th>XGB/GLM Produkt</th>
+      <td>0.0249</td>
+      <td>73.9908</td>
+      <td>36.0000</td>
+      <td>29.8863</td>
+      <td>33.5301</td>
+      <td>201.3516</td>
+      <td>1914.3631</td>
+      <td>19047.2962</td>
+      <td>268.4550</td>
+      <td>3.293475e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 10 columns</p>
+
+
+
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Tweedie dev p=1.5000</th>
+      <th>mean Tweedie dev p=1.7000</th>
+      <th>mean Tweedie dev p=1.8000</th>
+      <th>mean Tweedie dev p=1.9000</th>
+      <th>mean Tweedie dev p=1.9900</th>
+      <th>mean Tweedie dev p=1.9990</th>
+      <th>mean Tweedie dev p=1.9999</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>GLM Produkt</th>
+      <td>0.0146</td>
+      <td>76.1705</td>
+      <td>36.8398</td>
+      <td>30.4053</td>
+      <td>33.8500</td>
+      <td>201.5414</td>
+      <td>1914.3703</td>
+      <td>19045.5644</td>
+      <td>272.2128</td>
+      <td>3.212197e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Produkt</th>
+      <td>0.0194</td>
+      <td>74.6854</td>
+      <td>36.3462</td>
+      <td>30.1191</td>
+      <td>33.6835</td>
+      <td>201.4389</td>
+      <td>1914.2725</td>
+      <td>19045.4676</td>
+      <td>269.2882</td>
+      <td>3.210152e+07</td>
+    </tr>
+    <tr>
+      <th>XGB/GLM Produkt</th>
+      <td>0.0189</td>
+      <td>74.7662</td>
+      <td>36.3817</td>
+      <td>30.1428</td>
+      <td>33.6994</td>
+      <td>201.4501</td>
+      <td>1914.2834</td>
+      <td>19045.4779</td>
+      <td>268.7088</td>
+      <td>3.210232e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 10 columns</p>
+
+
+
+### Vorhersagekraft der Nettorisikoprämie
+
+
+```python
+scores = pd.concat(
+    [
+        scores_glm_tweedie_pure,
+        scores_glm_poisson_pure,
+        score_xgb_tweedie_pure,
+        score_xgb_tweedie_pure_calibrated,
+        scores_glm_product,
+        scores_xgb_product,
+        scores_xgb_glm_product,
+    ],
+    axis=1,
+    sort=True,
+    keys=(
+        "GLM Tweedie",
+        "GLM Poisson",
+        "XGB Tweedie",
+        "XGB Tweedie Kalibriert",
+        "GLM Produkt",
+        "XGB Produkt",
+        "XGB/GLM Produkt",
+    ),
+)
+```
+
+
+```python
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Tweedie dev p=1.5000</th>
+      <th>mean Tweedie dev p=1.7000</th>
+      <th>mean Tweedie dev p=1.8000</th>
+      <th>mean Tweedie dev p=1.9000</th>
+      <th>mean Tweedie dev p=1.9900</th>
+      <th>mean Tweedie dev p=1.9990</th>
+      <th>mean Tweedie dev p=1.9999</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>GLM Tweedie</th>
+      <td>0.0164</td>
+      <td>76.4077</td>
+      <td>36.8288</td>
+      <td>30.3760</td>
+      <td>33.8212</td>
+      <td>201.5347</td>
+      <td>1914.5380</td>
+      <td>19047.4703</td>
+      <td>273.9865</td>
+      <td>3.295505e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson</th>
+      <td>0.0168</td>
+      <td>76.1431</td>
+      <td>36.7659</td>
+      <td>30.3472</td>
+      <td>33.8091</td>
+      <td>201.5299</td>
+      <td>1914.5337</td>
+      <td>19047.4660</td>
+      <td>273.3377</td>
+      <td>3.294714e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Tweedie</th>
+      <td>0.0243</td>
+      <td>74.3993</td>
+      <td>36.1011</td>
+      <td>29.9335</td>
+      <td>33.5504</td>
+      <td>201.3598</td>
+      <td>1914.3704</td>
+      <td>19047.3041</td>
+      <td>258.9600</td>
+      <td>3.294002e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Tweedie Kalibriert</th>
+      <td>0.0239</td>
+      <td>74.3910</td>
+      <td>36.1186</td>
+      <td>29.9504</td>
+      <td>33.5645</td>
+      <td>201.3710</td>
+      <td>1914.3813</td>
+      <td>19047.3150</td>
+      <td>273.5062</td>
+      <td>3.293848e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Produkt</th>
+      <td>0.0148</td>
+      <td>76.6993</td>
+      <td>36.9574</td>
+      <td>30.4601</td>
+      <td>33.8758</td>
+      <td>201.5716</td>
+      <td>1914.5735</td>
+      <td>19047.5057</td>
+      <td>273.0119</td>
+      <td>3.295040e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Produkt</th>
+      <td>0.0274</td>
+      <td>73.3240</td>
+      <td>35.7610</td>
+      <td>29.7420</td>
+      <td>33.4426</td>
+      <td>201.2956</td>
+      <td>1914.3094</td>
+      <td>19047.2434</td>
+      <td>269.0106</td>
+      <td>3.293048e+07</td>
+    </tr>
+    <tr>
+      <th>XGB/GLM Produkt</th>
+      <td>0.0249</td>
+      <td>73.9908</td>
+      <td>36.0000</td>
+      <td>29.8863</td>
+      <td>33.5301</td>
+      <td>201.3516</td>
+      <td>1914.3631</td>
+      <td>19047.2962</td>
+      <td>268.4550</td>
+      <td>3.293475e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>7 rows × 10 columns</p>
+
+
+
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Tweedie dev p=1.5000</th>
+      <th>mean Tweedie dev p=1.7000</th>
+      <th>mean Tweedie dev p=1.8000</th>
+      <th>mean Tweedie dev p=1.9000</th>
+      <th>mean Tweedie dev p=1.9900</th>
+      <th>mean Tweedie dev p=1.9990</th>
+      <th>mean Tweedie dev p=1.9999</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>GLM Tweedie</th>
+      <td>0.0137</td>
+      <td>76.4088</td>
+      <td>36.9227</td>
+      <td>30.4539</td>
+      <td>33.8783</td>
+      <td>201.5587</td>
+      <td>1914.3868</td>
+      <td>19045.5807</td>
+      <td>273.1249</td>
+      <td>3.213056e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson</th>
+      <td>0.0142</td>
+      <td>76.2371</td>
+      <td>36.8694</td>
+      <td>30.4237</td>
+      <td>33.8611</td>
+      <td>201.5482</td>
+      <td>1914.3768</td>
+      <td>19045.5708</td>
+      <td>272.5738</td>
+      <td>3.211700e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Tweedie</th>
+      <td>0.0160</td>
+      <td>75.8406</td>
+      <td>36.7134</td>
+      <td>30.3264</td>
+      <td>33.8004</td>
+      <td>201.5086</td>
+      <td>1914.3387</td>
+      <td>19045.5335</td>
+      <td>257.8162</td>
+      <td>3.211121e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Tweedie Kalibriert</th>
+      <td>0.0164</td>
+      <td>75.7436</td>
+      <td>36.6799</td>
+      <td>30.3062</td>
+      <td>33.7881</td>
+      <td>201.5006</td>
+      <td>1914.3310</td>
+      <td>19045.5259</td>
+      <td>272.3598</td>
+      <td>3.211026e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Produkt</th>
+      <td>0.0146</td>
+      <td>76.1705</td>
+      <td>36.8398</td>
+      <td>30.4053</td>
+      <td>33.8500</td>
+      <td>201.5414</td>
+      <td>1914.3703</td>
+      <td>19045.5644</td>
+      <td>272.2128</td>
+      <td>3.212197e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Produkt</th>
+      <td>0.0194</td>
+      <td>74.6854</td>
+      <td>36.3462</td>
+      <td>30.1191</td>
+      <td>33.6835</td>
+      <td>201.4389</td>
+      <td>1914.2725</td>
+      <td>19045.4676</td>
+      <td>269.2882</td>
+      <td>3.210152e+07</td>
+    </tr>
+    <tr>
+      <th>XGB/GLM Produkt</th>
+      <td>0.0189</td>
+      <td>74.7662</td>
+      <td>36.3817</td>
+      <td>30.1428</td>
+      <td>33.6994</td>
+      <td>201.4501</td>
+      <td>1914.2834</td>
+      <td>19045.4779</td>
+      <td>268.7088</td>
+      <td>3.210232e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>7 rows × 10 columns</p>
+
+
+
+### Gesamtschaden
+
+
+```python
+train_index = [
+    "Trainingsdaten",
+    "GLM Tweedie",
+    "GLM Poisson",
+    "XGB Tweedie",
+    "XGB Tweedie Kalibriert",
+    "GLM Produkt",
+    "XGB Produkt",
+    "XGB/GLM Produkt",
+]
+
+test_index = [
+    "Testdaten",
+    "GLM Tweedie",
+    "GLM Poisson",
+    "XGB Tweedie",
+    "XGB Tweedie Kalibriert",
+    "GLM Produkt",
+    "XGB Produkt",
+    "XGB/GLM Produkt",
+]
+
+train_ClaimAmt = [
+    df_train["ClaimAmount"].sum(),
+    (glm_tweedie_pure.predict(X_train_glm) * df_train["Exposure"]).sum(),
+    (glm_poisson_pure.predict(X_train_glm) * df_train["Exposure"]).sum(),
+    (xgb_tweedie_pure.predict(X_train_xgb) * df_train["Exposure"]).sum(),
+    (xgb_tweedie_pure_calibrated.predict(X_train_xgb) * df_train["Exposure"]).sum(),
+    (
+        glm_poisson_freq.predict(X_train_glm)
+        * glm_gamma_sev.predict(X_train_glm)
+        * df_train["Exposure"]
+    ).sum(),
+    (
+        xgb_poisson_freq.predict(X_train_xgb)
+        * xgb_gamma_sev_calibrated.predict(X_train_xgb)
+        * df_train["Exposure"]
+    ).sum(),
+    (
+        xgb_poisson_freq.predict(X_train_xgb)
+        * glm_gamma_sev.predict(X_train_glm)
+        * df_train["Exposure"]
+    ).sum(),
+]
+
+test_ClaimAmt = [
+    df_test["ClaimAmount"].sum(),
+    (glm_tweedie_pure.predict(X_test_glm) * df_test["Exposure"]).sum(),
+    (glm_poisson_pure.predict(X_test_glm) * df_test["Exposure"]).sum(),
+    (xgb_tweedie_pure.predict(X_test_xgb) * df_test["Exposure"]).sum(),
+    (xgb_tweedie_pure_calibrated.predict(X_test_xgb) * df_test["Exposure"]).sum(),
+    (
+        glm_poisson_freq.predict(X_test_glm)
+        * glm_gamma_sev.predict(X_test_glm)
+        * df_test["Exposure"]
+    ).sum(),
+    (
+        xgb_poisson_freq.predict(X_test_xgb)
+        * xgb_gamma_sev_calibrated.predict(X_test_xgb)
+        * df_test["Exposure"]
+    ).sum(),
+    (
+        xgb_poisson_freq.predict(X_test_xgb)
+        * glm_gamma_sev.predict(X_test_glm)
+        * df_test["Exposure"]
+    ).sum(),
+]
+
+train_pure_summary = pd.DataFrame(
+    {
+        "Gesamtschaden": train_ClaimAmt,
+    },
+    index=train_index,
+)
+
+test_pure_summary = pd.DataFrame(
+    {
+        "Gesamtschaden": test_ClaimAmt,
+    },
+    index=test_index,
+)
+```
+
+
+```python
+train_pure_summary
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Gesamtschaden</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Trainingsdaten</th>
       <td>3.917618e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Tweedie</th>
+      <td>3.951751e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson</th>
+      <td>3.917618e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Tweedie</th>
+      <td>3.473469e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Tweedie Kalibriert</th>
+      <td>3.917618e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Produkt</th>
+      <td>3.916555e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Produkt</th>
+      <td>3.917680e+07</td>
+    </tr>
+    <tr>
+      <th>XGB/GLM Produkt</th>
+      <td>3.914267e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>8 rows × 1 columns</p>
+
+
+
+
+```python
+test_pure_summary
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Gesamtschaden</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Testdaten</th>
       <td>1.299546e+07</td>
     </tr>
     <tr>
-      <th>GLM Product PurePremium</th>
-      <td>3.916555e+07</td>
+      <th>GLM Tweedie</th>
+      <td>1.325198e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson</th>
+      <td>1.314235e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Tweedie</th>
+      <td>1.160785e+07</td>
+    </tr>
+    <tr>
+      <th>XGB Tweedie Kalibriert</th>
+      <td>1.309213e+07</td>
+    </tr>
+    <tr>
+      <th>GLM Produkt</th>
       <td>1.313276e+07</td>
     </tr>
     <tr>
-      <th>XGB Product PurePremium</th>
-      <td>3.689764e+07</td>
-      <td>1.234208e+07</td>
+      <th>XGB Produkt</th>
+      <td>1.310247e+07</td>
     </tr>
     <tr>
-      <th>XGB Product PurePremium Calibrated</th>
-      <td>3.916446e+07</td>
-      <td>1.310032e+07</td>
+      <th>XGB/GLM Produkt</th>
+      <td>1.309162e+07</td>
     </tr>
   </tbody>
 </table>
-<p>4 rows × 2 columns</p>
+<p>8 rows × 1 columns</p>
 
 
+
+
+```python
+model_predictions = {
+    "GLM Tweedie": glm_tweedie_pure.predict(X_test_glm),
+    "GLM Poisson": glm_poisson_pure.predict(X_test_glm),
+    "XGB Tweedie Kalibriert": xgb_tweedie_pure_calibrated.predict(X_test_xgb),
+    "GLM Produkt": glm_poisson_freq.predict(X_test_glm) * glm_gamma_sev.predict(
+        X_test_glm
+    ),
+    "XGB Produkt": xgb_poisson_freq.predict(
+        X_test_xgb
+    ) * xgb_gamma_sev_calibrated.predict(X_test_xgb),
+    "XGB/GLM Produkt": xgb_poisson_freq.predict(X_test_xgb) * glm_gamma_sev.predict(
+        X_test_glm
+    ),
+}
+```
+
+
+```python
+fig, ax = plt.subplots(figsize=(12, 6))
+
+for label, y_pred in model_predictions.items():
+    ax.hist(
+        y_pred,
+        bins=100,
+        density=True,
+        alpha=0.4,
+        label=label,
+        range=(0, 1000),
+    )
+
+ax.set(
+    title="Verteilung der Vorhersagen",
+    xlabel="Nettorisikoprämie",
+    ylabel="Dichte",
+)
+
+ax.legend(loc="upper right")
+```
+
+
+
+
+    <matplotlib.legend.Legend at 0x7f0ee14df730>
+
+
+
+
+    
+![png](README_files/README_127_1.png)
+    
+
+
+
+```python
+fig, axs = plt.subplots(ncols=2, nrows=3, figsize=(12, 8))
+
+colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+for (label, y_pred), color, ax in zip(model_predictions.items(), colors, axs.flatten()):
+    ax.hist(
+        y_pred,
+        bins=100,
+        density=True,
+        color=color,
+        label=label,
+        range=(0, 1000),
+    )
+    ax.legend(loc="upper right")
+    ax.set_ylim(0, 0.0125)
+```
+
+
+    
+![png](README_files/README_128_0.png)
+    
+
+
+### Risikodifferenzierung
 
 
 ```python
@@ -2919,51 +4561,1817 @@ plot_risk_ranking(
     df_test["PurePremium"],
     df_test["Exposure"],
     {
-        "GLM Product PurePremium": glm_poisson_freq.predict(
+        "GLM Tweedie": glm_tweedie_pure.predict(X_test_glm),
+        "GLM Poisson": glm_poisson_pure.predict(X_test_glm),
+        "XGBoost Tweedie": xgb_tweedie_pure.predict(X_test_xgb),
+        "GLM Produkt": glm_poisson_freq.predict(X_test_glm) * glm_gamma_sev.predict(
             X_test_glm
+        ),
+        "XGBoost Produkt": xgb_poisson_freq.predict(
+            X_test_xgb
+        ) * xgb_gamma_sev_calibrated.predict(X_test_xgb),
+        "XGBoost/GLM Produkt": xgb_poisson_freq.predict(
+            X_test_xgb
         ) * glm_gamma_sev.predict(X_test_glm),
-        "XGB Product PurePremium": xgb_poisson_freq.predict(
-            X_test_xgb_pure
-        ) * xgb_gamma_sev.predict(X_test_xgb_pure),
-        "XGB Product PurePremium Calibrated": xgb_poisson_freq.predict(
-            X_test_xgb_pure
-        ) * xgb_gamma_sev_calibrated.predict(X_test_xgb_pure),
     },
+    ylabel="Anteil der gesamten Schäden",
 )
 ```
 
 
     
-![png](README_files/README_108_0.png)
+![png](README_files/README_130_0.png)
     
 
 
-## Evaluation with SHAP
+## Erklärbarkeit der Modelle
+
+### Statistische Inferenz für GLMS
+
+Statistische Inferenz ist die Standardmethode in der Risikomodellierung, um die Einfüsse der Tarifmerkmale im GLM zu erklären. Dieser Methodik ist leider nicht auf Gradient Boosting Modelle übertragbar und auch nicht in den Standard Machine Learning Bibliotheken* implmentiert. Der Fokus liegt in diesen Bibliotheken eher auf der Vorhersagekraft, als auf der statistischen Infenz der exogenen Variablen.
+
+Der Vollständigkeit halber betrachten wir im Folgenden die Implementierung für ein Poisson GLM mit der log-likelihood Funktion:
+
+$$
+L(\beta) = \sum_{i=1}^n y_i \cdot \beta^T x_i - exp(\beta^T x_i) 
+$$
+
+Mit der Anzahl an Observationen $n$, $y_i$ der $i$-ten Ausprägung der Zielvariablen, $x_i$ der $i$-ten Zeile der Designmatrix und den Koeffiienten $\beta$.
+
+Die Hesse Matrix der log-likelihood Funktion:
+
+$$
+H(\beta) = \sum_{i=1}^n -exp(\beta^T x_i) \cdot x_i x_i^T
+$$
+
+Daraus ergibt sich Varianz-Kovarianz-Matrix:
+
+$$
+V(\beta) = (-H)^{-1}
+$$
+
+\* Es gibt durchaus jedoch andere Bibliotheken mit statistischem Fokus. Ein Beispiel ist [statsmodels](https://www.statsmodels.org/stable/index.html). Diesen fehlen dafür andere für das Machine Learning übliche Funktionen.
+
+
+```python
+def variance_covariance_matrix(X, params, weights=None):
+    """Calculate the variance-covariance matrix of a model.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The input data.
+    params : numpy.ndarray
+        The parameters of the model.
+
+    Returns
+    -------
+    numpy.ndarray
+        The variance-covariance matrix.
+    """
+    if weights is None:
+        weights = np.ones(X.shape[0])
+
+    y_hat = np.exp(X.dot(params))
+    hessian = -np.dot(X.T * y_hat, weights[:, None] * X)
+    return np.linalg.inv(-hessian)
+```
+
+Auf Basis der Varianz-Kovarianz-Matrix lässt sich dann der Standard-Fehler der Koeefizienten $SE(\beta)$ errechnen:
+
+$$
+SE(\beta) = \sqrt{diag(V(\beta))}
+$$
+
+
+```python
+def standard_error(cov):
+    """Calculate the standard error of parameter estimates.
+
+    Parameters
+    ----------
+    cov : numpy.ndarray
+        The variance-covariance matrix.
+
+    Returns
+    -------
+    numpy.ndarray
+        The standard error.
+    """
+    return np.sqrt(np.diagonal(cov))
+```
+
+Nun können aus den Koeffizienten $\beta$ und den dazugehörigen Standard-Fehlern $SE(\beta)$ die z-Werte errechnet werden:
+
+$$
+z = \frac{\beta}{SE(\beta)}
+$$
+
+
+```python
+def z_value(params, se):
+    """Calculate the z-value of parameter estimates.
+
+    Parameters
+    ----------
+    params : numpy.ndarray
+        The parameters of the model.
+    se : numpy.ndarray
+        The standard error of the parameter estimates.
+
+    Returns
+    -------
+    numpy.ndarray
+        The z-value.
+    """
+    return params / se
+```
+
+Auf Basis der z-Werte und der Anzahl an Freiheitsgraden lässt sich dann der p-Wert errechnen:
+
+$$
+p = 2 \cdot (1 - \Phi(|z|))
+$$
+
+mit $\Phi$ der kumulativen Verteilungsfunktion der t-Verteilung.
+
+
+```python
+from scipy import stats
+
+
+def calc_p_value(z_value, df):
+    """Calculate the p-value of parameter estimates.
+
+    Parameters
+    ----------
+    z_value : numpy.ndarray
+        The z-value of the parameter estimates.
+    df : int
+        The degrees of freedom.
+
+    Returns
+    -------
+    numpy.ndarray
+        The p-value.
+    """
+    return (1 - stats.t.cdf(np.abs(z_value), df)) * 2
+```
+
+Hierzu lassen sich dann auch die Konfidenzintervalle für die Koeffizienten errechnen:
+
+$$
+CI = \beta \pm z_{1-\alpha/2} \cdot SE(\beta)
+$$
+
+
+
+```python
+def calc_confidence_intervalls(params, se, df, alpha=0.05):
+    """Calculate the confidence intervals of parameter estimates.
+
+    Parameters
+    ----------
+    params : numpy.ndarray
+        The parameters of the model.
+    se : numpy.ndarray
+        The standard error of the parameter estimates.
+    df : int
+        The degrees of freedom.
+    alpha : float
+        The significance level.
+
+    Returns
+    -------
+    numpy.ndarray
+        The confidence intervals.
+    """
+    return (
+        params + stats.t.ppf(alpha / 2, df) * se,
+        params + stats.t.ppf(1 - alpha / 2, df) * se,
+    )
+```
+
+
+```python
+def regression_summary(X, params, weights=None, feature_names=None, alpha=0.05):
+    """Prints a summary of the regression results.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        The input data.
+    params : numpy.ndarray
+        The parameters of the model.
+    feature_names : list
+        The names of the features.
+    alpha : float
+        The significance level.
+    """
+    df = X.shape[0] - X.shape[1]
+    cov = variance_covariance_matrix(X, params, weights=weights)
+    se = standard_error(cov)
+    z = z_value(params, se)
+    p = calc_p_value(z, df)
+    ci = calc_confidence_intervalls(params, se, df, alpha)
+
+    if feature_names is None:
+        feature_names = [f"f_{i}" for i in range(X.shape[1])]
+    else:
+        feature_names = feature_names
+
+    return pd.DataFrame(
+        {
+            "coef": params,
+            "std err": se,
+            "z": z,
+            "P>|z|": p,
+            f"[{alpha/2}": ci[0],
+            f"{1-alpha/2}]": ci[1],
+        },
+        index=feature_names,
+    )
+```
+
+Zur Berechnung dieser Werte sind jedoch einige Nebenbedingungen zu erfüllen. 
+
+- Das Modell muss ohne Regularisierung trainiert worden sein.
+- Die Features müssen unkorreliert sein.
+
+Die oben gezeigten Modelle und Trainingsdaten erfüllen diese Bedingungen nicht. Die GLMs wurden mit Regularisierung trainiert und die Features sind korreliert. Daher wird exemplarisch ein kleines Modell ohne Regularisierung nur mit den beiden Features "BonusMalus" und "Density" trainiert.
+
+
+```python
+features = ["BonusMalus", "Density_log"]
+```
+
+
+```python
+glm_poisson_freq_stat = PoissonRegressor(
+    alpha=0, max_iter=1000, fit_intercept=True, solver="newton-cholesky"
+)
+glm_poisson_freq_stat.fit(
+    X_train_glm[features], df_train["Frequency"], sample_weight=df_train["Exposure"]
+)
+```
+
+
+
+
+<style>#sk-container-id-2 {color: black;background-color: white;}#sk-container-id-2 pre{padding: 0;}#sk-container-id-2 div.sk-toggleable {background-color: white;}#sk-container-id-2 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-2 label.sk-toggleable__label-arrow:before {content: "▸";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-2 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-2 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-2 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-2 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-2 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-2 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: "▾";}#sk-container-id-2 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-2 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-2 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-2 div.sk-parallel-item::after {content: "";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-2 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 div.sk-serial::before {content: "";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-2 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-2 div.sk-item {position: relative;z-index: 1;}#sk-container-id-2 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-2 div.sk-item::before, #sk-container-id-2 div.sk-parallel-item::before {content: "";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-2 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-2 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-2 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-2 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-2 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-2 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-2 div.sk-label-container {text-align: center;}#sk-container-id-2 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-2 div.sk-text-repr-fallback {display: none;}</style><div id="sk-container-id-2" class="sk-top-container"><div class="sk-text-repr-fallback"><pre>PoissonRegressor(alpha=0, max_iter=1000, solver=&#x27;newton-cholesky&#x27;)</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-11" type="checkbox" checked><label for="sk-estimator-id-11" class="sk-toggleable__label sk-toggleable__label-arrow">PoissonRegressor</label><div class="sk-toggleable__content"><pre>PoissonRegressor(alpha=0, max_iter=1000, solver=&#x27;newton-cholesky&#x27;)</pre></div></div></div></div></div>
+
+
+
+
+```python
+regression_summary(
+    X=np.append(
+        X_train_glm[features].values,
+        np.ones(X_train_glm[features].shape[0]).reshape(-1, 1),
+        axis=1,
+    ),
+    params=np.append(glm_poisson_freq_stat.coef_, glm_poisson_freq_stat.intercept_),
+    weights=df_train["Exposure"].values,
+    feature_names=features + ["Intercept"],
+    alpha=0.05,
+)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>coef</th>
+      <th>std err</th>
+      <th>z</th>
+      <th>P&gt;|z|</th>
+      <th>[0.025</th>
+      <th>0.975]</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>BonusMalus</th>
+      <td>0.023752</td>
+      <td>0.000349</td>
+      <td>68.002521</td>
+      <td>0.0</td>
+      <td>0.023067</td>
+      <td>0.024436</td>
+    </tr>
+    <tr>
+      <th>Density_log</th>
+      <td>0.143362</td>
+      <td>0.007177</td>
+      <td>19.974767</td>
+      <td>0.0</td>
+      <td>0.129295</td>
+      <td>0.157429</td>
+    </tr>
+    <tr>
+      <th>Intercept</th>
+      <td>-4.059830</td>
+      <td>0.023772</td>
+      <td>-170.781029</td>
+      <td>0.0</td>
+      <td>-4.106423</td>
+      <td>-4.013238</td>
+    </tr>
+  </tbody>
+</table>
+<p>3 rows × 6 columns</p>
+
+
+
+### SHAP
+
+SHAP (SHapley Additive exPlanations) ist eine Methode, die auf der Spieltheorie basiert und die Einflüsse der Merkmale zur Vorhersage erklärt. SHAP ist eine modell-agnostische Methode und kann auf alle Modelle angewendet werden. Mittels der SHAP-Methode kann sowohl die Makro- als auch die Mikroerklärbarkeit der Modelle untersucht werden.
 
 
 ```python
 import shap
+
+np.random.seed(42)
 ```
+
+#### SHAP für GLMs
+
+Wir betrachten zunächst die Generalisierten Linearen Modelle. Hierfür gibt es im SHAP-Paket eine spezielle Implementierung, die die spezielle Struktur der GLMs ausnutzt. Wir starten mit der Makroebebene.
+
+Beachte: Binder stellt nur eine begrenzte Menge an Resourcen zur Verfügung. Daher wird die Anzahl der betrachteten Samples hier limitiert. Stehen auf einer anderen Machine mehr Resourcen zur Verfügung, dann kann die n_samples Variable erhöht werden.
 
 
 ```python
-glm_tweedie_pure_exp = shap.LinearExplainer(
-    glm_tweedie_pure, X_train_glm, output_names=feature_names_glm
+n_samples = 1000
+X_train_glm_sample = X_train_glm.sample(n_samples, random_state=42)
+
+glm_tweedie_pure_exp = shap.Explainer(
+    glm_tweedie_pure,
+    X_train_glm_sample,
+)
+
+glm_tweedie_pure_exp = glm_tweedie_pure_exp(X_train_glm_sample)
+
+glm_tweedie_pure_exp = shap.Explanation(
+    values=glm_tweedie_pure_exp.values,
+    base_values=glm_tweedie_pure_exp.base_values,
+    data=glm_tweedie_pure_exp.data,
+    feature_names=feature_names_glm,
+    display_data=glm_tweedie_pure_exp.data,
 )
 ```
+
+Um einen generellen Überblick über die Einflüsse der Merkmale zu erhalten, betrachten wir zunächst die relative Stärke der Einflüsse der Merkmale. Der Übersichtlichkeit halber werden nur die 10 stärksten Einflüsse dargestellt.
 
 
 ```python
 shap.summary_plot(
-    glm_tweedie_pure_exp.shap_values(X_test_glm),
-    X_test_glm,
-    feature_names=feature_names_glm,
+    glm_tweedie_pure_exp,
+    max_display=10,
+    plot_type="bar",
 )
 ```
 
 
     
-![png](README_files/README_112_0.png)
+![png](README_files/README_152_0.png)
+    
+
+
+Um die Richtung der Einflüsse besser verstehen zu können, gibt es auch eine Merkmalswert abhängige Darstellung. Für jedes Merkmal wird der Wert des Merkmals farbig dargestellt und gemäß der Stärke und Richtung des Einflusses einsortiert. Häufigkeiten bestimmter Ausprägungen werden ebenfalls sichtbar.
+
+
+```python
+shap.summary_plot(
+    glm_tweedie_pure_exp,
+    max_display=10,
+)
+```
+
+
+    
+![png](README_files/README_154_0.png)
+    
+
+
+Während die Darstellung der Richtung des Einflüsses für die binären Merkmale sehr hilfreich ist, wirkt die Darstellung für den relativen Einfluss etwas unübersichtlich. Glücklicherweise sind SHAP-Werte additiv, so dass wir dieser wieder zusammenführen können.
+
+
+```python
+train_cols = [
+    "VehAge",
+    "DrivAge",
+    "VehBrand",
+    "VehPower",
+    "VehGas",
+    "Region",
+    "Area",
+    "BonusMalus",
+    "Density",
+]
+
+# get number of unique categories for each feature
+n_categories = []
+for feat in train_cols:
+    if feat in ["VehAge", "DrivAge"]:
+        n_categories.append(10)
+    elif feat in ["VehBrand", "VehPower", "VehGas", "Region", "Area"]:
+        n = df_train[feat].nunique()
+        n_categories.append(n)
+    elif feat in ["BonusMalus", "Density"]:
+        n_categories.append(1)
+
+n_categories
+```
+
+
+
+
+    [10, 10, 11, 12, 2, 22, 6, 1, 1]
+
+
+
+
+```python
+new_shap_values = []
+for values in glm_tweedie_pure_exp.values:
+    # split shap values into a list for each feature
+    values_split = np.split(values, np.cumsum(n_categories))
+
+    # sum values within each list
+    values_sum = [sum(l) for l in values_split]
+
+    new_shap_values.append(values_sum)
+```
+
+
+```python
+glm_tweedie_pure_exp_mod = shap.Explanation(
+    values=np.array(new_shap_values)[:, :-1],
+    base_values=glm_tweedie_pure_exp.base_values,
+    data=df_train.loc[X_train_glm_sample.index, train_cols],
+    feature_names=train_cols,
+    display_data=df_train.loc[X_train_glm_sample.index, train_cols],
+)
+```
+
+Mit den addierten SHAP-Werten kann man sich nun einen Überblick über den Gesamteinfluss eines Tarifmerkmals machen.
+
+
+```python
+shap.summary_plot(glm_tweedie_pure_exp_mod, plot_type="bar")
+```
+
+
+    
+![png](README_files/README_160_0.png)
+    
+
+
+Neben der Makroebene liefert SHAP auch die Möglichkeit, die Mikroebene zu betrachten. Hierbei wird für jede Beobachtung der Einfluss der Merkmale auf die Vorhersage dargestellt. Wir betrachten hierbei die Merkmale mit dem höchsten Einfluss.
+
+
+```python
+shap.force_plot(glm_tweedie_pure_exp_mod[2], matplotlib=True)
+```
+
+
+    
+![png](README_files/README_162_0.png)
+    
+
+
+Die bisher verwendete Berechenungslogik der SHAP-Werte nutzt die Koeffzienten und den Interzept des GLMs. Nun sind diese auf Grund der im GLM verwendeten log-Link Funktion nicht direkt interpretierbar. Diese Methode ist zwar relativ performant, jedoch wird die Interpretierbarkeit auf relative Vergleiche beschränkt. Im Folgenden nutzen wir ein Subset, um die SHAP-Werte auf der realen Zielvariablen zu berechnen. Diese Methode ist allerdings sehr rechenintensiv.
+
+
+```python
+glm_tweedie_pure_exp = shap.Explainer(
+    glm_tweedie_pure.predict, X_train_glm_sample, output_names=feature_names_glm
+)
+
+glm_tweedie_pure_exp = glm_tweedie_pure_exp(X_train_glm_sample)
+
+glm_tweedie_pure_exp = shap.Explanation(
+    values=glm_tweedie_pure_exp.values,
+    base_values=glm_tweedie_pure_exp.base_values,
+    data=glm_tweedie_pure_exp.data,
+    feature_names=feature_names_glm,
+    display_data=glm_tweedie_pure_exp.data,
+)
+```
+
+    PermutationExplainer explainer: 1001it [01:11, 12.48it/s]                                                               
+
+
+
+```python
+new_shap_values = []
+for values in glm_tweedie_pure_exp.values:
+    # split shap values into a list for each feature
+    values_split = np.split(values, np.cumsum(n_categories))
+
+    # sum values within each list
+    values_sum = [sum(l) for l in values_split]
+
+    new_shap_values.append(values_sum)
+```
+
+
+```python
+glm_tweedie_pure_exp_mod = shap.Explanation(
+    values=np.array(new_shap_values)[:, :-1],
+    base_values=glm_tweedie_pure_exp.base_values,
+    data=df_train.loc[X_train_glm_sample.index, train_cols],
+    feature_names=train_cols,
+    display_data=df_train.loc[X_train_glm_sample.index, train_cols],
+)
+```
+
+Nun erhalten wir die Erklärung im realen Wertebereich.
+
+
+```python
+shap.force_plot(glm_tweedie_pure_exp_mod[0], matplotlib=True)
+```
+
+
+    
+![png](README_files/README_168_0.png)
+    
+
+
+
+```python
+shap.waterfall_plot(glm_tweedie_pure_exp_mod[0])
+```
+
+
+    
+![png](README_files/README_169_0.png)
+    
+
+
+
+```python
+glm_tweedie_pure.predict(X_train_glm_sample.iloc[0].to_frame().T)
+```
+
+
+
+
+    array([137.1268435])
+
+
+
+Auf diese Weise kann jeder € der Nettorisikoprämie für jeden einzelnen Versicherungsnehmer erklärt werden.
+
+#### SHAP für Frequency-Severity Modelle
+
+Frequency-Severity Modelle bestehen aus zwei getrennten Modellen für die Schadenhäufigkeit und-höhe. Zunächst müssen die SHAP-Werte für die einzelnen Modelle berechnet werden.
+
+##### Schadenhäufigkeit
+
+
+```python
+glm_poisson_freq_exp = shap.Explainer(
+    glm_poisson_freq.predict, X_train_glm_sample, output_names=feature_names_glm
+)
+
+glm_poisson_freq_exp = glm_poisson_freq_exp(X_train_glm_sample)
+
+glm_poisson_freq_exp = shap.Explanation(
+    values=glm_poisson_freq_exp.values,
+    base_values=glm_poisson_freq_exp.base_values,
+    data=glm_poisson_freq_exp.data,
+    feature_names=feature_names_glm,
+    display_data=glm_poisson_freq_exp.data,
+)
+```
+
+    PermutationExplainer explainer: 1001it [01:06, 12.37it/s]                                                               
+
+
+
+```python
+new_shap_values = []
+
+for values in glm_poisson_freq_exp.values:
+    # split shap values into a list for each feature
+    values_split = np.split(values, np.cumsum(n_categories))
+
+    # sum values within each list
+    values_sum = [sum(l) for l in values_split]
+
+    new_shap_values.append(values_sum)
+```
+
+
+```python
+glm_poisson_freq_exp_mod = shap.Explanation(
+    values=np.array(new_shap_values)[:, :-1],
+    base_values=glm_poisson_freq_exp.base_values,
+    data=df_train.loc[X_train_glm_sample.index, train_cols],
+    feature_names=train_cols,
+    display_data=df_train.loc[X_train_glm_sample.index, train_cols],
+)
+```
+
+
+```python
+shap.summary_plot(glm_poisson_freq_exp_mod, plot_type="bar")
+```
+
+
+    
+![png](README_files/README_176_0.png)
+    
+
+
+
+```python
+shap.waterfall_plot(glm_poisson_freq_exp_mod[0])
+```
+
+
+    
+![png](README_files/README_177_0.png)
+    
+
+
+##### Schadenhöhe
+
+
+```python
+glm_gamma_sev_exp = shap.Explainer(
+    glm_gamma_sev.predict, X_train_glm_sample, output_names=feature_names_glm
+)
+
+glm_gamma_sev_exp = glm_gamma_sev_exp(X_train_glm_sample)
+
+glm_gamma_sev_exp = shap.Explanation(
+    values=glm_gamma_sev_exp.values,
+    base_values=glm_gamma_sev_exp.base_values,
+    data=glm_gamma_sev_exp.data,
+    feature_names=feature_names_glm,
+    display_data=glm_gamma_sev_exp.data,
+)
+```
+
+    PermutationExplainer explainer: 1001it [01:09, 12.10it/s]                                                               
+
+
+
+```python
+new_shap_values = []
+
+for values in glm_gamma_sev_exp.values:
+    # split shap values into a list for each feature
+    values_split = np.split(values, np.cumsum(n_categories))
+
+    # sum values within each list
+    values_sum = [sum(l) for l in values_split]
+
+    new_shap_values.append(values_sum)
+```
+
+
+```python
+glm_gamma_sev_exp_mod = shap.Explanation(
+    values=np.array(new_shap_values)[:, :-1],
+    base_values=glm_gamma_sev_exp.base_values,
+    data=df_train.loc[X_train_glm_sample.index, train_cols],
+    feature_names=train_cols,
+    display_data=df_train.loc[X_train_glm_sample.index, train_cols],
+)
+```
+
+
+```python
+shap.summary_plot(glm_gamma_sev_exp_mod, plot_type="bar")
+```
+
+
+    
+![png](README_files/README_182_0.png)
+    
+
+
+
+```python
+shap.waterfall_plot(glm_gamma_sev_exp_mod[0])
+```
+
+
+    
+![png](README_files/README_183_0.png)
+    
+
+
+##### Kombination mittels mshap
+
+Mshap ist eine Methode, die in der Lage ist SHAP-Werte von multiplikativ verknüpften Modellen miteinander zu verbinden.
+
+
+```python
+from mshap import Mshap
+
+final_shap = Mshap(
+    glm_poisson_freq_exp_mod.values,
+    glm_gamma_sev_exp_mod.values,
+    glm_poisson_freq_exp_mod.base_values[0],
+    glm_gamma_sev_exp_mod.base_values[0],
+).shap_values()
+```
+
+
+```python
+final_shap_explanation = shap.Explanation(
+    values=final_shap["shap_vals"].values,
+    base_values=final_shap["expected_value"],
+    data=df_train.loc[X_train_glm_sample.index, train_cols],
+    feature_names=train_cols,
+    display_data=df_train.loc[X_train_glm_sample.index, train_cols],
+)
+```
+
+
+```python
+shap.waterfall_plot(final_shap_explanation[0])
+```
+
+
+    
+![png](README_files/README_187_0.png)
+    
+
+
+
+```python
+glm_poisson_freq.predict(
+    X_train_glm_sample.iloc[0].to_frame().T
+) * glm_gamma_sev.predict(X_train_glm_sample.iloc[0].to_frame().T)
+```
+
+
+
+
+    array([126.7848964])
+
+
+
+#### SHAP für GBMs
+
+Der TreeExplainer ist der schnellste Algorithmus, um SHAP-Werte für baumbasierte Boosting Modelle zu ermitteln.
+
+
+```python
+n_samples = 1000
+X_train_xgb_sample = X_train_xgb.sample(n_samples, random_state=42)
+
+xgb_poisson_freq_exp = shap.TreeExplainer(
+    xgb_poisson_freq,
+)
+
+xgb_poisson_freq_exp = xgb_poisson_freq_exp(X_train_xgb_sample)
+
+xgb_poisson_freq_exp = shap.Explanation(
+    values=xgb_poisson_freq_exp.values,
+    base_values=xgb_poisson_freq_exp.base_values,
+    data=xgb_poisson_freq_exp.data,
+    feature_names=feature_names_xgb,
+    display_data=df_train.loc[X_train_xgb_sample.index, feature_names_xgb],
+)
+```
+
+    [18:33:59] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
+
+
+
+```python
+shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar")
+```
+
+
+    
+![png](README_files/README_192_0.png)
+    
+
+
+
+```python
+shap.waterfall_plot(xgb_poisson_freq_exp[0])
+```
+
+
+    
+![png](README_files/README_193_0.png)
+    
+
+
+Wir sind an dieser Stelle mit den gleichen Herausforderungen wie beim GLM konfrontiert. Der native Algorithmus bewegt sich im log-transformierten Wertebereich und wir haben nur eine begrenzte Interpretierbarkeit.
+
+
+```python
+xgb_poisson_freq_exp = shap.Explainer(xgb_poisson_freq.predict, X_train_xgb_sample)
+
+xgb_poisson_freq_exp = xgb_poisson_freq_exp(X_train_xgb_sample)
+
+xgb_poisson_freq_exp = shap.Explanation(
+    values=xgb_poisson_freq_exp.values,
+    base_values=xgb_poisson_freq_exp.base_values,
+    data=xgb_poisson_freq_exp.data,
+    feature_names=feature_names_xgb,
+    display_data=df_train.loc[X_train_xgb_sample.index, feature_names_xgb],
+)
+```
+
+    ExactExplainer explainer: 1001it [02:04,  7.27it/s]                                                                     
+
+
+
+```python
+shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar")
+```
+
+
+    
+![png](README_files/README_196_0.png)
+    
+
+
+
+```python
+shap.waterfall_plot(xgb_poisson_freq_exp[0])
+```
+
+
+    
+![png](README_files/README_197_0.png)
+    
+
+
+
+```python
+xgb_gamma_sev_exp = shap.Explainer(xgb_gamma_sev_calibrated.predict, X_train_xgb_sample)
+
+xgb_gamma_sev_exp = xgb_gamma_sev_exp(X_train_xgb_sample)
+
+xgb_gamma_sev_exp = shap.Explanation(
+    values=xgb_gamma_sev_exp.values,
+    base_values=xgb_gamma_sev_exp.base_values,
+    data=xgb_gamma_sev_exp.data,
+    feature_names=feature_names_xgb,
+    display_data=df_train.loc[X_train_xgb_sample.index, feature_names_xgb],
+)
+```
+
+    ExactExplainer explainer: 1001it [00:42, 18.02it/s]                                                                     
+
+
+
+```python
+shap.summary_plot(xgb_gamma_sev_exp, plot_type="bar")
+```
+
+
+    
+![png](README_files/README_199_0.png)
+    
+
+
+
+```python
+shap.waterfall_plot(xgb_gamma_sev_exp[0])
+```
+
+
+    
+![png](README_files/README_200_0.png)
+    
+
+
+
+```python
+final_shap = Mshap(
+    xgb_poisson_freq_exp.values,
+    xgb_gamma_sev_exp.values,
+    xgb_poisson_freq_exp.base_values[0],
+    xgb_gamma_sev_exp.base_values[0],
+).shap_values()
+```
+
+
+```python
+final_shap_explanation = shap.Explanation(
+    values=final_shap["shap_vals"].values,
+    base_values=final_shap["expected_value"],
+    data=X_train_xgb_sample,
+    feature_names=feature_names_xgb,
+    display_data=df_train.loc[X_train_xgb_sample.index, feature_names_xgb].values,
+)
+```
+
+
+```python
+shap.summary_plot(final_shap_explanation, plot_type="bar")
+```
+
+
+    
+![png](README_files/README_203_0.png)
+    
+
+
+
+```python
+shap.waterfall_plot(final_shap_explanation[0])
+```
+
+
+    
+![png](README_files/README_204_0.png)
+    
+
+
+
+```python
+xgb_poisson_freq.predict(
+    X_train_xgb_sample.iloc[0].values.reshape(1, -1), validate_features=False
+) * xgb_gamma_sev_calibrated.predict(
+    X_train_xgb_sample.iloc[0].values.reshape(1, -1), validate_features=False
+)
+```
+
+
+
+
+    array([110.41886], dtype=float32)
+
+
+
+### Partial Dependence Plots
+
+#### PDPs mit scikit-learn
+
+Die Machine Learning Bibliothek scikit-learn bringt eine Funktionalität zur Erstellung von Partial Dependence Plots mit sich.
+
+
+```python
+from sklearn.inspection import PartialDependenceDisplay
+
+fig, ax = plt.subplots(figsize=(12, 12))
+
+display = PartialDependenceDisplay.from_estimator(
+    xgb_poisson_freq,
+    X_train_xgb,
+    features=feature_names_xgb,
+    kind="average",
+    response_method="auto",
+    categorical_features=categorical_features,
+    ax=ax,
+)
+```
+
+
+    
+![png](README_files/README_208_0.png)
+    
+
+
+Diese Plots sind ausreichend, wenn man sich nur einen groben Überblick verschaffen möchte. Allerdings könne sie auch trügerisch sein, da bei der Darstellung die Varianz der Vorhersagen komplett außen vor gelassen wird. Man betrachtet nur eine Metrik.
+
+#### PDPs mit eigener API
+
+Die folgende Implementierung nimmt sich der Herausforderung an, auch einen Blick auf die Varianz der Vorhersagen zu werfen.
+
+Für numerische Merkmale wird analog zur scikit-learn API der Mittelwert der Vorhersage als Linienplot dargestellt. Zusätzlich kann jedoch eine beliebige Zahl an Vorhersage-Intervallen mit geplottet werden.
+
+
+```python
+def _plot_num_partial_dependence(estimator, X, feature, ax, target, pi=None, **kwargs):
+    """
+    Generate a partial dependence plot for a given numeric feature in a dataset using XGBoost.
+
+    Parameters:
+    -----------
+    estimator : scikit-learn like estimator
+        A scikit-learn like estimator that has a `predict` method.
+    X : pd.DataFrame
+        The input samples.
+    feature : str
+        The name of the feature to generate the partial dependence plot for.
+    ax : matplotlib axis
+        The axis to plot the partial dependence plot on.
+    target : str
+        The name of the target variable.
+    pi : int or list of ints or None, optional (default=None)
+        The prediction interval(s) to plot, in percent. If None, no prediction interval is plotted.
+        If a single int is passed, a single prediction interval is plotted.
+        If a list of ints is passed, multiple prediction intervals are plotted.
+    **kwargs : dict
+        Additional arguments to pass to the plot functions.
+
+    Returns:
+    --------
+    None
+    """
+    value_range = np.linspace(X[feature].min(), X[feature].max(), 100)
+    mean_predictions = []
+    pi_predictions = []
+    if pi is not None:
+        if isinstance(pi, int):
+            pi = [pi]
+        for _ in pi:
+            pi_predictions.append([])
+    X_mod = X.copy()
+    for value in value_range:
+        X_mod[feature] = value
+        preds = estimator.predict(X_mod)
+        mean_predictions.append(preds.mean())
+        if pi is not None:
+            for i, p in enumerate(pi):
+                pi_predictions[i].append(
+                    np.percentile(preds, [(100 - p) / 2, 50 + p / 2])
+                )
+
+    ax.plot(value_range, mean_predictions, **kwargs)
+    line_color = ax.get_lines()[0].get_color()  # get color of the line in the base plot
+    if pi is not None:
+        for i, p in enumerate(pi):
+            pi_array = np.array(pi_predictions[i])
+            alpha = (
+                0.1 + (1 - p / 100) * 0.7
+            )  # calculate alpha based on prediction interval
+            ax.fill_between(
+                value_range,
+                pi_array[:, 0],
+                pi_array[:, 1],
+                facecolor=line_color,
+                alpha=alpha,
+                label=f"{p}% Prediction Interval",
+            )
+        ax.legend()
+    ax.set_xlabel(feature)
+    ax.set_ylabel(f"Predicted {target}")
+
+
+fig, ax = plt.subplots(figsize=(12, 6))
+_plot_num_partial_dependence(
+    xgb_poisson_freq,
+    X_train_xgb,
+    "BonusMalus",
+    ax,
+    target="Frequency",
+    pi=[67, 95],
+)
+```
+
+
+    
+![png](README_files/README_211_0.png)
+    
+
+
+Für kategorische Merkmale kann entweder ein Box- oder Violinplot genutzt werden.
+
+
+```python
+def _plot_cat_partial_dependence(
+    estimator, X, feature, ax, target, plot_type="box", category_names=None, **kwargs
+):
+    """
+    Generate a partial dependence plot for a given categorical feature in a dataset using XGBoost.
+
+    Parameters:
+    -----------
+    estimator : scikit-learn like estimator
+        A scikit-learn like estimator that has a `predict` method.
+    X : array-like of shape (n_samples, n_features)
+        The input samples.
+    feature : str
+        The name of the feature to generate the partial dependence plot for.
+    ax : matplotlib axis
+        The axis to plot the partial dependence plot on.
+    target : str
+        The name of the target variable.
+    plot_type : str, optional (default='box')
+        The type of plot to generate. Either 'box' or 'violin'.
+    category_names : list of str, optional
+        The names of the categories in the categorical feature.
+    **kwargs : dict
+        Additional arguments to pass to the plot functions.
+
+    Returns:
+    --------
+    None
+    """
+    value_range = X[feature].unique()
+    value_range.sort()
+    predictions = []
+
+    X_mod = X.copy()
+    for value in value_range:
+        X_mod[feature] = value
+        preds = estimator.predict(X_mod)
+        predictions.append(preds)
+
+    if category_names is None:
+        category_names = value_range
+
+    if plot_type == "box":
+        ax.boxplot(predictions, labels=category_names, showfliers=False, **kwargs)
+    elif plot_type == "violin":
+        ax.violinplot(predictions, showextrema=False, **kwargs)
+        ax.set_xticks(np.arange(1, len(value_range) + 1))
+        ax.set_xticklabels(category_names)
+    else:
+        raise ValueError(f"Unsupported plot type: {plot_type}")
+    ax.set_xlabel(feature)
+    ax.set_ylabel(f"Predicted {target}")
+    ax.tick_params(axis="x", labelrotation=45)
+
+
+fig, axs = plt.subplots(figsize=(12, 6))
+_plot_cat_partial_dependence(
+    xgb_poisson_freq,
+    X_train_xgb,
+    "VehBrand",
+    axs[0],
+    target="Frequency",
+    plot_type="box",
+    category_names=[
+        "B1",
+        "B10",
+        "B11",
+        "B12",
+        "B13",
+        "B14",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+    ],
+)
+_plot_cat_partial_dependence(
+    xgb_poisson_freq,
+    X_train_xgb,
+    "VehBrand",
+    axs[1],
+    target="Frequency",
+    plot_type="violin",
+    category_names=[
+        "B1",
+        "B10",
+        "B11",
+        "B12",
+        "B13",
+        "B14",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+    ],
+)
+fig.tight_layout()
+```
+
+
+    
+![png](README_files/README_213_0.png)
+    
+
+
+Für binäre Merkmale kann ebenso entweder ein Box- oder Violinplot genutzt werden. Hierbei wird berücksichtigt, dass mehrere Merkmale zussammengefasst werden müssen.
+
+
+```python
+def _plot_bin_partial_dependence(
+    estimator, X, feature, ax, target, plot_type="box", category_names=None, **kwargs
+):
+    """
+    Generate a partial dependence plot for a given set of binary features in a dataset using XGBoost.
+
+    Parameters:
+    -----------
+    estimator : scikit-learn like estimator
+        A scikit-learn like estimator that has a `predict` method.
+    X : array-like of shape (n_samples, n_features)
+        The input samples.
+    feature : str
+        The name of the feature to generate the partial dependence plot for.
+    ax : matplotlib axis
+        The axis to plot the partial dependence plot on.
+    target : str
+        The name of the target variable.
+    plot_type : str, optional (default='box')
+        The type of plot to generate. Either 'box' or 'violin'.
+    category_names : list of str, optional
+        The names of the categories in the categorical feature.
+    **kwargs : dict
+        Additional arguments to pass to the plot functions.
+
+    Returns:
+    --------
+    None
+    """
+    predictions = []
+    bin_features = [col for col in X.columns if col.startswith(feature)]
+    for bin_feature in bin_features:
+        X_mod = X.copy()
+        X_mod[bin_feature] = 1
+        preds = estimator.predict(X_mod)
+        predictions.append(preds)
+
+    if category_names is None:
+        category_names = [col.replace(f"{feature}_", "") for col in bin_features]
+
+    if plot_type == "box":
+        ax.boxplot(predictions, labels=category_names, showfliers=False, **kwargs)
+    elif plot_type == "violin":
+        ax.violinplot(predictions, showextrema=False, **kwargs)
+        ax.set_xticks(np.arange(1, len(feature_indexes) + 1))
+        ax.set_xticklabels(category_names)
+    else:
+        raise ValueError(f"Unsupported plot type: {plot_type}")
+    ax.set_xlabel(feature)
+    ax.set_ylabel(f"Predicted {target}")
+    ax.tick_params(axis="x", labelrotation=45)
+
+
+fig, ax = plt.subplots(figsize=(12, 6))
+_plot_bin_partial_dependence(
+    glm_poisson_freq,
+    X_train_glm,
+    "VehBrand",
+    ax,
+    target="Frequency",
+    plot_type="box",
+)
+```
+
+
+    
+![png](README_files/README_215_0.png)
+    
+
+
+
+```python
+def plot_partial_dependence(
+    estimator,
+    X,
+    feature,
+    target="Target",
+    feature_type="num",
+    ax=None,
+    plot_type="box",
+    category_names=None,
+    pi=None,
+    **kwargs,
+):
+    """
+    Generate a partial dependence plot for a given feature in a dataset using XGBoost.
+
+    Parameters:
+    -----------
+    estimator : scikit-learn like estimator
+        A scikit-learn like estimator that has a `predict` method.
+    X : pd.DataFrame
+        The input samples.
+    feature : str, int
+        The name of the feature to generate the partial dependence plot for.
+    target : str, optional (default='Target')
+        The name of the target variable.
+    feature_type : str, optional (default='num')
+        The type of the feature. Either 'num' or 'cat'.
+    ax : matplotlib axis, optional (default=None)
+        The axis to plot the partial dependence plot on. If None, a new figure and axis is created.
+    plot_type : str, optional (default='box')
+        The type of plot to generate for categorical features. Either 'box' or 'violin'.
+    pi : int or list of ints or None, optional (default=None)
+        The prediction interval(s) to plot, in percent. If None, no prediction interval is plotted.
+        If a single int is passed, a single prediction interval is plotted.
+        If a list of ints is passed, multiple prediction intervals are plotted.
+    **kwargs : dict
+        Additional arguments to pass to the plot functions.
+
+    Returns:
+    --------
+    None
+    """
+    if ax is None:
+        _, ax = plt.subplots()
+
+    if feature_type == "num":
+        _plot_num_partial_dependence(
+            estimator, X, feature, ax, target=target, pi=pi, **kwargs
+        )
+    elif feature_type == "cat":
+        _plot_cat_partial_dependence(
+            estimator,
+            X,
+            feature,
+            ax,
+            target=target,
+            plot_type=plot_type,
+            category_names=category_names,
+            **kwargs,
+        )
+    elif feature_type == "bin":
+        _plot_bin_partial_dependence(
+            estimator,
+            X,
+            feature,
+            ax,
+            target=target,
+            plot_type=plot_type,
+            category_names=category_names,
+            **kwargs,
+        )
+    else:
+        raise TypeError(f"Unsupported feature type: {feature_type}")
+```
+
+
+```python
+features = feature_names_xgb
+feature_types = ["num"] * len(numeric_features) + ["cat"] * len(categorical_features)
+category_names = [None] * len(numeric_features) + column_trans_xgb.named_transformers_[
+    "label"
+].categories_
+
+fig, axs = plt.subplots(ncols=3, nrows=3, figsize=(12, 12))
+for feature, feature_type, category_name, ax in zip(
+    features, feature_types, category_names, axs.flatten()
+):
+    plot_partial_dependence(
+        xgb_poisson_freq,
+        X_train_xgb,
+        feature,
+        feature_type=feature_type,
+        ax=ax,
+        target="Frequency",
+        plot_type="box",
+        category_names=category_name,
+        pi=[67, 95],
+    )
+fig.tight_layout()
+```
+
+
+    
+![png](README_files/README_217_0.png)
+    
+
+
+
+```python
+features = [
+    "VehAge",
+    "DrivAge",
+    "VehBrand",
+    "VehPower",
+    "VehGas",
+    "Region",
+    "Area",
+    "BonusMalus",
+    "Density_log",
+]
+feature_types = ["bin"] * 7 + ["num"] * 2
+
+fig, axs = plt.subplots(ncols=3, nrows=3, figsize=(12, 12))
+for feature, feature_type, ax in zip(features, feature_types, axs.flatten()):
+    plot_partial_dependence(
+        glm_poisson_freq,
+        X_train_glm,
+        feature,
+        feature_type=feature_type,
+        ax=ax,
+        target="Frequency",
+        plot_type="box",
+        pi=[67, 95],
+    )
+fig.tight_layout()
+```
+
+
+    
+![png](README_files/README_218_0.png)
+    
+
+
+### Monotonie
+
+Wir haben in den obigen Beispielen gesehen, dass die Vorhersage, ceteris paribus, für zunhemende Werte des Merkmals "BonusMalus" stark osziliert. Dieses Verhalten ist für ein der Schadenfreiheitsklasse entsprechendes Merkmal eher unerwünscht. Man erwartet hier einen monoton wachsenden Zusammenhang. Im linearen Modell kann sich ein solcher Zusammenhang entweder implzit durch die Verwendung als numerisches Tarifmerkmal ergeben oder explizit durch die Klassenbildung forciert werden. Bei Gradient Boosting Machines ist das nicht der Fall. Hier müssen wir die Monotonie als Nebenbedingung für die Baumbildung festlegen.
+
+#### Schadenhäufigkeit
+
+
+```python
+xgb_poisson_freq_constrained = xgb.XGBRegressor(
+    objective="count:poisson",
+    tree_method="hist",
+    device="cuda",
+    n_estimators=boost_rounds_poisson,
+    n_jobs=-1,
+    monotone_constraints=(1, 0, 0, 0, 0, 0, 0, 0, 0),
+    **best_params_xgb_poisson,
+)
+
+xgb_poisson_freq_constrained.fit(
+    X_train_xgb, df_train["Frequency"], sample_weight=df_train["Exposure"]
+)
+
+scores_xgb_poisson_freq_constrained = score_estimator(
+    xgb_poisson_freq_constrained,
+    X_train_xgb,
+    X_test_xgb,
+    df_train,
+    df_test,
+    target="Frequency",
+    weights="Exposure",
+)
+
+scores = pd.concat(
+    [
+        scores_xgb_poisson_freq_constrained,
+        scores_xgb_poisson_freq,
+    ],
+    axis=1,
+    sort=True,
+    keys=(
+        "XGBoost Poisson Constrained",
+        "XGBoost Poisson",
+    ),
+)
+```
+
+
+```python
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Poisson dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>XGBoost Poisson Constrained</th>
+      <td>0.0750</td>
+      <td>0.4427</td>
+      <td>0.1364</td>
+      <td>0.2421</td>
+    </tr>
+    <tr>
+      <th>XGBoost Poisson</th>
+      <td>0.0849</td>
+      <td>0.4379</td>
+      <td>0.1355</td>
+      <td>0.2414</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 4 columns</p>
+
+
+
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Poisson dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>XGBoost Poisson Constrained</th>
+      <td>0.0568</td>
+      <td>0.4494</td>
+      <td>0.1368</td>
+      <td>0.2229</td>
+    </tr>
+    <tr>
+      <th>XGBoost Poisson</th>
+      <td>0.0644</td>
+      <td>0.4458</td>
+      <td>0.1361</td>
+      <td>0.2224</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 4 columns</p>
+
+
+
+
+```python
+fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
+plot_partial_dependence(
+    xgb_poisson_freq_constrained,
+    X_train_xgb,
+    "BonusMalus",
+    feature_type="num",
+    ax=axs[0],
+    target="Schadenhäufigkeit",
+    pi=[67, 95],
+)
+axs[0].set_title("Mit Monotonie")
+plot_partial_dependence(
+    xgb_poisson_freq,
+    X_train_xgb,
+    "BonusMalus",
+    feature_type="num",
+    ax=axs[1],
+    target="Schadenhäufigkeit",
+    pi=[67, 95],
+)
+axs[1].set_title("Ohne Monotonie")
+fig.tight_layout()
+```
+
+
+    
+![png](README_files/README_224_0.png)
+    
+
+
+#### Schadenhöhe
+
+
+```python
+xgb_gamma_sev_constrained = xgb.XGBRegressor(
+    objective="reg:gamma",
+    tree_method="hist",
+    device="cuda",
+    n_estimators=boost_rounds_gamma,
+    n_jobs=-1,
+    monotone_constraints=(1, 0, 0, 0, 0, 0, 0, 0, 0),
+    **best_params_xgb_gamma,
+)
+
+xgb_gamma_sev_constrained.fit(
+    X_train_xgb[mask_train.values],
+    df_train.loc[mask_train, "AvgClaimAmount"],
+    sample_weight=df_train.loc[mask_train, "ClaimNb"],
+)
+
+xgb_gamma_sev_calibrated_constrained = CalibratedRegressor(
+    xgb_gamma_sev_constrained,
+    X_train_xgb[mask_train.values],
+    df_train.loc[mask_train, "AvgClaimAmount"],
+    weights=df_train.loc[mask_train, "ClaimNb"],
+)
+
+scores_xgb_gamma_sev_calibrated_constrained = score_estimator(
+    xgb_gamma_sev_calibrated,
+    X_train_xgb[mask_train.values],
+    X_test_xgb[mask_test.values],
+    df_train[mask_train],
+    df_test[mask_test],
+    target="AvgClaimAmount",
+    weights="ClaimNb",
+)
+
+scores = pd.concat(
+    [
+        scores_xgb_gamma_sev_calibrated_constrained,
+        scores_xgb_gamma_sev,
+    ],
+    axis=1,
+    sort=True,
+    keys=(
+        "XGBoost Gamma Constrained",
+        "XGBoost Gamma",
+    ),
+)
+```
+
+
+```python
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Gamma dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>XGBoost Gamma Constrained</th>
+      <td>0.0463</td>
+      <td>1.3741</td>
+      <td>1749.9435</td>
+      <td>5.771594e+07</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma</th>
+      <td>0.0464</td>
+      <td>1.3739</td>
+      <td>1683.0390</td>
+      <td>5.773907e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 4 columns</p>
+
+
+
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Gamma dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>XGBoost Gamma Constrained</th>
+      <td>0.0103</td>
+      <td>1.3865</td>
+      <td>1739.2299</td>
+      <td>5.026899e+07</td>
+    </tr>
+    <tr>
+      <th>XGBoost Gamma</th>
+      <td>0.0088</td>
+      <td>1.3886</td>
+      <td>1670.7478</td>
+      <td>5.027763e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 4 columns</p>
+
+
+
+
+```python
+fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
+plot_partial_dependence(
+    xgb_gamma_sev_calibrated_constrained,
+    X_train_xgb,
+    "BonusMalus",
+    feature_type="num",
+    ax=axs[0],
+    target="Schadenhöhe",
+    pi=[67, 95],
+)
+axs[0].set_title("Mit Monotonie")
+plot_partial_dependence(
+    xgb_gamma_sev,
+    X_train_xgb,
+    "BonusMalus",
+    feature_type="num",
+    ax=axs[1],
+    target="Schadenhöhe",
+    pi=[67, 95],
+)
+axs[1].set_title("Ohne Monotonie")
+fig.tight_layout()
+```
+
+
+    
+![png](README_files/README_229_0.png)
+    
+
+
+#### Nettorisikoprämie via Frequency-Severity
+
+
+```python
+class ProductRegressor:
+    """Wrapper for frequency - severity estimators.
+
+    Parameters
+    ----------
+    est1: scikit-learn like estimator
+        Scikit-learn like estimator with a `predict` method.
+    est2: scikit-learn like estimator
+        Scikit-learn like estimator with a `predict` method.
+    """
+
+    def __init__(self, est1, est2):
+        self.est1 = est1
+        self.est2 = est2
+
+    def predict(self, X):
+        """Returns the product of the individual predictions.
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Returns
+        -------
+        prediction : array-like of shape (n_samples,)
+            The product of the individual predictions.
+        """
+        return self.est1.predict(X) * self.est2.predict(X)
+```
+
+
+```python
+fig, axs = plt.subplots(ncols=2, nrows=2, figsize=(12, 12))
+
+plot_partial_dependence(
+    ProductRegressor(xgb_poisson_freq, xgb_gamma_sev_calibrated),
+    X_train_xgb,
+    "BonusMalus",
+    feature_type="num",
+    ax=axs[0][0],
+    target="Nettorisikoprämie",
+    pi=[67, 95],
+)
+axs[0][0].set_title("Frequency (ohne Monotonie) X Severity (ohne Monotonie)")
+
+plot_partial_dependence(
+    ProductRegressor(xgb_poisson_freq_constrained, xgb_gamma_sev_calibrated),
+    X_train_xgb,
+    "BonusMalus",
+    feature_type="num",
+    ax=axs[0][1],
+    target="Nettorisikoprämie",
+    pi=[67, 95],
+)
+axs[0][1].set_title("Frequency (mit Monotonie) X Severity (ohne Monotonie)")
+
+plot_partial_dependence(
+    ProductRegressor(xgb_poisson_freq, xgb_gamma_sev_calibrated_constrained),
+    X_train_xgb,
+    "BonusMalus",
+    feature_type="num",
+    ax=axs[1][0],
+    target="Nettorisikoprämie",
+    pi=[67, 95],
+)
+axs[1][0].set_title("Frequency (ohne Monotonie) X Severity (mit Monotonie)")
+
+plot_partial_dependence(
+    ProductRegressor(
+        xgb_poisson_freq_constrained, xgb_gamma_sev_calibrated_constrained
+    ),
+    X_train_xgb,
+    "BonusMalus",
+    feature_type="num",
+    ax=axs[1][1],
+    target="Nettorisikoprämie",
+    pi=[67, 95],
+)
+axs[1][1].set_title("Frequency (mit Monotonie) X Severity (mit Monotonie)")
+
+fig.tight_layout()
+```
+
+
+    
+![png](README_files/README_232_0.png)
     
 
 
@@ -2988,5 +6396,3 @@ shap.summary_plot(
 <a id="totalclaimamount"></a>
 
 **Total Claim Amount**: The total amount of money an insurance company pays out for all claims.
-
-
