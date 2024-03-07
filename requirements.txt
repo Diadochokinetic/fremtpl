@@ -3,4 +3,5 @@ mshap==0.2.2
 pandas==2.2.0
 scikit-learn==1.4.0
 shap==0.44.0
+statsmodels==0.14.1
 xgboost==2.0.3
