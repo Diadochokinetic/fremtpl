@@ -995,43 +995,8 @@ column_trans = ColumnTransformer(
     ],
     remainder="drop",
 )
-column_trans.fit(df)
+column_trans.fit(df);
 ```
-
-
-
-
-<style>#sk-container-id-1 {color: black;background-color: white;}#sk-container-id-1 pre{padding: 0;}#sk-container-id-1 div.sk-toggleable {background-color: white;}#sk-container-id-1 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-1 label.sk-toggleable__label-arrow:before {content: "▸";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-1 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-1 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-1 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-1 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-1 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-1 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: "▾";}#sk-container-id-1 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-1 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-1 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-1 div.sk-parallel-item::after {content: "";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-1 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-1 div.sk-serial::before {content: "";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-1 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-1 div.sk-item {position: relative;z-index: 1;}#sk-container-id-1 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-1 div.sk-item::before, #sk-container-id-1 div.sk-parallel-item::before {content: "";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-1 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-1 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-1 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-1 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-1 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-1 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-1 div.sk-label-container {text-align: center;}#sk-container-id-1 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-1 div.sk-text-repr-fallback {display: none;}</style><div id="sk-container-id-1" class="sk-top-container"><div class="sk-text-repr-fallback"><pre>ColumnTransformer(transformers=[(&#x27;binned_numeric&#x27;,
-                                 KBinsDiscretizer(n_bins=10, random_state=0,
-                                                  subsample=200000),
-                                 [&#x27;VehAge&#x27;, &#x27;DrivAge&#x27;]),
-                                (&#x27;onehot_categorical&#x27;, OneHotEncoder(),
-                                 [&#x27;VehBrand&#x27;, &#x27;VehPower&#x27;, &#x27;VehGas&#x27;, &#x27;Region&#x27;,
-                                  &#x27;Area&#x27;]),
-                                (&#x27;passthrough_numeric&#x27;, &#x27;passthrough&#x27;,
-                                 [&#x27;BonusMalus&#x27;]),
-                                (&#x27;log_scaled_numeric&#x27;,
-                                 Pipeline(steps=[(&#x27;functiontransformer&#x27;,
-                                                  FunctionTransformer(func=&lt;ufunc &#x27;log&#x27;&gt;)),
-                                                 (&#x27;standardscaler&#x27;,
-                                                  StandardScaler())]),
-                                 [&#x27;Density&#x27;])])</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden><div class="sk-item sk-dashed-wrapped"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-1" type="checkbox" ><label for="sk-estimator-id-1" class="sk-toggleable__label sk-toggleable__label-arrow">ColumnTransformer</label><div class="sk-toggleable__content"><pre>ColumnTransformer(transformers=[(&#x27;binned_numeric&#x27;,
-                                 KBinsDiscretizer(n_bins=10, random_state=0,
-                                                  subsample=200000),
-                                 [&#x27;VehAge&#x27;, &#x27;DrivAge&#x27;]),
-                                (&#x27;onehot_categorical&#x27;, OneHotEncoder(),
-                                 [&#x27;VehBrand&#x27;, &#x27;VehPower&#x27;, &#x27;VehGas&#x27;, &#x27;Region&#x27;,
-                                  &#x27;Area&#x27;]),
-                                (&#x27;passthrough_numeric&#x27;, &#x27;passthrough&#x27;,
-                                 [&#x27;BonusMalus&#x27;]),
-                                (&#x27;log_scaled_numeric&#x27;,
-                                 Pipeline(steps=[(&#x27;functiontransformer&#x27;,
-                                                  FunctionTransformer(func=&lt;ufunc &#x27;log&#x27;&gt;)),
-                                                 (&#x27;standardscaler&#x27;,
-                                                  StandardScaler())]),
-                                 [&#x27;Density&#x27;])])</pre></div></div></div><div class="sk-parallel"><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-2" type="checkbox" ><label for="sk-estimator-id-2" class="sk-toggleable__label sk-toggleable__label-arrow">binned_numeric</label><div class="sk-toggleable__content"><pre>[&#x27;VehAge&#x27;, &#x27;DrivAge&#x27;]</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-3" type="checkbox" ><label for="sk-estimator-id-3" class="sk-toggleable__label sk-toggleable__label-arrow">KBinsDiscretizer</label><div class="sk-toggleable__content"><pre>KBinsDiscretizer(n_bins=10, random_state=0, subsample=200000)</pre></div></div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-4" type="checkbox" ><label for="sk-estimator-id-4" class="sk-toggleable__label sk-toggleable__label-arrow">onehot_categorical</label><div class="sk-toggleable__content"><pre>[&#x27;VehBrand&#x27;, &#x27;VehPower&#x27;, &#x27;VehGas&#x27;, &#x27;Region&#x27;, &#x27;Area&#x27;]</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-5" type="checkbox" ><label for="sk-estimator-id-5" class="sk-toggleable__label sk-toggleable__label-arrow">OneHotEncoder</label><div class="sk-toggleable__content"><pre>OneHotEncoder()</pre></div></div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-6" type="checkbox" ><label for="sk-estimator-id-6" class="sk-toggleable__label sk-toggleable__label-arrow">passthrough_numeric</label><div class="sk-toggleable__content"><pre>[&#x27;BonusMalus&#x27;]</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-7" type="checkbox" ><label for="sk-estimator-id-7" class="sk-toggleable__label sk-toggleable__label-arrow">passthrough</label><div class="sk-toggleable__content"><pre>passthrough</pre></div></div></div></div></div></div><div class="sk-parallel-item"><div class="sk-item"><div class="sk-label-container"><div class="sk-label sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-8" type="checkbox" ><label for="sk-estimator-id-8" class="sk-toggleable__label sk-toggleable__label-arrow">log_scaled_numeric</label><div class="sk-toggleable__content"><pre>[&#x27;Density&#x27;]</pre></div></div></div><div class="sk-serial"><div class="sk-item"><div class="sk-serial"><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-9" type="checkbox" ><label for="sk-estimator-id-9" class="sk-toggleable__label sk-toggleable__label-arrow">FunctionTransformer</label><div class="sk-toggleable__content"><pre>FunctionTransformer(func=&lt;ufunc &#x27;log&#x27;&gt;)</pre></div></div></div><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-10" type="checkbox" ><label for="sk-estimator-id-10" class="sk-toggleable__label sk-toggleable__label-arrow">StandardScaler</label><div class="sk-toggleable__content"><pre>StandardScaler()</pre></div></div></div></div></div></div></div></div></div></div></div></div>
-
-
 
 Damit die nun zum Teil neu erstellten binären Merkmale später erklärbar sind, speichern wir die Merkmalsnamen in einer Liste.
 
@@ -1144,7 +1109,8 @@ from sklearn.metrics import (
     d2_tweedie_score,
 )
 
-tweedie_powers = [1.5, 1.7, 1.8, 1.9, 1.99, 1.999, 1.9999]
+# tweedie_powers = [1.5, 1.7, 1.8, 1.9, 1.99, 1.999, 1.9999]
+tweedie_powers = [1.5, 1.7, 1.8, 1.9, 1.99]
 
 
 def score_estimator(
@@ -1809,19 +1775,27 @@ score_glm_poisson_multiplicative
 
 
 
-Alternativ kann man auch ein Poisson GLM trainieren, ohne dass die Koeffizienten in MMT-Faktoren umgewandelt werden müssen. Dies bietet zum einem die Möglichkeit, numerische Merkmale direkt zu verwenden und zum anderen die Möglichkeit, Regularisierung zu verwenden. Das folgende Modell macht von beiden Möglichkeiten Gebrauch.
+Alternativ kann man auch ein Poisson GLM trainieren, ohne dass die Koeffizienten in MMT-Faktoren umgewandelt werden müssen. Neben `scikit-learn` gibt es in der Bibliothek `statsmodels` eine eher nach klassischer Statistik orientierte Implementierung. Beide Implementierung bieten uns die Möglichkeit numerische Merkmale und Regularisierung zu verwenden. Wir trainieren das `scikit-learn` Modell mit einer kleinen Regularisierung und das `statsmodel` Modell gänzlich ohne Regularisierung, um es später als Beispiel für die statistische Inferenz in der Modellerklärbarkeit verwenden zu können.
 
 
 ```python
+import statsmodels.api as sm
 from sklearn.linear_model import PoissonRegressor
 
-glm_poisson_freq = PoissonRegressor(alpha=1e-4, solver="newton-cholesky")
-glm_poisson_freq.fit(
+glm_poisson_freq_sk = PoissonRegressor(alpha=1e-4, solver="newton-cholesky")
+glm_poisson_freq_sk.fit(
     X_train_glm, df_train["Frequency"], sample_weight=df_train["Exposure"]
 )
 
-scores_glm_poisson_freq = score_estimator(
-    glm_poisson_freq,
+glm_poisson_freq_sm = sm.GLM(
+    df_train["Frequency"],
+    sm.add_constant(X_train_glm),
+    family=sm.families.Poisson(sm.families.links.Log()),
+    var_weights=df_train["Exposure"],
+).fit()
+
+scores_glm_poisson_freq_sk = score_estimator(
+    glm_poisson_freq_sk,
     X_train_glm,
     X_test_glm,
     df_train,
@@ -1830,7 +1804,30 @@ scores_glm_poisson_freq = score_estimator(
     weights="Exposure",
 )
 
-scores_glm_poisson_freq
+scores_glm_poisson_freq_sm = score_estimator(
+    glm_poisson_freq_sm,
+    sm.add_constant(X_train_glm),
+    sm.add_constant(X_test_glm),
+    df_train,
+    df_test,
+    target="Frequency",
+    weights="Exposure",
+)
+
+scores = pd.concat(
+    [
+        scores_glm_poisson_freq_sk,
+        scores_glm_poisson_freq_sm,
+    ],
+    axis=1,
+    sort=True,
+    keys=("GLM Poisson sk", "GLM Poisson sm"),
+)
+```
+
+
+```python
+scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 ```
 
 
@@ -1839,40 +1836,70 @@ scores_glm_poisson_freq
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
-      <th>subset</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-    <tr>
-      <th>metric</th>
       <th></th>
-      <th></th>
+      <th>D² explained</th>
+      <th>mean Poisson dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <th>D² explained</th>
+      <th>GLM Poisson sk</th>
       <td>0.0448</td>
-      <td>0.0427</td>
-    </tr>
-    <tr>
-      <th>mean Poisson dev</th>
       <td>0.4572</td>
-      <td>0.4561</td>
-    </tr>
-    <tr>
-      <th>mean abs. error</th>
       <td>0.1379</td>
-      <td>0.1378</td>
+      <td>0.2441</td>
     </tr>
     <tr>
-      <th>mean squared error</th>
+      <th>GLM Poisson sm</th>
+      <td>0.0448</td>
+      <td>0.4572</td>
+      <td>0.1378</td>
       <td>0.2441</td>
-      <td>0.2246</td>
     </tr>
   </tbody>
 </table>
-<p>4 rows × 2 columns</p>
+<p>2 rows × 4 columns</p>
+
+
+
+
+```python
+scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>D² explained</th>
+      <th>mean Poisson dev</th>
+      <th>mean abs. error</th>
+      <th>mean squared error</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>GLM Poisson sk</th>
+      <td>0.0427</td>
+      <td>0.4561</td>
+      <td>0.1378</td>
+      <td>0.2246</td>
+    </tr>
+    <tr>
+      <th>GLM Poisson sm</th>
+      <td>0.0426</td>
+      <td>0.4562</td>
+      <td>0.1378</td>
+      <td>0.2247</td>
+    </tr>
+  </tbody>
+</table>
+<p>2 rows × 4 columns</p>
 
 
 
@@ -1928,7 +1955,7 @@ scores_xgb_poisson_freq = score_estimator(
 scores_xgb_poisson_freq
 ```
 
-    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [18:28:49] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
+    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [10:07:15] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
     Potential solutions:
     - Use a data structure that matches the device ordinal in the booster.
     - Set the device for booster before call to inplace_predict.
@@ -1992,7 +2019,8 @@ if run_mmt:
         [
             scores_mmt,
             score_glm_poisson_multiplicative,
-            scores_glm_poisson_freq,
+            scores_glm_poisson_freq_sk,
+            scores_glm_poisson_freq_sm,
             scores_xgb_poisson_freq,
         ],
         axis=1,
@@ -2000,8 +2028,9 @@ if run_mmt:
         keys=(
             "Marginalsummenverfahren",
             "GLM Poisson Multiplikativ",
-            "GLM Poisson",
-            "XGBoost Poisson",
+            "GLM Poisson sk",
+            "GLM Poisson sm",
+            "GBM Poisson",
         ),
     )
 
@@ -2009,12 +2038,18 @@ else:
     scores = pd.concat(
         [
             score_glm_poisson_multiplicative,
-            scores_glm_poisson_freq,
+            scores_glm_poisson_freq_sk,
+            scores_glm_poisson_freq_sm,
             scores_xgb_poisson_freq,
         ],
         axis=1,
         sort=True,
-        keys=("GLM Poisson Multiplikativ", "GLM Poisson", "XGBoost Poisson"),
+        keys=(
+            "GLM Poisson Multiplikativ",
+            "GLM Poisson sk",
+            "GLM Poisson sm",
+            "GBM Poisson",
+        ),
     )
 ```
 
@@ -2047,14 +2082,21 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>0.2437</td>
     </tr>
     <tr>
-      <th>GLM Poisson</th>
+      <th>GLM Poisson sk</th>
       <td>0.0448</td>
       <td>0.4572</td>
       <td>0.1379</td>
       <td>0.2441</td>
     </tr>
     <tr>
-      <th>XGBoost Poisson</th>
+      <th>GLM Poisson sm</th>
+      <td>0.0448</td>
+      <td>0.4572</td>
+      <td>0.1378</td>
+      <td>0.2441</td>
+    </tr>
+    <tr>
+      <th>GBM Poisson</th>
       <td>0.0849</td>
       <td>0.4379</td>
       <td>0.1355</td>
@@ -2062,7 +2104,7 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
     </tr>
   </tbody>
 </table>
-<p>3 rows × 4 columns</p>
+<p>4 rows × 4 columns</p>
 
 
 
@@ -2106,14 +2148,21 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>0.2235</td>
     </tr>
     <tr>
-      <th>GLM Poisson</th>
+      <th>GLM Poisson sk</th>
       <td>0.0427</td>
       <td>0.4561</td>
       <td>0.1378</td>
       <td>0.2246</td>
     </tr>
     <tr>
-      <th>XGBoost Poisson</th>
+      <th>GLM Poisson sm</th>
+      <td>0.0426</td>
+      <td>0.4562</td>
+      <td>0.1378</td>
+      <td>0.2247</td>
+    </tr>
+    <tr>
+      <th>GBM Poisson</th>
       <td>0.0644</td>
       <td>0.4458</td>
       <td>0.1361</td>
@@ -2121,7 +2170,7 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
     </tr>
   </tbody>
 </table>
-<p>3 rows × 4 columns</p>
+<p>4 rows × 4 columns</p>
 
 
 
@@ -2145,15 +2194,17 @@ if run_mmt:
         "Trainingsdaten",
         "Marginalsummenverfahren",
         "GLM Poisson Multiplikativ",
-        "GLM Poisson",
-        "XGBoost Poisson",
+        "GLM Poisson sk",
+        "GLM Poisson sm",
+        "GBM Poisson",
     ]
     test_index = [
         "Testdaten",
         "Marginalsummenverfahren",
         "GLM Poisson Multiplikativ",
-        "GLM Poisson",
-        "XGBoost Poisson",
+        "GLM Poisson sk",
+        "GLM Poisson sm",
+        "GBM Poisson",
     ]
     train_mean_freq = [
         np.average(df_train["Frequency"], weights=df_train["Exposure"]),
@@ -2162,7 +2213,13 @@ if run_mmt:
             glm_poisson_multiplicative.predict(X_train_mmt),
             weights=df_train["Exposure"],
         ),
-        np.average(glm_poisson_freq.predict(X_train_glm), weights=df_train["Exposure"]),
+        np.average(
+            glm_poisson_freq_sk.predict(X_train_glm), weights=df_train["Exposure"]
+        ),
+        np.average(
+            glm_poisson_freq_sm.predict(sm.add_constant(X_train_glm)),
+            weights=df_train["Exposure"],
+        ),
         np.average(xgb_poisson_freq.predict(X_train_xgb), weights=df_train["Exposure"]),
     ]
     test_mean_freq = [
@@ -2171,35 +2228,51 @@ if run_mmt:
         np.average(
             glm_poisson_multiplicative.predict(X_test_mmt), weights=df_test["Exposure"]
         ),
-        np.average(glm_poisson_freq.predict(X_test_glm), weights=df_test["Exposure"]),
+        np.average(
+            glm_poisson_freq_sk.predict(X_test_glm), weights=df_test["Exposure"]
+        ),
+        np.average(
+            glm_poisson_freq_sm.predict(sm.add_constant(X_test_glm)),
+            weights=df_test["Exposure"],
+        ),
         np.average(xgb_poisson_freq.predict(X_test_xgb), weights=df_test["Exposure"]),
     ]
     train_ClaimNb = [
         df_train["ClaimNb"].sum(),
         (mmt.predict(X_train_mmt) * df_train["Exposure"]).sum(),
         (glm_poisson_multiplicative.predict(X_train_mmt) * df_train["Exposure"]).sum(),
-        (glm_poisson_freq.predict(X_train_glm) * df_train["Exposure"]).sum(),
+        (glm_poisson_freq_sk.predict(X_train_glm) * df_train["Exposure"]).sum(),
+        (
+            glm_poisson_freq_sm.predict(sm.add_constant(X_train_glm))
+            * df_train["Exposure"]
+        ).sum(),
         (xgb_poisson_freq.predict(X_train_xgb) * df_train["Exposure"]).sum(),
     ]
     test_ClaimNb = [
         df_test["ClaimNb"].sum(),
         (mmt.predict(X_test_mmt) * df_test["Exposure"]).sum(),
         (glm_poisson_multiplicative.predict(X_test_mmt) * df_test["Exposure"]).sum(),
-        (glm_poisson_freq.predict(X_test_glm) * df_test["Exposure"]).sum(),
+        (glm_poisson_freq_sk.predict(X_test_glm) * df_test["Exposure"]).sum(),
+        (
+            glm_poisson_freq_sm.predict(sm.add_constant(X_test_glm))
+            * df_test["Exposure"]
+        ).sum(),
         (xgb_poisson_freq.predict(X_test_xgb) * df_test["Exposure"]).sum(),
     ]
 else:
     train_index = [
         "Trainingsdaten",
         "GLM Poisson Multiplikativ",
-        "GLM Poisson",
-        "XGBoost Poisson",
+        "GLM Poisson sk",
+        "GLM Poisson sm",
+        "GBM Poisson",
     ]
     test_index = [
         "Testdaten",
         "GLM Poisson Multiplikativ",
-        "GLM Poisson",
-        "XGBoost Poisson",
+        "GLM Poisson sk",
+        "GLM Poisson sm",
+        "GBM Poisson",
     ]
     train_mean_freq = [
         np.average(df_train["Frequency"], weights=df_train["Exposure"]),
@@ -2207,7 +2280,13 @@ else:
             glm_poisson_multiplicative.predict(X_train_mmt),
             weights=df_train["Exposure"],
         ),
-        np.average(glm_poisson_freq.predict(X_train_glm), weights=df_train["Exposure"]),
+        np.average(
+            glm_poisson_freq_sk.predict(X_train_glm), weights=df_train["Exposure"]
+        ),
+        np.average(
+            glm_poisson_freq_sm.predict(sm.add_constant(X_train_glm)),
+            weights=df_train["Exposure"],
+        ),
         np.average(xgb_poisson_freq.predict(X_train_xgb), weights=df_train["Exposure"]),
     ]
     test_mean_freq = [
@@ -2215,19 +2294,33 @@ else:
         np.average(
             glm_poisson_multiplicative.predict(X_test_mmt), weights=df_test["Exposure"]
         ),
-        np.average(glm_poisson_freq.predict(X_test_glm), weights=df_test["Exposure"]),
+        np.average(
+            glm_poisson_freq_sk.predict(X_test_glm), weights=df_test["Exposure"]
+        ),
+        np.average(
+            glm_poisson_freq_sm.predict(sm.add_constant(X_test_glm)),
+            weights=df_test["Exposure"],
+        ),
         np.average(xgb_poisson_freq.predict(X_test_xgb), weights=df_test["Exposure"]),
     ]
     train_ClaimNb = [
         df_train["ClaimNb"].sum(),
         (glm_poisson_multiplicative.predict(X_train_mmt) * df_train["Exposure"]).sum(),
-        (glm_poisson_freq.predict(X_train_glm) * df_train["Exposure"]).sum(),
+        (glm_poisson_freq_sk.predict(X_train_glm) * df_train["Exposure"]).sum(),
+        (
+            glm_poisson_freq_sm.predict(sm.add_constant(X_train_glm))
+            * df_train["Exposure"]
+        ).sum(),
         (xgb_poisson_freq.predict(X_train_xgb) * df_train["Exposure"]).sum(),
     ]
     test_ClaimNb = [
         df_test["ClaimNb"].sum(),
         (glm_poisson_multiplicative.predict(X_test_mmt) * df_test["Exposure"]).sum(),
-        (glm_poisson_freq.predict(X_test_glm) * df_test["Exposure"]).sum(),
+        (glm_poisson_freq_sk.predict(X_test_glm) * df_test["Exposure"]).sum(),
+        (
+            glm_poisson_freq_sm.predict(sm.add_constant(X_test_glm))
+            * df_test["Exposure"]
+        ).sum(),
         (xgb_poisson_freq.predict(X_test_xgb) * df_test["Exposure"]).sum(),
     ]
 
@@ -2275,18 +2368,23 @@ train_freq_summary
       <td>19797</td>
     </tr>
     <tr>
-      <th>GLM Poisson</th>
+      <th>GLM Poisson sk</th>
       <td>0.073724</td>
       <td>19800</td>
     </tr>
     <tr>
-      <th>XGBoost Poisson</th>
+      <th>GLM Poisson sm</th>
+      <td>0.073724</td>
+      <td>19800</td>
+    </tr>
+    <tr>
+      <th>GBM Poisson</th>
       <td>0.073732</td>
       <td>19801</td>
     </tr>
   </tbody>
 </table>
-<p>4 rows × 2 columns</p>
+<p>5 rows × 2 columns</p>
 
 
 
@@ -2328,18 +2426,23 @@ test_freq_summary
       <td>6627</td>
     </tr>
     <tr>
-      <th>GLM Poisson</th>
+      <th>GLM Poisson sk</th>
       <td>0.073890</td>
       <td>6634</td>
     </tr>
     <tr>
-      <th>XGBoost Poisson</th>
+      <th>GLM Poisson sm</th>
+      <td>0.073897</td>
+      <td>6635</td>
+    </tr>
+    <tr>
+      <th>GBM Poisson</th>
       <td>0.073780</td>
       <td>6624</td>
     </tr>
   </tbody>
 </table>
-<p>4 rows × 2 columns</p>
+<p>5 rows × 2 columns</p>
 
 
 
@@ -2358,15 +2461,15 @@ test_freq_summary
 if run_mmt:
     model_predictions = {
         "GLM Poisson Multiplikativ": glm_poisson_multiplicative.predict(X_test_mmt),
-        "GLM Poisson": glm_poisson_freq.predict(X_test_glm),
-        "XGBoost Poisson": xgb_poisson_freq.predict(X_test_xgb),
+        "GLM Poisson sk": glm_poisson_freq_sk.predict(X_test_glm),
+        "GBM Poisson": xgb_poisson_freq.predict(X_test_xgb),
         "Marginalsummenverfahren": mmt.predict(X_test_mmt),
     }
 else:
     model_predictions = {
         "GLM Poisson Multiplikativ": glm_poisson_multiplicative.predict(X_test_mmt),
-        "GLM Poisson": glm_poisson_freq.predict(X_test_glm),
-        "XGBoost Poisson": xgb_poisson_freq.predict(X_test_xgb),
+        "GLM Poisson": glm_poisson_freq_sk.predict(X_test_glm),
+        "GBM Poisson": xgb_poisson_freq.predict(X_test_xgb),
     }
 ```
 
@@ -2390,18 +2493,22 @@ ax.set(
     ylabel="Dichte",
 )
 ax.legend(loc="upper right")
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/dist_freq_predictions.png",
+#     bbox_inches="tight",
+# )
 ```
 
 
 
 
-    <matplotlib.legend.Legend at 0x7f0ee23fc9d0>
+    <matplotlib.legend.Legend at 0x7f7e730ffb20>
 
 
 
 
     
-![png](README_files/README_72_1.png)
+![png](README_files/README_74_1.png)
     
 
 
@@ -2426,11 +2533,11 @@ for (label, y_pred), color, ax in zip(model_predictions.items(), colors, axs.fla
 
 
     
-![png](README_files/README_73_0.png)
+![png](README_files/README_75_0.png)
     
 
 
-#### Risikodifferenzierung
+### Risikodifferenzierung
 
 
 ```python
@@ -2440,11 +2547,13 @@ if run_mmt:
         df_test["Exposure"],
         {
             "GLM Poisson Multiplikativ": glm_poisson_multiplicative.predict(X_test_mmt),
-            "GLM Poisson": glm_poisson_freq.predict(X_test_glm),
-            "XGBoost Poisson": xgb_poisson_freq.predict(X_test_xgb),
+            "GLM Poisson sk": glm_poisson_freq_sk.predict(X_test_glm),
+            "GLM Poisson sm": glm_poisson_freq_sm.predict(sm.add_constant(X_test_glm)),
+            "GBM Poisson": xgb_poisson_freq.predict(X_test_xgb),
             "Marginalsummenverfahren": mmt.predict(X_test_mmt),
         },
         ylabel="Anteil der gesamten Schäden",
+        # plot="/home/fabian/Projects/master-thesis/thesis/Figures/lorenz_curve_frequency.png",
     )
 
 else:
@@ -2453,8 +2562,9 @@ else:
         df_test["Exposure"],
         {
             "GLM Poisson Multiplikativ": glm_poisson_multiplicative.predict(X_test_mmt),
-            "GLM Poisson": glm_poisson_freq.predict(X_test_glm),
-            "XGBoost Poisson": xgb_poisson_freq.predict(X_test_xgb),
+            "GLM Poisson sk": glm_poisson_freq_sk.predict(X_test_glm),
+            "GLM Poisson sm": glm_poisson_freq_sm.predict(sm.add_constant(X_test_glm)),
+            "GBM Poisson": xgb_poisson_freq.predict(X_test_xgb),
         },
         ylabel="Anteil der gesamten Schäden",
     )
@@ -2462,7 +2572,7 @@ else:
 
 
     
-![png](README_files/README_75_0.png)
+![png](README_files/README_77_0.png)
     
 
 
@@ -2895,8 +3005,8 @@ scores = pd.concat(
     keys=(
         "GLM Gamma",
         "GLM Gamma Multiplikativ",
-        "XGBoost Gamma",
-        "XGBoost Gamma kalibriert",
+        "GBM Gamma",
+        "GBM Gamma Kalibriert",
         "Dummy",
     ),
 )
@@ -2936,14 +3046,14 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>5.803309e+07</td>
     </tr>
     <tr>
-      <th>XGBoost Gamma</th>
+      <th>GBM Gamma</th>
       <td>0.0464</td>
       <td>1.3739</td>
       <td>1683.0390</td>
       <td>5.773907e+07</td>
     </tr>
     <tr>
-      <th>XGBoost Gamma kalibriert</th>
+      <th>GBM Gamma Kalibriert</th>
       <td>0.0463</td>
       <td>1.3741</td>
       <td>1749.9435</td>
@@ -3013,14 +3123,14 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>5.033476e+07</td>
     </tr>
     <tr>
-      <th>XGBoost Gamma</th>
+      <th>GBM Gamma</th>
       <td>0.0088</td>
       <td>1.3886</td>
       <td>1670.7478</td>
       <td>5.027763e+07</td>
     </tr>
     <tr>
-      <th>XGBoost Gamma kalibriert</th>
+      <th>GBM Gamma Kalibriert</th>
       <td>0.0103</td>
       <td>1.3865</td>
       <td>1739.2299</td>
@@ -3043,7 +3153,7 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 ```python
 # scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
 #     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_severity_test.tex",
-#        formatters=[
+#     formatters=[
 #         "{:.4f}".format,
 #         "{:.4f}".format,
 #         "{:.0f}".format,
@@ -3063,8 +3173,8 @@ train_index = [
     "Trainingsdaten",
     "GLM Gamma",
     "GLM Gamma Multiplikativ",
-    "XGBoost Gamma",
-    "XGBoost Gamma kalibriert",
+    "GBM Gamma",
+    "GBM Gamma Kalibriert",
     "DummyRegressor",
 ]
 
@@ -3072,8 +3182,8 @@ test_index = [
     "Testdaten",
     "GLM Gamma",
     "GLM Gamma Multiplikativ",
-    "XGBoost Gamma",
-    "XGBoost Gamma kalibriert",
+    "GBM Gamma",
+    "GBM Gamma Kalibriert",
     "DummyRegressor",
 ]
 
@@ -3211,14 +3321,14 @@ train_sev_summary
       <td>2003.999926</td>
     </tr>
     <tr>
-      <th>XGBoost Gamma</th>
+      <th>GBM Gamma</th>
       <td>1865.106445</td>
       <td>3.722511e+07</td>
       <td>1100.803467</td>
       <td>3599.080322</td>
     </tr>
     <tr>
-      <th>XGBoost Gamma kalibriert</th>
+      <th>GBM Gamma Kalibriert</th>
       <td>1962.861572</td>
       <td>3.917618e+07</td>
       <td>1158.499634</td>
@@ -3299,14 +3409,14 @@ test_sev_summary
       <td>2003.491999</td>
     </tr>
     <tr>
-      <th>XGBoost Gamma</th>
+      <th>GBM Gamma</th>
       <td>1864.413452</td>
       <td>1.240900e+07</td>
       <td>1135.186890</td>
       <td>3494.851562</td>
     </tr>
     <tr>
-      <th>XGBoost Gamma kalibriert</th>
+      <th>GBM Gamma Kalibriert</th>
       <td>1962.132568</td>
       <td>1.305939e+07</td>
       <td>1194.685181</td>
@@ -3351,8 +3461,8 @@ test_sev_summary
 model_predictions = {
     "GLM Gamma": glm_gamma_sev.predict(X_test_glm),
     "GLM Gamma Multiplikativ": glm_gamma_multiplicative.predict(X_test_mmt),
-    "XGBoost Gamma": xgb_gamma_sev.predict(X_test_xgb),
-    "XGBoost Gamma kalibriert": xgb_gamma_sev_calibrated.predict(X_test_xgb),
+    "GBM Gamma": xgb_gamma_sev.predict(X_test_xgb),
+    "GBM Gamma Kalibriert": xgb_gamma_sev_calibrated.predict(X_test_xgb),
 }
 ```
 
@@ -3377,19 +3487,21 @@ ax.set(
 )
 ax.legend(loc="upper right")
 
-# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/dist_sev_predictions.png")
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/dist_sev_predictions.png"
+# )
 ```
 
 
 
 
-    <matplotlib.legend.Legend at 0x7f0ee0e7ee30>
+    <matplotlib.legend.Legend at 0x7f7e222170d0>
 
 
 
 
     
-![png](README_files/README_99_1.png)
+![png](README_files/README_101_1.png)
     
 
 
@@ -3417,7 +3529,7 @@ for (label, y_pred), color, ax, ylim in zip(
 
 
     
-![png](README_files/README_100_0.png)
+![png](README_files/README_102_0.png)
     
 
 
@@ -3433,7 +3545,7 @@ plot_risk_ranking(
     {
         "GLM Gamma": glm_gamma_sev.predict(X_test_glm),
         "GLM Gamma Multiplikativ": glm_gamma_multiplicative.predict(X_test_mmt),
-        "XGBoost Gamma": xgb_gamma_sev.predict(X_test_xgb),
+        "GBM Gamma": xgb_gamma_sev.predict(X_test_xgb),
     },
     # plot="/home/fabian/Projects/master-thesis/thesis/Figures/lorenz_curve_severity.png",
 )
@@ -3441,7 +3553,7 @@ plot_risk_ranking(
 
 
     
-![png](README_files/README_102_0.png)
+![png](README_files/README_104_0.png)
     
 
 
@@ -3453,7 +3565,7 @@ plot_risk_ranking(
 
 Für die direkte Modellierung der Nettorisikoprämie eignen sich GLMs auf Basis der Tweedie Familie mit einem Exponentialparameter $1<p<2$. Je näher der Parameter bei 1 liegt, desto mehr ähnelt die Verteilung einer Poisson Verteilung. Für Werte nahe der 2, nähert man sich der Gamma Verteilung an.
 
-Die Praxis zeigt, dass obwohl es sich bei der Poisson Verteilung um eine diskrete Verteilung handelt, man auch mittels Poisson GLMs gute Ergebnisse für die Nettorisikoprämie erzielen kann. Wir betrachten im Folgenden Poisson und Tweedie GLMs. Auf die Transformation in multiplikative Modelle wird der übersichtlichkeit halber verzichtet. Diese ist analog den Modellierungen für die Schadenhäufigkeit und -höhe möglich. Für den Exponentialparameter nehmen für das Modelltraining den Wert 1.9 an. In einem realen Szenario sollte man hier über die Behandlung als Hyperparameter oder geschäftspolitische Entscheidung nachdenken.
+Die Praxis zeigt, dass obwohl es sich bei der Poisson Verteilung um eine diskrete Verteilung handelt, man auch mittels Poisson GLMs gute Ergebnisse für die Nettorisikoprämie erzielen kann. Wir betrachten im Folgenden Poisson und Tweedie GLMs. Auf die Transformation in multiplikative Modelle wird der Übersichtlichkeit halber verzichtet. Diese ist analog den Modellierungen für die Schadenhäufigkeit und -höhe möglich. Für den Exponentialparameter nehmen wir für das Modelltraining den Wert 1.9 an. In einem realen Szenario sollte man hier über die Behandlung als Hyperparameter oder geschäftspolitische Entscheidung nachdenken.
 
 
 ```python
@@ -3468,8 +3580,6 @@ glm_poisson_pure = PoissonRegressor(alpha=0.1, solver="newton-cholesky")
 glm_poisson_pure.fit(
     X_train_glm, df_train["PurePremium"], sample_weight=df_train["Exposure"]
 )
-
-tweedie_powers = [1.5, 1.7, 1.8, 1.9, 1.99, 1.999, 1.9999]
 
 scores_glm_tweedie_pure = score_estimator(
     glm_tweedie_pure,
@@ -3526,8 +3636,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <th>mean Tweedie dev p=1.8000</th>
       <th>mean Tweedie dev p=1.9000</th>
       <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
@@ -3541,8 +3649,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.3760</td>
       <td>33.8212</td>
       <td>201.5347</td>
-      <td>1914.5380</td>
-      <td>19047.4703</td>
       <td>273.9865</td>
       <td>3.295505e+07</td>
     </tr>
@@ -3554,14 +3660,12 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.3472</td>
       <td>33.8091</td>
       <td>201.5299</td>
-      <td>1914.5337</td>
-      <td>19047.4660</td>
       <td>273.3377</td>
       <td>3.294714e+07</td>
     </tr>
   </tbody>
 </table>
-<p>2 rows × 10 columns</p>
+<p>2 rows × 8 columns</p>
 
 
 
@@ -3583,8 +3687,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <th>mean Tweedie dev p=1.8000</th>
       <th>mean Tweedie dev p=1.9000</th>
       <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
@@ -3598,8 +3700,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.4539</td>
       <td>33.8783</td>
       <td>201.5587</td>
-      <td>1914.3868</td>
-      <td>19045.5807</td>
       <td>273.1249</td>
       <td>3.213056e+07</td>
     </tr>
@@ -3611,18 +3711,18 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.4237</td>
       <td>33.8611</td>
       <td>201.5482</td>
-      <td>1914.3768</td>
-      <td>19045.5708</td>
       <td>272.5738</td>
       <td>3.211700e+07</td>
     </tr>
   </tbody>
 </table>
-<p>2 rows × 10 columns</p>
+<p>2 rows × 8 columns</p>
 
 
 
 #### Gradient Boosting Modelle
+
+Analog dem GLM gehen wir auch hier von einer Tweedie-Verteilung aus. Hyperparameter und Tweedie-Exponent werden als gegeben betrachtet.
 
 
 ```python
@@ -3716,8 +3816,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <th>mean Tweedie dev p=1.8000</th>
       <th>mean Tweedie dev p=1.9000</th>
       <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
@@ -3731,8 +3829,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>29.9335</td>
       <td>33.5504</td>
       <td>201.3598</td>
-      <td>1914.3704</td>
-      <td>19047.3041</td>
       <td>258.9600</td>
       <td>3.294002e+07</td>
     </tr>
@@ -3744,14 +3840,12 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>29.9504</td>
       <td>33.5645</td>
       <td>201.3710</td>
-      <td>1914.3813</td>
-      <td>19047.3150</td>
       <td>273.5062</td>
       <td>3.293848e+07</td>
     </tr>
   </tbody>
 </table>
-<p>2 rows × 10 columns</p>
+<p>2 rows × 8 columns</p>
 
 
 
@@ -3773,8 +3867,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <th>mean Tweedie dev p=1.8000</th>
       <th>mean Tweedie dev p=1.9000</th>
       <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
@@ -3788,8 +3880,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.3264</td>
       <td>33.8004</td>
       <td>201.5086</td>
-      <td>1914.3387</td>
-      <td>19045.5335</td>
       <td>257.8162</td>
       <td>3.211121e+07</td>
     </tr>
@@ -3801,14 +3891,12 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.3062</td>
       <td>33.7881</td>
       <td>201.5006</td>
-      <td>1914.3310</td>
-      <td>19045.5259</td>
       <td>272.3598</td>
       <td>3.211026e+07</td>
     </tr>
   </tbody>
 </table>
-<p>2 rows × 10 columns</p>
+<p>2 rows × 8 columns</p>
 
 
 
@@ -3823,7 +3911,7 @@ Für die Frequency-Severity Modellierung betrachten wir drei Kombinationen
 
 ```python
 scores_glm_product = score_estimator(
-    (glm_poisson_freq, glm_gamma_sev),
+    (glm_poisson_freq_sk, glm_gamma_sev),
     (X_train_glm, X_train_glm),
     (X_test_glm, X_test_glm),
     df_train,
@@ -3885,8 +3973,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <th>mean Tweedie dev p=1.8000</th>
       <th>mean Tweedie dev p=1.9000</th>
       <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
@@ -3900,8 +3986,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.4601</td>
       <td>33.8758</td>
       <td>201.5716</td>
-      <td>1914.5735</td>
-      <td>19047.5057</td>
       <td>273.0119</td>
       <td>3.295040e+07</td>
     </tr>
@@ -3913,8 +3997,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>29.7420</td>
       <td>33.4426</td>
       <td>201.2956</td>
-      <td>1914.3094</td>
-      <td>19047.2434</td>
       <td>269.0106</td>
       <td>3.293048e+07</td>
     </tr>
@@ -3926,14 +4008,12 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>29.8863</td>
       <td>33.5301</td>
       <td>201.3516</td>
-      <td>1914.3631</td>
-      <td>19047.2962</td>
       <td>268.4550</td>
       <td>3.293475e+07</td>
     </tr>
   </tbody>
 </table>
-<p>3 rows × 10 columns</p>
+<p>3 rows × 8 columns</p>
 
 
 
@@ -3955,8 +4035,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <th>mean Tweedie dev p=1.8000</th>
       <th>mean Tweedie dev p=1.9000</th>
       <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
@@ -3970,8 +4048,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.4053</td>
       <td>33.8500</td>
       <td>201.5414</td>
-      <td>1914.3703</td>
-      <td>19045.5644</td>
       <td>272.2128</td>
       <td>3.212197e+07</td>
     </tr>
@@ -3983,8 +4059,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.1191</td>
       <td>33.6835</td>
       <td>201.4389</td>
-      <td>1914.2725</td>
-      <td>19045.4676</td>
       <td>269.2882</td>
       <td>3.210152e+07</td>
     </tr>
@@ -3996,14 +4070,12 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.1428</td>
       <td>33.6994</td>
       <td>201.4501</td>
-      <td>1914.2834</td>
-      <td>19045.4779</td>
       <td>268.7088</td>
       <td>3.210232e+07</td>
     </tr>
   </tbody>
 </table>
-<p>3 rows × 10 columns</p>
+<p>3 rows × 8 columns</p>
 
 
 
@@ -4026,11 +4098,11 @@ scores = pd.concat(
     keys=(
         "GLM Tweedie",
         "GLM Poisson",
-        "XGB Tweedie",
-        "XGB Tweedie Kalibriert",
-        "GLM Produkt",
-        "XGB Produkt",
-        "XGB/GLM Produkt",
+        "GBM Tweedie",
+        "GBM Tweedie Kal.",
+        "GLM Prod.",
+        "GBM Prod.",
+        "GBM/GLM Prod.",
     ),
 )
 ```
@@ -4053,8 +4125,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <th>mean Tweedie dev p=1.8000</th>
       <th>mean Tweedie dev p=1.9000</th>
       <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
@@ -4068,8 +4138,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.3760</td>
       <td>33.8212</td>
       <td>201.5347</td>
-      <td>1914.5380</td>
-      <td>19047.4703</td>
       <td>273.9865</td>
       <td>3.295505e+07</td>
     </tr>
@@ -4081,81 +4149,90 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.3472</td>
       <td>33.8091</td>
       <td>201.5299</td>
-      <td>1914.5337</td>
-      <td>19047.4660</td>
       <td>273.3377</td>
       <td>3.294714e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie</th>
+      <th>GBM Tweedie</th>
       <td>0.0243</td>
       <td>74.3993</td>
       <td>36.1011</td>
       <td>29.9335</td>
       <td>33.5504</td>
       <td>201.3598</td>
-      <td>1914.3704</td>
-      <td>19047.3041</td>
       <td>258.9600</td>
       <td>3.294002e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie Kalibriert</th>
+      <th>GBM Tweedie Kal.</th>
       <td>0.0239</td>
       <td>74.3910</td>
       <td>36.1186</td>
       <td>29.9504</td>
       <td>33.5645</td>
       <td>201.3710</td>
-      <td>1914.3813</td>
-      <td>19047.3150</td>
       <td>273.5062</td>
       <td>3.293848e+07</td>
     </tr>
     <tr>
-      <th>GLM Produkt</th>
+      <th>GLM Prod.</th>
       <td>0.0148</td>
       <td>76.6993</td>
       <td>36.9574</td>
       <td>30.4601</td>
       <td>33.8758</td>
       <td>201.5716</td>
-      <td>1914.5735</td>
-      <td>19047.5057</td>
       <td>273.0119</td>
       <td>3.295040e+07</td>
     </tr>
     <tr>
-      <th>XGB Produkt</th>
+      <th>GBM Prod.</th>
       <td>0.0274</td>
       <td>73.3240</td>
       <td>35.7610</td>
       <td>29.7420</td>
       <td>33.4426</td>
       <td>201.2956</td>
-      <td>1914.3094</td>
-      <td>19047.2434</td>
       <td>269.0106</td>
       <td>3.293048e+07</td>
     </tr>
     <tr>
-      <th>XGB/GLM Produkt</th>
+      <th>GBM/GLM Prod.</th>
       <td>0.0249</td>
       <td>73.9908</td>
       <td>36.0000</td>
       <td>29.8863</td>
       <td>33.5301</td>
       <td>201.3516</td>
-      <td>1914.3631</td>
-      <td>19047.2962</td>
       <td>268.4550</td>
       <td>3.293475e+07</td>
     </tr>
   </tbody>
 </table>
-<p>7 rows × 10 columns</p>
+<p>7 rows × 8 columns</p>
 
 
+
+
+```python
+# scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_pure_train.tex",
+#     # float_format="%.4f",
+#     formatters=[
+#         "{:.4f}".format,
+#         "{:.2f}".format,
+#         "{:.2f}".format,
+#         "{:.2f}".format,
+#         "{:.2f}".format,
+#         "{:.2f}".format,
+#         "{:.0f}".format,
+#         "{:.2E}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=["$D^2$", "$D_{{T_{{p=1.5}}}}$", "$D_{{T_{{p=1.7}}}}$", "$D_{{T_{{p=1.8}}}}$", "$D_{{T_{{p=1.9}}}}$", "$D_{{T_{{p=1.99}}}}$", "$MAE$", "$MSE$"],
+# )
+```
 
 
 ```python
@@ -4175,8 +4252,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <th>mean Tweedie dev p=1.8000</th>
       <th>mean Tweedie dev p=1.9000</th>
       <th>mean Tweedie dev p=1.9900</th>
-      <th>mean Tweedie dev p=1.9990</th>
-      <th>mean Tweedie dev p=1.9999</th>
       <th>mean abs. error</th>
       <th>mean squared error</th>
     </tr>
@@ -4190,8 +4265,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.4539</td>
       <td>33.8783</td>
       <td>201.5587</td>
-      <td>1914.3868</td>
-      <td>19045.5807</td>
       <td>273.1249</td>
       <td>3.213056e+07</td>
     </tr>
@@ -4203,81 +4276,90 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
       <td>30.4237</td>
       <td>33.8611</td>
       <td>201.5482</td>
-      <td>1914.3768</td>
-      <td>19045.5708</td>
       <td>272.5738</td>
       <td>3.211700e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie</th>
+      <th>GBM Tweedie</th>
       <td>0.0160</td>
       <td>75.8406</td>
       <td>36.7134</td>
       <td>30.3264</td>
       <td>33.8004</td>
       <td>201.5086</td>
-      <td>1914.3387</td>
-      <td>19045.5335</td>
       <td>257.8162</td>
       <td>3.211121e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie Kalibriert</th>
+      <th>GBM Tweedie Kal.</th>
       <td>0.0164</td>
       <td>75.7436</td>
       <td>36.6799</td>
       <td>30.3062</td>
       <td>33.7881</td>
       <td>201.5006</td>
-      <td>1914.3310</td>
-      <td>19045.5259</td>
       <td>272.3598</td>
       <td>3.211026e+07</td>
     </tr>
     <tr>
-      <th>GLM Produkt</th>
+      <th>GLM Prod.</th>
       <td>0.0146</td>
       <td>76.1705</td>
       <td>36.8398</td>
       <td>30.4053</td>
       <td>33.8500</td>
       <td>201.5414</td>
-      <td>1914.3703</td>
-      <td>19045.5644</td>
       <td>272.2128</td>
       <td>3.212197e+07</td>
     </tr>
     <tr>
-      <th>XGB Produkt</th>
+      <th>GBM Prod.</th>
       <td>0.0194</td>
       <td>74.6854</td>
       <td>36.3462</td>
       <td>30.1191</td>
       <td>33.6835</td>
       <td>201.4389</td>
-      <td>1914.2725</td>
-      <td>19045.4676</td>
       <td>269.2882</td>
       <td>3.210152e+07</td>
     </tr>
     <tr>
-      <th>XGB/GLM Produkt</th>
+      <th>GBM/GLM Prod.</th>
       <td>0.0189</td>
       <td>74.7662</td>
       <td>36.3817</td>
       <td>30.1428</td>
       <td>33.6994</td>
       <td>201.4501</td>
-      <td>1914.2834</td>
-      <td>19045.4779</td>
       <td>268.7088</td>
       <td>3.210232e+07</td>
     </tr>
   </tbody>
 </table>
-<p>7 rows × 10 columns</p>
+<p>7 rows × 8 columns</p>
 
 
+
+
+```python
+# scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_pure_test.tex",
+#     # float_format="%.4f",
+#     formatters=[
+#         "{:.4f}".format,
+#         "{:.2f}".format,
+#         "{:.2f}".format,
+#         "{:.2f}".format,
+#         "{:.2f}".format,
+#         "{:.2f}".format,
+#         "{:.0f}".format,
+#         "{:.2E}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=["$D^2$", "$D_{{T_{{p=1.5}}}}$", "$D_{{T_{{p=1.7}}}}$", "$D_{{T_{{p=1.8}}}}$", "$D_{{T_{{p=1.9}}}}$", "$D_{{T_{{p=1.99}}}}$", "$MAE$", "$MSE$"],
+# )
+```
 
 ### Gesamtschaden
 
@@ -4287,22 +4369,22 @@ train_index = [
     "Trainingsdaten",
     "GLM Tweedie",
     "GLM Poisson",
-    "XGB Tweedie",
-    "XGB Tweedie Kalibriert",
+    "GBM Tweedie",
+    "GBM Tweedie Kal.",
     "GLM Produkt",
-    "XGB Produkt",
-    "XGB/GLM Produkt",
+    "GBM Produkt",
+    "GBM/GLM Prod.",
 ]
 
 test_index = [
     "Testdaten",
     "GLM Tweedie",
     "GLM Poisson",
-    "XGB Tweedie",
-    "XGB Tweedie Kalibriert",
+    "GBM Tweedie",
+    "GBM Tweedie Kal.",
     "GLM Produkt",
-    "XGB Produkt",
-    "XGB/GLM Produkt",
+    "GBM Produkt",
+    "GBM/GLM Prod.",
 ]
 
 train_ClaimAmt = [
@@ -4312,7 +4394,7 @@ train_ClaimAmt = [
     (xgb_tweedie_pure.predict(X_train_xgb) * df_train["Exposure"]).sum(),
     (xgb_tweedie_pure_calibrated.predict(X_train_xgb) * df_train["Exposure"]).sum(),
     (
-        glm_poisson_freq.predict(X_train_glm)
+        glm_poisson_freq_sk.predict(X_train_glm)
         * glm_gamma_sev.predict(X_train_glm)
         * df_train["Exposure"]
     ).sum(),
@@ -4335,7 +4417,7 @@ test_ClaimAmt = [
     (xgb_tweedie_pure.predict(X_test_xgb) * df_test["Exposure"]).sum(),
     (xgb_tweedie_pure_calibrated.predict(X_test_xgb) * df_test["Exposure"]).sum(),
     (
-        glm_poisson_freq.predict(X_test_glm)
+        glm_poisson_freq_sk.predict(X_test_glm)
         * glm_gamma_sev.predict(X_test_glm)
         * df_test["Exposure"]
     ).sum(),
@@ -4395,11 +4477,11 @@ train_pure_summary
       <td>3.917618e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie</th>
+      <th>GBM Tweedie</th>
       <td>3.473469e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie Kalibriert</th>
+      <th>GBM Tweedie Kal.</th>
       <td>3.917618e+07</td>
     </tr>
     <tr>
@@ -4407,11 +4489,11 @@ train_pure_summary
       <td>3.916555e+07</td>
     </tr>
     <tr>
-      <th>XGB Produkt</th>
+      <th>GBM Produkt</th>
       <td>3.917680e+07</td>
     </tr>
     <tr>
-      <th>XGB/GLM Produkt</th>
+      <th>GBM/GLM Prod.</th>
       <td>3.914267e+07</td>
     </tr>
   </tbody>
@@ -4419,6 +4501,19 @@ train_pure_summary
 <p>8 rows × 1 columns</p>
 
 
+
+
+```python
+# train_pure_summary.to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/pure_summary_train.tex",
+#     # float_format="%.4f",
+#     formatters=[
+#         "{:.4E}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+# )
+```
 
 
 ```python
@@ -4449,11 +4544,11 @@ test_pure_summary
       <td>1.314235e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie</th>
+      <th>GBM Tweedie</th>
       <td>1.160785e+07</td>
     </tr>
     <tr>
-      <th>XGB Tweedie Kalibriert</th>
+      <th>GBM Tweedie Kal.</th>
       <td>1.309213e+07</td>
     </tr>
     <tr>
@@ -4461,11 +4556,11 @@ test_pure_summary
       <td>1.313276e+07</td>
     </tr>
     <tr>
-      <th>XGB Produkt</th>
+      <th>GBM Produkt</th>
       <td>1.310247e+07</td>
     </tr>
     <tr>
-      <th>XGB/GLM Produkt</th>
+      <th>GBM/GLM Prod.</th>
       <td>1.309162e+07</td>
     </tr>
   </tbody>
@@ -4476,17 +4571,30 @@ test_pure_summary
 
 
 ```python
+# test_pure_summary.to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/pure_summary_test.tex",
+#     # float_format="%.4f",
+#     formatters=[
+#         "{:.4E}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+# )
+```
+
+
+```python
 model_predictions = {
     "GLM Tweedie": glm_tweedie_pure.predict(X_test_glm),
     "GLM Poisson": glm_poisson_pure.predict(X_test_glm),
-    "XGB Tweedie Kalibriert": xgb_tweedie_pure_calibrated.predict(X_test_xgb),
-    "GLM Produkt": glm_poisson_freq.predict(X_test_glm) * glm_gamma_sev.predict(
+    "GBM Tweedie Kal.": xgb_tweedie_pure_calibrated.predict(X_test_xgb),
+    "GLM Produkt": glm_poisson_freq_sk.predict(X_test_glm) * glm_gamma_sev.predict(
         X_test_glm
     ),
-    "XGB Produkt": xgb_poisson_freq.predict(
+    "GBM Produkt": xgb_poisson_freq.predict(
         X_test_xgb
     ) * xgb_gamma_sev_calibrated.predict(X_test_xgb),
-    "XGB/GLM Produkt": xgb_poisson_freq.predict(X_test_xgb) * glm_gamma_sev.predict(
+    "GBM/GLM Produkt": xgb_poisson_freq.predict(X_test_xgb) * glm_gamma_sev.predict(
         X_test_glm
     ),
 }
@@ -4518,13 +4626,13 @@ ax.legend(loc="upper right")
 
 
 
-    <matplotlib.legend.Legend at 0x7f0ee14df730>
+    <matplotlib.legend.Legend at 0x7f7e21930ee0>
 
 
 
 
     
-![png](README_files/README_127_1.png)
+![png](README_files/README_133_1.png)
     
 
 
@@ -4545,11 +4653,13 @@ for (label, y_pred), color, ax in zip(model_predictions.items(), colors, axs.fla
     )
     ax.legend(loc="upper right")
     ax.set_ylim(0, 0.0125)
+
+# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/dist_pure_predictions.png", bbox_inches="tight")
 ```
 
 
     
-![png](README_files/README_128_0.png)
+![png](README_files/README_134_0.png)
     
 
 
@@ -4563,34 +4673,422 @@ plot_risk_ranking(
     {
         "GLM Tweedie": glm_tweedie_pure.predict(X_test_glm),
         "GLM Poisson": glm_poisson_pure.predict(X_test_glm),
-        "XGBoost Tweedie": xgb_tweedie_pure.predict(X_test_xgb),
-        "GLM Produkt": glm_poisson_freq.predict(X_test_glm) * glm_gamma_sev.predict(
+        "GBM Tweedie Kal.": xgb_tweedie_pure_calibrated.predict(X_test_xgb),
+        "GLM Produkt": glm_poisson_freq_sk.predict(X_test_glm) * glm_gamma_sev.predict(
             X_test_glm
         ),
-        "XGBoost Produkt": xgb_poisson_freq.predict(
+        "GBM Produkt": xgb_poisson_freq.predict(
             X_test_xgb
         ) * xgb_gamma_sev_calibrated.predict(X_test_xgb),
-        "XGBoost/GLM Produkt": xgb_poisson_freq.predict(
-            X_test_xgb
-        ) * glm_gamma_sev.predict(X_test_glm),
+        "GBM/GLM Produkt": xgb_poisson_freq.predict(X_test_xgb) * glm_gamma_sev.predict(
+            X_test_glm
+        ),
     },
     ylabel="Anteil der gesamten Schäden",
+    # plot="/home/fabian/Projects/master-thesis/thesis/Figures/lorenz_curve_pure.png",
 )
 ```
 
 
     
-![png](README_files/README_130_0.png)
+![png](README_files/README_136_0.png)
     
 
 
 ## Erklärbarkeit der Modelle
 
-### Statistische Inferenz für GLMS
+### Statistische Inferenz für GLMs
 
-Statistische Inferenz ist die Standardmethode in der Risikomodellierung, um die Einfüsse der Tarifmerkmale im GLM zu erklären. Dieser Methodik ist leider nicht auf Gradient Boosting Modelle übertragbar und auch nicht in den Standard Machine Learning Bibliotheken* implmentiert. Der Fokus liegt in diesen Bibliotheken eher auf der Vorhersagekraft, als auf der statistischen Infenz der exogenen Variablen.
+Statistische Inferenz ist die Standardmethode in der Risikomodellierung, um die Einfüsse der Tarifmerkmale im GLM zu erklären. Dieser Methodik ist leider nicht auf Gradient Boosting Modelle übertragbar und auch nicht in den Standard Machine Learning Bibliotheken, wie `scikit-learn` implmentiert. Der Fokus liegt in diesen Bibliotheken eher auf der Vorhersagekraft, als auf der statistischen Infenz der exogenen Variablen. In statistisch orientierten Bibliotheken wie `statsmodels` finden wir jedoch entsprechende Implementierungen.
 
-Der Vollständigkeit halber betrachten wir im Folgenden die Implementierung für ein Poisson GLM mit der log-likelihood Funktion:
+#### statsmodels
+
+Für Modelle, die mittels der `statsmodels` Bibliothek trainiert wurden, können wie einfach die integerierte `summary` Funktion nutzen.
+
+
+```python
+summary = glm_poisson_freq_sm.summary()
+summary
+```
+
+
+
+
+<table class="simpletable">
+<caption>Generalized Linear Model Regression Results</caption>
+<tr>
+  <th>Dep. Variable:</th>       <td>Frequency</td>    <th>  No. Observations:  </th>   <td>508509</td>  
+</tr>
+<tr>
+  <th>Model:</th>                  <td>GLM</td>       <th>  Df Residuals:      </th>   <td>508440</td>  
+</tr>
+<tr>
+  <th>Model Family:</th>         <td>Poisson</td>     <th>  Df Model:          </th>   <td>    68</td>  
+</tr>
+<tr>
+  <th>Link Function:</th>          <td>Log</td>       <th>  Scale:             </th>  <td>  1.0000</td> 
+</tr>
+<tr>
+  <th>Method:</th>                <td>IRLS</td>       <th>  Log-Likelihood:    </th>  <td> -75962.</td> 
+</tr>
+<tr>
+  <th>Date:</th>            <td>Sat, 09 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
+</tr>
+<tr>
+  <th>Time:</th>                <td>09:54:13</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
+</tr>
+<tr>
+  <th>No. Iterations:</th>          <td>7</td>        <th>  Pseudo R-squ. (CS):</th>   <td>0.01125</td> 
+</tr>
+<tr>
+  <th>Covariance Type:</th>     <td>nonrobust</td>    <th>                     </th>      <td> </td>    
+</tr>
+</table>
+<table class="simpletable">
+<tr>
+             <td></td>               <th>coef</th>     <th>std err</th>      <th>z</th>      <th>P>|z|</th>  <th>[0.025</th>    <th>0.975]</th>  
+</tr>
+<tr>
+  <th>const</th>                  <td>   -1.9992</td> <td>    0.018</td> <td> -112.419</td> <td> 0.000</td> <td>   -2.034</td> <td>   -1.964</td>
+</tr>
+<tr>
+  <th>VehAge_bin_0.0_1.0</th>     <td>   -0.1887</td> <td>    0.032</td> <td>   -5.847</td> <td> 0.000</td> <td>   -0.252</td> <td>   -0.125</td>
+</tr>
+<tr>
+  <th>VehAge_bin_1.0_2.0</th>     <td>   -0.1682</td> <td>    0.024</td> <td>   -7.072</td> <td> 0.000</td> <td>   -0.215</td> <td>   -0.122</td>
+</tr>
+<tr>
+  <th>VehAge_bin_2.0_3.0</th>     <td>   -0.0906</td> <td>    0.023</td> <td>   -3.876</td> <td> 0.000</td> <td>   -0.136</td> <td>   -0.045</td>
+</tr>
+<tr>
+  <th>VehAge_bin_3.0_4.0</th>     <td>   -0.1759</td> <td>    0.025</td> <td>   -6.935</td> <td> 0.000</td> <td>   -0.226</td> <td>   -0.126</td>
+</tr>
+<tr>
+  <th>VehAge_bin_4.0_6.0</th>     <td>   -0.1663</td> <td>    0.019</td> <td>   -8.622</td> <td> 0.000</td> <td>   -0.204</td> <td>   -0.128</td>
+</tr>
+<tr>
+  <th>VehAge_bin_6.0_8.0</th>     <td>   -0.0858</td> <td>    0.020</td> <td>   -4.370</td> <td> 0.000</td> <td>   -0.124</td> <td>   -0.047</td>
+</tr>
+<tr>
+  <th>VehAge_bin_8.0_10.0</th>    <td>   -0.1608</td> <td>    0.021</td> <td>   -7.799</td> <td> 0.000</td> <td>   -0.201</td> <td>   -0.120</td>
+</tr>
+<tr>
+  <th>VehAge_bin_10.0_12.0</th>   <td>   -0.2125</td> <td>    0.021</td> <td>  -10.284</td> <td> 0.000</td> <td>   -0.253</td> <td>   -0.172</td>
+</tr>
+<tr>
+  <th>VehAge_bin_12.0_15.0</th>   <td>   -0.2693</td> <td>    0.020</td> <td>  -13.585</td> <td> 0.000</td> <td>   -0.308</td> <td>   -0.230</td>
+</tr>
+<tr>
+  <th>VehAge_bin_15.0_100.0</th>  <td>   -0.4811</td> <td>    0.023</td> <td>  -21.006</td> <td> 0.000</td> <td>   -0.526</td> <td>   -0.436</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_18.0_28.0</th>  <td>   -0.3441</td> <td>    0.023</td> <td>  -15.036</td> <td> 0.000</td> <td>   -0.389</td> <td>   -0.299</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_28.0_32.0</th>  <td>   -0.4868</td> <td>    0.025</td> <td>  -19.636</td> <td> 0.000</td> <td>   -0.535</td> <td>   -0.438</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_32.0_36.0</th>  <td>   -0.3870</td> <td>    0.023</td> <td>  -16.584</td> <td> 0.000</td> <td>   -0.433</td> <td>   -0.341</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_36.0_40.0</th>  <td>   -0.2542</td> <td>    0.022</td> <td>  -11.439</td> <td> 0.000</td> <td>   -0.298</td> <td>   -0.211</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_40.0_44.0</th>  <td>   -0.1459</td> <td>    0.022</td> <td>   -6.633</td> <td> 0.000</td> <td>   -0.189</td> <td>   -0.103</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_44.0_49.0</th>  <td>   -0.0065</td> <td>    0.019</td> <td>   -0.337</td> <td> 0.736</td> <td>   -0.044</td> <td>    0.031</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_49.0_53.0</th>  <td>    0.0034</td> <td>    0.021</td> <td>    0.165</td> <td> 0.869</td> <td>   -0.037</td> <td>    0.044</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_53.0_57.0</th>  <td>   -0.0918</td> <td>    0.023</td> <td>   -3.991</td> <td> 0.000</td> <td>   -0.137</td> <td>   -0.047</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_57.0_65.0</th>  <td>   -0.1594</td> <td>    0.022</td> <td>   -7.314</td> <td> 0.000</td> <td>   -0.202</td> <td>   -0.117</td>
+</tr>
+<tr>
+  <th>DrivAge_bin_65.0_100.0</th> <td>   -0.1269</td> <td>    0.021</td> <td>   -6.018</td> <td> 0.000</td> <td>   -0.168</td> <td>   -0.086</td>
+</tr>
+<tr>
+  <th>VehBrand_B1</th>            <td>   -0.1765</td> <td>    0.019</td> <td>   -9.414</td> <td> 0.000</td> <td>   -0.213</td> <td>   -0.140</td>
+</tr>
+<tr>
+  <th>VehBrand_B10</th>           <td>   -0.1691</td> <td>    0.041</td> <td>   -4.089</td> <td> 0.000</td> <td>   -0.250</td> <td>   -0.088</td>
+</tr>
+<tr>
+  <th>VehBrand_B11</th>           <td>    0.0034</td> <td>    0.044</td> <td>    0.076</td> <td> 0.939</td> <td>   -0.083</td> <td>    0.090</td>
+</tr>
+<tr>
+  <th>VehBrand_B12</th>           <td>   -0.4502</td> <td>    0.023</td> <td>  -19.266</td> <td> 0.000</td> <td>   -0.496</td> <td>   -0.404</td>
+</tr>
+<tr>
+  <th>VehBrand_B13</th>           <td>   -0.1728</td> <td>    0.048</td> <td>   -3.612</td> <td> 0.000</td> <td>   -0.267</td> <td>   -0.079</td>
+</tr>
+<tr>
+  <th>VehBrand_B14</th>           <td>   -0.3851</td> <td>    0.093</td> <td>   -4.124</td> <td> 0.000</td> <td>   -0.568</td> <td>   -0.202</td>
+</tr>
+<tr>
+  <th>VehBrand_B2</th>            <td>   -0.1716</td> <td>    0.019</td> <td>   -9.178</td> <td> 0.000</td> <td>   -0.208</td> <td>   -0.135</td>
+</tr>
+<tr>
+  <th>VehBrand_B3</th>            <td>   -0.1246</td> <td>    0.025</td> <td>   -4.926</td> <td> 0.000</td> <td>   -0.174</td> <td>   -0.075</td>
+</tr>
+<tr>
+  <th>VehBrand_B4</th>            <td>   -0.1375</td> <td>    0.034</td> <td>   -4.014</td> <td> 0.000</td> <td>   -0.205</td> <td>   -0.070</td>
+</tr>
+<tr>
+  <th>VehBrand_B5</th>            <td>   -0.0827</td> <td>    0.029</td> <td>   -2.835</td> <td> 0.005</td> <td>   -0.140</td> <td>   -0.026</td>
+</tr>
+<tr>
+  <th>VehBrand_B6</th>            <td>   -0.1326</td> <td>    0.032</td> <td>   -4.079</td> <td> 0.000</td> <td>   -0.196</td> <td>   -0.069</td>
+</tr>
+<tr>
+  <th>VehPower_4</th>             <td>   -0.3616</td> <td>    0.025</td> <td>  -14.292</td> <td> 0.000</td> <td>   -0.411</td> <td>   -0.312</td>
+</tr>
+<tr>
+  <th>VehPower_5</th>             <td>   -0.3006</td> <td>    0.024</td> <td>  -12.417</td> <td> 0.000</td> <td>   -0.348</td> <td>   -0.253</td>
+</tr>
+<tr>
+  <th>VehPower_6</th>             <td>   -0.2577</td> <td>    0.024</td> <td>  -10.927</td> <td> 0.000</td> <td>   -0.304</td> <td>   -0.211</td>
+</tr>
+<tr>
+  <th>VehPower_7</th>             <td>   -0.2834</td> <td>    0.023</td> <td>  -12.353</td> <td> 0.000</td> <td>   -0.328</td> <td>   -0.238</td>
+</tr>
+<tr>
+  <th>VehPower_8</th>             <td>   -0.2427</td> <td>    0.032</td> <td>   -7.634</td> <td> 0.000</td> <td>   -0.305</td> <td>   -0.180</td>
+</tr>
+<tr>
+  <th>VehPower_9</th>             <td>   -0.1380</td> <td>    0.035</td> <td>   -3.918</td> <td> 0.000</td> <td>   -0.207</td> <td>   -0.069</td>
+</tr>
+<tr>
+  <th>VehPower_10</th>            <td>   -0.1246</td> <td>    0.035</td> <td>   -3.539</td> <td> 0.000</td> <td>   -0.194</td> <td>   -0.056</td>
+</tr>
+<tr>
+  <th>VehPower_11</th>            <td>   -0.0279</td> <td>    0.043</td> <td>   -0.645</td> <td> 0.519</td> <td>   -0.113</td> <td>    0.057</td>
+</tr>
+<tr>
+  <th>VehPower_12</th>            <td>   -0.0784</td> <td>    0.064</td> <td>   -1.232</td> <td> 0.218</td> <td>   -0.203</td> <td>    0.046</td>
+</tr>
+<tr>
+  <th>VehPower_13</th>            <td>   -0.0411</td> <td>    0.090</td> <td>   -0.455</td> <td> 0.649</td> <td>   -0.218</td> <td>    0.136</td>
+</tr>
+<tr>
+  <th>VehPower_14</th>            <td>   -0.0513</td> <td>    0.106</td> <td>   -0.485</td> <td> 0.627</td> <td>   -0.258</td> <td>    0.156</td>
+</tr>
+<tr>
+  <th>VehPower_15</th>            <td>   -0.0919</td> <td>    0.108</td> <td>   -0.849</td> <td> 0.396</td> <td>   -0.304</td> <td>    0.120</td>
+</tr>
+<tr>
+  <th>VehGas_Diesel</th>          <td>   -0.9240</td> <td>    0.012</td> <td>  -77.335</td> <td> 0.000</td> <td>   -0.947</td> <td>   -0.901</td>
+</tr>
+<tr>
+  <th>VehGas_Regular</th>         <td>   -1.0752</td> <td>    0.012</td> <td>  -91.981</td> <td> 0.000</td> <td>   -1.098</td> <td>   -1.052</td>
+</tr>
+<tr>
+  <th>Region_R11</th>             <td>   -0.1189</td> <td>    0.032</td> <td>   -3.747</td> <td> 0.000</td> <td>   -0.181</td> <td>   -0.057</td>
+</tr>
+<tr>
+  <th>Region_R21</th>             <td>   -0.0612</td> <td>    0.125</td> <td>   -0.487</td> <td> 0.626</td> <td>   -0.307</td> <td>    0.185</td>
+</tr>
+<tr>
+  <th>Region_R22</th>             <td>   -0.0041</td> <td>    0.065</td> <td>   -0.063</td> <td> 0.950</td> <td>   -0.131</td> <td>    0.123</td>
+</tr>
+<tr>
+  <th>Region_R23</th>             <td>   -0.0755</td> <td>    0.074</td> <td>   -1.021</td> <td> 0.307</td> <td>   -0.220</td> <td>    0.069</td>
+</tr>
+<tr>
+  <th>Region_R24</th>             <td>   -0.1311</td> <td>    0.022</td> <td>   -5.936</td> <td> 0.000</td> <td>   -0.174</td> <td>   -0.088</td>
+</tr>
+<tr>
+  <th>Region_R25</th>             <td>   -0.1418</td> <td>    0.055</td> <td>   -2.597</td> <td> 0.009</td> <td>   -0.249</td> <td>   -0.035</td>
+</tr>
+<tr>
+  <th>Region_R26</th>             <td>   -0.0731</td> <td>    0.061</td> <td>   -1.206</td> <td> 0.228</td> <td>   -0.192</td> <td>    0.046</td>
+</tr>
+<tr>
+  <th>Region_R31</th>             <td>   -0.0660</td> <td>    0.039</td> <td>   -1.684</td> <td> 0.092</td> <td>   -0.143</td> <td>    0.011</td>
+</tr>
+<tr>
+  <th>Region_R41</th>             <td>   -0.2391</td> <td>    0.054</td> <td>   -4.444</td> <td> 0.000</td> <td>   -0.344</td> <td>   -0.134</td>
+</tr>
+<tr>
+  <th>Region_R42</th>             <td>   -0.2618</td> <td>    0.123</td> <td>   -2.121</td> <td> 0.034</td> <td>   -0.504</td> <td>   -0.020</td>
+</tr>
+<tr>
+  <th>Region_R43</th>             <td>   -0.1310</td> <td>    0.178</td> <td>   -0.736</td> <td> 0.462</td> <td>   -0.480</td> <td>    0.218</td>
+</tr>
+<tr>
+  <th>Region_R52</th>             <td>   -0.0936</td> <td>    0.032</td> <td>   -2.913</td> <td> 0.004</td> <td>   -0.157</td> <td>   -0.031</td>
+</tr>
+<tr>
+  <th>Region_R53</th>             <td>   -0.1122</td> <td>    0.030</td> <td>   -3.682</td> <td> 0.000</td> <td>   -0.172</td> <td>   -0.052</td>
+</tr>
+<tr>
+  <th>Region_R54</th>             <td>    0.0159</td> <td>    0.041</td> <td>    0.389</td> <td> 0.698</td> <td>   -0.064</td> <td>    0.096</td>
+</tr>
+<tr>
+  <th>Region_R72</th>             <td>   -0.0620</td> <td>    0.038</td> <td>   -1.640</td> <td> 0.101</td> <td>   -0.136</td> <td>    0.012</td>
+</tr>
+<tr>
+  <th>Region_R73</th>             <td>   -0.3275</td> <td>    0.059</td> <td>   -5.518</td> <td> 0.000</td> <td>   -0.444</td> <td>   -0.211</td>
+</tr>
+<tr>
+  <th>Region_R74</th>             <td>    0.2669</td> <td>    0.080</td> <td>    3.341</td> <td> 0.001</td> <td>    0.110</td> <td>    0.423</td>
+</tr>
+<tr>
+  <th>Region_R82</th>             <td>    0.0805</td> <td>    0.024</td> <td>    3.385</td> <td> 0.001</td> <td>    0.034</td> <td>    0.127</td>
+</tr>
+<tr>
+  <th>Region_R83</th>             <td>   -0.1944</td> <td>    0.096</td> <td>   -2.025</td> <td> 0.043</td> <td>   -0.383</td> <td>   -0.006</td>
+</tr>
+<tr>
+  <th>Region_R91</th>             <td>   -0.1560</td> <td>    0.039</td> <td>   -4.029</td> <td> 0.000</td> <td>   -0.232</td> <td>   -0.080</td>
+</tr>
+<tr>
+  <th>Region_R93</th>             <td>   -0.0143</td> <td>    0.026</td> <td>   -0.543</td> <td> 0.587</td> <td>   -0.066</td> <td>    0.037</td>
+</tr>
+<tr>
+  <th>Region_R94</th>             <td>   -0.0991</td> <td>    0.103</td> <td>   -0.958</td> <td> 0.338</td> <td>   -0.302</td> <td>    0.104</td>
+</tr>
+<tr>
+  <th>Area_A</th>                 <td>   -0.4524</td> <td>    0.057</td> <td>   -7.994</td> <td> 0.000</td> <td>   -0.563</td> <td>   -0.341</td>
+</tr>
+<tr>
+  <th>Area_B</th>                 <td>   -0.3806</td> <td>    0.041</td> <td>   -9.329</td> <td> 0.000</td> <td>   -0.461</td> <td>   -0.301</td>
+</tr>
+<tr>
+  <th>Area_C</th>                 <td>   -0.3720</td> <td>    0.022</td> <td>  -17.188</td> <td> 0.000</td> <td>   -0.414</td> <td>   -0.330</td>
+</tr>
+<tr>
+  <th>Area_D</th>                 <td>   -0.2825</td> <td>    0.019</td> <td>  -14.873</td> <td> 0.000</td> <td>   -0.320</td> <td>   -0.245</td>
+</tr>
+<tr>
+  <th>Area_E</th>                 <td>   -0.2652</td> <td>    0.038</td> <td>   -7.060</td> <td> 0.000</td> <td>   -0.339</td> <td>   -0.192</td>
+</tr>
+<tr>
+  <th>Area_F</th>                 <td>   -0.2465</td> <td>    0.074</td> <td>   -3.347</td> <td> 0.001</td> <td>   -0.391</td> <td>   -0.102</td>
+</tr>
+<tr>
+  <th>BonusMalus</th>             <td>    0.0273</td> <td>    0.000</td> <td>   67.023</td> <td> 0.000</td> <td>    0.026</td> <td>    0.028</td>
+</tr>
+<tr>
+  <th>Density_log</th>            <td>    0.0795</td> <td>    0.032</td> <td>    2.477</td> <td> 0.013</td> <td>    0.017</td> <td>    0.142</td>
+</tr>
+</table>
+
+
+
+
+```python
+# with open("/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_stat.tex", "w") as file:
+#     file.write(summary.tables[0].as_latex_tabular(center=False))
+```
+
+
+```python
+# summary_df = pd.DataFrame(summary.tables[1].data)
+# summary_df.columns = ["feature"] + list(summary_df.iloc[0])[1:]
+# summary_df = summary_df.drop(0)
+# summary_df.set_index("feature", drop=True, inplace=True)
+# summary_df[summary_df.index.isin(["const", "BonusMalus", "Density_log"])].to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_coef.tex",
+#     multicolumn_format="c",
+#     na_rep="",
+#     escape=True
+# )
+```
+
+#### scikit-learn
+
+Für `scikit-learn` müssen wir solche Zusammenfassungen manuell erstellen.
+
+
+```python
+from datetime import datetime
+from statsmodels.iolib.table import SimpleTable
+
+
+def sklearn_summary(model, X, y):
+    # Get the current date and time
+    now = datetime.now()
+    date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+
+    # Calculate the number of observations
+    nobs = X.shape[0]
+
+    # Calculate the log-likelihood
+    y_pred = model.predict(X)
+    log_likelihood = (y * np.log(y_pred) - y_pred).sum()
+
+    # Calculate the deviance (-2 log-likelihood)
+    deviance = -2 * log_likelihood
+
+    # Calculate the null deviance
+    y_mean = y.mean()
+    null_deviance = -2 * (y * np.log(y_mean) - y_mean).sum()
+
+    # Calculate the pseudo R-squared
+    pseudo_r2 = 1 - deviance / null_deviance
+
+    # Create the summary table
+    summary_data = [
+        ["Dep. Variable:", y.name, "No. Observations:", X.shape[0]],
+        [
+            "Model:",
+            type(model).__name__,
+            "Df Residuals:",
+            X.shape[0] - len(model.coef_) - 1,
+        ],
+        [
+            "Method:",
+            model.solver if hasattr(model, "solver") else "unknown",
+            "Df Model:",
+            len(model.coef_) + 1,
+        ],
+        [
+            "Date:",
+            date_time.split(",")[0],
+            "Log-Likelihood:",
+            "{:.4E}".format(log_likelihood),
+        ],
+        ["Time:", date_time.split(",")[1], "Deviance:", "{:.4E}".format(deviance)],
+        [
+            "No. Iterations:",
+            model.n_iter_ if hasattr(model, "n_iter_") else "unknown",
+            "Pseudo R-squ.:",
+            "{:.5f}".format(pseudo_r2),
+        ],
+    ]
+
+    summary_table = SimpleTable(summary_data)
+
+    return summary_table
+
+
+# Assuming X and y are your predictors and response
+summary_table = sklearn_summary(glm_poisson_freq_sk, X_train_glm, df_train["Frequency"])
+print(summary_table)
+```
+
+    ==============================================================
+     Dep. Variable:        Frequency No. Observations:      508509
+             Model: PoissonRegressor     Df Residuals:      508433
+            Method:  newton-cholesky         Df Model:          76
+              Date:       03/09/2024   Log-Likelihood: -1.8942E+05
+              Time:         09:54:13         Deviance:  3.7883E+05
+    No. Iterations:                5    Pseudo R-squ.:     0.00721
+    --------------------------------------------------------------
+
+
+
+```python
+# with open("/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_stat_sk.tex", "w") as file:
+#     file.write(summary_table.as_latex_tabular(center=False))
+```
+
+Der Vollständigkeit halber betrachten wir im Folgenden die Implementierung für ein `scikit-learn` Poisson GLM mit der log-likelihood Funktion:
 
 $$
 L(\beta) = \sum_{i=1}^n y_i \cdot \beta^T x_i - exp(\beta^T x_i) 
@@ -4609,8 +5107,6 @@ Daraus ergibt sich Varianz-Kovarianz-Matrix:
 $$
 V(\beta) = (-H)^{-1}
 $$
-
-\* Es gibt durchaus jedoch andere Bibliotheken mit statistischem Fokus. Ein Beispiel ist [statsmodels](https://www.statsmodels.org/stable/index.html). Diesen fehlen dafür andere für das Machine Learning übliche Funktionen.
 
 
 ```python
@@ -4633,8 +5129,9 @@ def variance_covariance_matrix(X, params, weights=None):
         weights = np.ones(X.shape[0])
 
     y_hat = np.exp(X.dot(params))
-    hessian = -np.dot(X.T * y_hat, weights[:, None] * X)
-    return np.linalg.inv(-hessian)
+    y_hat_weights = y_hat * weights
+    hessian = np.dot(X.T * y_hat_weights, X)
+    return np.linalg.inv(hessian)
 ```
 
 Auf Basis der Varianz-Kovarianz-Matrix lässt sich dann der Standard-Fehler der Koeefizienten $SE(\beta)$ errechnen:
@@ -4642,6 +5139,8 @@ Auf Basis der Varianz-Kovarianz-Matrix lässt sich dann der Standard-Fehler der 
 $$
 SE(\beta) = \sqrt{diag(V(\beta))}
 $$
+
+An dieser Stelle können wir in der Praxis auf Probleme stoßen. Damit die Standard-Fehler der Koeffizienten korrekt berechnet werden können, muss die Varianz-Kovarianz-Matrix positiv definit oder positiv semidiginit sein. Diese Bedingung ist bei starken Kolinearitäten nicht erfüllt.
 
 
 ```python
@@ -4793,49 +5292,27 @@ def regression_summary(X, params, weights=None, feature_names=None, alpha=0.05):
     )
 ```
 
-Zur Berechnung dieser Werte sind jedoch einige Nebenbedingungen zu erfüllen. 
-
-- Das Modell muss ohne Regularisierung trainiert worden sein.
-- Die Features müssen unkorreliert sein.
-
-Die oben gezeigten Modelle und Trainingsdaten erfüllen diese Bedingungen nicht. Die GLMs wurden mit Regularisierung trainiert und die Features sind korreliert. Daher wird exemplarisch ein kleines Modell ohne Regularisierung nur mit den beiden Features "BonusMalus" und "Density" trainiert.
+Leider haben die Tarifmerkmale in unserem Datensatz einige Kolinearitäten, so dass die Hessematrix nicht positiv definit/semidefinit ist. In der Folge erhalten wir für einige Koeffizienten keine sinnvollen Werte für den Standardfehler und alle darauf aufbaueneden Statistiken.
 
 
 ```python
-features = ["BonusMalus", "Density_log"]
-```
-
-
-```python
-glm_poisson_freq_stat = PoissonRegressor(
-    alpha=0, max_iter=1000, fit_intercept=True, solver="newton-cholesky"
-)
-glm_poisson_freq_stat.fit(
-    X_train_glm[features], df_train["Frequency"], sample_weight=df_train["Exposure"]
-)
-```
-
-
-
-
-<style>#sk-container-id-2 {color: black;background-color: white;}#sk-container-id-2 pre{padding: 0;}#sk-container-id-2 div.sk-toggleable {background-color: white;}#sk-container-id-2 label.sk-toggleable__label {cursor: pointer;display: block;width: 100%;margin-bottom: 0;padding: 0.3em;box-sizing: border-box;text-align: center;}#sk-container-id-2 label.sk-toggleable__label-arrow:before {content: "▸";float: left;margin-right: 0.25em;color: #696969;}#sk-container-id-2 label.sk-toggleable__label-arrow:hover:before {color: black;}#sk-container-id-2 div.sk-estimator:hover label.sk-toggleable__label-arrow:before {color: black;}#sk-container-id-2 div.sk-toggleable__content {max-height: 0;max-width: 0;overflow: hidden;text-align: left;background-color: #f0f8ff;}#sk-container-id-2 div.sk-toggleable__content pre {margin: 0.2em;color: black;border-radius: 0.25em;background-color: #f0f8ff;}#sk-container-id-2 input.sk-toggleable__control:checked~div.sk-toggleable__content {max-height: 200px;max-width: 100%;overflow: auto;}#sk-container-id-2 input.sk-toggleable__control:checked~label.sk-toggleable__label-arrow:before {content: "▾";}#sk-container-id-2 div.sk-estimator input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 div.sk-label input.sk-toggleable__control:checked~label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 input.sk-hidden--visually {border: 0;clip: rect(1px 1px 1px 1px);clip: rect(1px, 1px, 1px, 1px);height: 1px;margin: -1px;overflow: hidden;padding: 0;position: absolute;width: 1px;}#sk-container-id-2 div.sk-estimator {font-family: monospace;background-color: #f0f8ff;border: 1px dotted black;border-radius: 0.25em;box-sizing: border-box;margin-bottom: 0.5em;}#sk-container-id-2 div.sk-estimator:hover {background-color: #d4ebff;}#sk-container-id-2 div.sk-parallel-item::after {content: "";width: 100%;border-bottom: 1px solid gray;flex-grow: 1;}#sk-container-id-2 div.sk-label:hover label.sk-toggleable__label {background-color: #d4ebff;}#sk-container-id-2 div.sk-serial::before {content: "";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: 0;}#sk-container-id-2 div.sk-serial {display: flex;flex-direction: column;align-items: center;background-color: white;padding-right: 0.2em;padding-left: 0.2em;position: relative;}#sk-container-id-2 div.sk-item {position: relative;z-index: 1;}#sk-container-id-2 div.sk-parallel {display: flex;align-items: stretch;justify-content: center;background-color: white;position: relative;}#sk-container-id-2 div.sk-item::before, #sk-container-id-2 div.sk-parallel-item::before {content: "";position: absolute;border-left: 1px solid gray;box-sizing: border-box;top: 0;bottom: 0;left: 50%;z-index: -1;}#sk-container-id-2 div.sk-parallel-item {display: flex;flex-direction: column;z-index: 1;position: relative;background-color: white;}#sk-container-id-2 div.sk-parallel-item:first-child::after {align-self: flex-end;width: 50%;}#sk-container-id-2 div.sk-parallel-item:last-child::after {align-self: flex-start;width: 50%;}#sk-container-id-2 div.sk-parallel-item:only-child::after {width: 0;}#sk-container-id-2 div.sk-dashed-wrapped {border: 1px dashed gray;margin: 0 0.4em 0.5em 0.4em;box-sizing: border-box;padding-bottom: 0.4em;background-color: white;}#sk-container-id-2 div.sk-label label {font-family: monospace;font-weight: bold;display: inline-block;line-height: 1.2em;}#sk-container-id-2 div.sk-label-container {text-align: center;}#sk-container-id-2 div.sk-container {/* jupyter's `normalize.less` sets `[hidden] { display: none; }` but bootstrap.min.css set `[hidden] { display: none !important; }` so we also need the `!important` here to be able to override the default hidden behavior on the sphinx rendered scikit-learn.org. See: https://github.com/scikit-learn/scikit-learn/issues/21755 */display: inline-block !important;position: relative;}#sk-container-id-2 div.sk-text-repr-fallback {display: none;}</style><div id="sk-container-id-2" class="sk-top-container"><div class="sk-text-repr-fallback"><pre>PoissonRegressor(alpha=0, max_iter=1000, solver=&#x27;newton-cholesky&#x27;)</pre><b>In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. <br />On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.</b></div><div class="sk-container" hidden><div class="sk-item"><div class="sk-estimator sk-toggleable"><input class="sk-toggleable__control sk-hidden--visually" id="sk-estimator-id-11" type="checkbox" checked><label for="sk-estimator-id-11" class="sk-toggleable__label sk-toggleable__label-arrow">PoissonRegressor</label><div class="sk-toggleable__content"><pre>PoissonRegressor(alpha=0, max_iter=1000, solver=&#x27;newton-cholesky&#x27;)</pre></div></div></div></div></div>
-
-
-
-
-```python
-regression_summary(
+summary = regression_summary(
     X=np.append(
-        X_train_glm[features].values,
-        np.ones(X_train_glm[features].shape[0]).reshape(-1, 1),
+        X_train_glm.values,
+        np.ones(X_train_glm.shape[0]).reshape(-1, 1),
         axis=1,
     ),
-    params=np.append(glm_poisson_freq_stat.coef_, glm_poisson_freq_stat.intercept_),
+    params=np.append(glm_poisson_freq_sk.coef_, glm_poisson_freq_sk.intercept_),
     weights=df_train["Exposure"].values,
-    feature_names=features + ["Intercept"],
+    feature_names=feature_names_glm + ["Intercept"],
     alpha=0.05,
 )
+summary
 ```
+
+    /tmp/ipykernel_30633/1598025945.py:14: RuntimeWarning: invalid value encountered in sqrt
+      return np.sqrt(np.diagonal(cov))
+
 
 
 
@@ -4854,37 +5331,577 @@ regression_summary(
   </thead>
   <tbody>
     <tr>
+      <th>VehAge_bin_0.0_1.0</th>
+      <td>0.009442</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_1.0_2.0</th>
+      <td>0.029882</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_2.0_3.0</th>
+      <td>0.106744</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_3.0_4.0</th>
+      <td>0.023076</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_4.0_6.0</th>
+      <td>0.033388</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_6.0_8.0</th>
+      <td>0.113459</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_8.0_10.0</th>
+      <td>0.039371</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_10.0_12.0</th>
+      <td>-0.011699</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_12.0_15.0</th>
+      <td>-0.067652</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_15.0_100.0</th>
+      <td>-0.276010</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_18.0_28.0</th>
+      <td>-0.141124</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_28.0_32.0</th>
+      <td>-0.281297</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_32.0_36.0</th>
+      <td>-0.183992</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_36.0_40.0</th>
+      <td>-0.053507</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_40.0_44.0</th>
+      <td>0.052824</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_44.0_49.0</th>
+      <td>0.190773</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_49.0_53.0</th>
+      <td>0.200266</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_53.0_57.0</th>
+      <td>0.105753</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_57.0_65.0</th>
+      <td>0.039408</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_65.0_100.0</th>
+      <td>0.070895</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B1</th>
+      <td>0.000730</td>
+      <td>172950.233356</td>
+      <td>4.220094e-09</td>
+      <td>1.000000</td>
+      <td>-338977.034726</td>
+      <td>338977.036186</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B10</th>
+      <td>0.012865</td>
+      <td>173075.358857</td>
+      <td>7.433343e-08</td>
+      <td>1.000000</td>
+      <td>-339222.264652</td>
+      <td>339222.290382</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B11</th>
+      <td>0.176841</td>
+      <td>173099.926453</td>
+      <td>1.021611e-06</td>
+      <td>0.999999</td>
+      <td>-339270.252393</td>
+      <td>339270.606075</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B12</th>
+      <td>-0.267581</td>
+      <td>173204.857835</td>
+      <td>-1.544882e-06</td>
+      <td>0.999999</td>
+      <td>-339476.359034</td>
+      <td>339475.823872</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B13</th>
+      <td>0.005887</td>
+      <td>173514.815471</td>
+      <td>3.392584e-08</td>
+      <td>1.000000</td>
+      <td>-340083.592817</td>
+      <td>340083.604590</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B14</th>
+      <td>-0.161371</td>
+      <td>173447.965013</td>
+      <td>-9.303731e-07</td>
+      <td>0.999999</td>
+      <td>-339952.735272</td>
+      <td>339952.412529</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B2</th>
+      <td>0.005497</td>
+      <td>173338.720485</td>
+      <td>3.171392e-08</td>
+      <td>1.000000</td>
+      <td>-339738.452554</td>
+      <td>339738.463549</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B3</th>
+      <td>0.052462</td>
+      <td>173086.526378</td>
+      <td>3.030972e-07</td>
+      <td>1.000000</td>
+      <td>-339244.113046</td>
+      <td>339244.217970</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B4</th>
+      <td>0.038347</td>
+      <td>173334.260062</td>
+      <td>2.212310e-07</td>
+      <td>1.000000</td>
+      <td>-339729.677416</td>
+      <td>339729.754110</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B5</th>
+      <td>0.092621</td>
+      <td>172990.462137</td>
+      <td>5.354092e-07</td>
+      <td>1.000000</td>
+      <td>-339055.789986</td>
+      <td>339055.975227</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>Region_R21</th>
+      <td>0.017442</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R22</th>
+      <td>0.076221</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R23</th>
+      <td>0.011531</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R24</th>
+      <td>-0.042605</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R25</th>
+      <td>-0.048877</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R26</th>
+      <td>0.014125</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R31</th>
+      <td>0.021332</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R41</th>
+      <td>-0.140164</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R42</th>
+      <td>-0.120217</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R43</th>
+      <td>-0.022888</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R52</th>
+      <td>-0.004889</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R53</th>
+      <td>-0.022718</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R54</th>
+      <td>0.100048</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R72</th>
+      <td>0.025556</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R73</th>
+      <td>-0.218563</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R74</th>
+      <td>0.299442</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R82</th>
+      <td>0.167893</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R83</th>
+      <td>-0.084361</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R91</th>
+      <td>-0.064979</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R93</th>
+      <td>0.074108</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Region_R94</th>
+      <td>-0.008642</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>Area_A</th>
+      <td>-0.101173</td>
+      <td>160890.197979</td>
+      <td>-6.288301e-07</td>
+      <td>0.999999</td>
+      <td>-315339.845368</td>
+      <td>315339.643023</td>
+    </tr>
+    <tr>
+      <th>Area_B</th>
+      <td>-0.036150</td>
+      <td>160890.197979</td>
+      <td>-2.246859e-07</td>
+      <td>1.000000</td>
+      <td>-315339.780345</td>
+      <td>315339.708046</td>
+    </tr>
+    <tr>
+      <th>Area_C</th>
+      <td>-0.033452</td>
+      <td>160890.197979</td>
+      <td>-2.079172e-07</td>
+      <td>1.000000</td>
+      <td>-315339.777647</td>
+      <td>315339.710744</td>
+    </tr>
+    <tr>
+      <th>Area_D</th>
+      <td>0.047775</td>
+      <td>160890.197979</td>
+      <td>2.969431e-07</td>
+      <td>1.000000</td>
+      <td>-315339.696420</td>
+      <td>315339.791971</td>
+    </tr>
+    <tr>
+      <th>Area_E</th>
+      <td>0.057669</td>
+      <td>160890.197979</td>
+      <td>3.584395e-07</td>
+      <td>1.000000</td>
+      <td>-315339.686526</td>
+      <td>315339.801865</td>
+    </tr>
+    <tr>
+      <th>Area_F</th>
+      <td>0.065330</td>
+      <td>160890.197979</td>
+      <td>4.060506e-07</td>
+      <td>1.000000</td>
+      <td>-315339.678866</td>
+      <td>315339.809525</td>
+    </tr>
+    <tr>
       <th>BonusMalus</th>
-      <td>0.023752</td>
-      <td>0.000349</td>
-      <td>68.002521</td>
-      <td>0.0</td>
-      <td>0.023067</td>
-      <td>0.024436</td>
+      <td>0.027208</td>
+      <td>0.000407</td>
+      <td>6.680051e+01</td>
+      <td>0.000000</td>
+      <td>0.026410</td>
+      <td>0.028007</td>
     </tr>
     <tr>
       <th>Density_log</th>
-      <td>0.143362</td>
-      <td>0.007177</td>
-      <td>19.974767</td>
-      <td>0.0</td>
-      <td>0.129295</td>
-      <td>0.157429</td>
+      <td>0.088866</td>
+      <td>0.032103</td>
+      <td>2.768155e+00</td>
+      <td>0.005638</td>
+      <td>0.025945</td>
+      <td>0.151787</td>
     </tr>
     <tr>
       <th>Intercept</th>
-      <td>-4.059830</td>
-      <td>0.023772</td>
-      <td>-170.781029</td>
-      <td>0.0</td>
-      <td>-4.106423</td>
-      <td>-4.013238</td>
+      <td>-4.171663</td>
+      <td>114603.330695</td>
+      <td>-3.640088e-05</td>
+      <td>0.999971</td>
+      <td>-224623.107056</td>
+      <td>224614.763731</td>
     </tr>
   </tbody>
 </table>
-<p>3 rows × 6 columns</p>
+<p>76 rows × 6 columns</p>
 
 
+
+
+```python
+# summary[summary.index.isin(["Intercept", "BonusMalus", "Density_log", "VehGas_Regular", "VehGas_Diesel"])].to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_coef_sk.tex",
+#     formatters=[
+#         "{:.4f}".format,
+#         "{:.3f}".format,
+#         "{:.3f}".format,
+#         "{:.3f}".format,
+#         "{:.3f}".format,
+#         "{:.3f}".format,
+#     ],
+#     multicolumn_format="c",
+#     na_rep="",
+#     escape=True
+# )
+```
 
 ### SHAP
 
@@ -4928,16 +5945,24 @@ Um einen generellen Überblick über die Einflüsse der Merkmale zu erhalten, be
 
 
 ```python
-shap.summary_plot(
-    glm_tweedie_pure_exp,
-    max_display=10,
-    plot_type="bar",
-)
+shap.summary_plot(glm_tweedie_pure_exp, max_display=10, plot_type="bar", show=False)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(10, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_bar_raw.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_152_0.png)
+![png](README_files/README_164_0.png)
     
 
 
@@ -4948,12 +5973,25 @@ Um die Richtung der Einflüsse besser verstehen zu können, gibt es auch eine Me
 shap.summary_plot(
     glm_tweedie_pure_exp,
     max_display=10,
+    show=False,
 )
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(10, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_beeswarm_raw.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_154_0.png)
+![png](README_files/README_166_0.png)
     
 
 
@@ -5022,12 +6060,51 @@ Mit den addierten SHAP-Werten kann man sich nun einen Überblick über den Gesam
 
 
 ```python
-shap.summary_plot(glm_tweedie_pure_exp_mod, plot_type="bar")
+shap.summary_plot(glm_tweedie_pure_exp_mod, plot_type="bar", show=False)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(10, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_bar_agg.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_160_0.png)
+![png](README_files/README_172_0.png)
+    
+
+
+
+```python
+shap.summary_plot(
+    glm_tweedie_pure_exp_mod,
+    max_display=10,
+    show=False,
+)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(10, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_beeswarm_agg.png",
+#     bbox_inches="tight",
+# )
+plt.show()
+```
+
+
+    
+![png](README_files/README_173_0.png)
     
 
 
@@ -5035,12 +6112,54 @@ Neben der Makroebene liefert SHAP auch die Möglichkeit, die Mikroebene zu betra
 
 
 ```python
-shap.force_plot(glm_tweedie_pure_exp_mod[2], matplotlib=True)
+shap.force_plot(
+    glm_tweedie_pure_exp_mod[0],
+    matplotlib=True,
+    show=False,
+)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(16, 3)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_force_log.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_162_0.png)
+![png](README_files/README_175_0.png)
+    
+
+
+
+```python
+shap.waterfall_plot(
+    glm_tweedie_pure_exp_mod[0],
+    show=False,
+)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(6, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_waterfall_raw.png",
+#     bbox_inches="tight",
+# )
+plt.show()
+```
+
+
+    
+![png](README_files/README_176_0.png)
     
 
 
@@ -5063,7 +6182,7 @@ glm_tweedie_pure_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [01:11, 12.48it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:39, 19.01it/s]                                                               
 
 
 
@@ -5094,23 +6213,54 @@ Nun erhalten wir die Erklärung im realen Wertebereich.
 
 
 ```python
-shap.force_plot(glm_tweedie_pure_exp_mod[0], matplotlib=True)
+shap.force_plot(
+    glm_tweedie_pure_exp_mod[0],
+    matplotlib=True,
+    show=False,
+)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(16, 3)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_force_true.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_168_0.png)
+![png](README_files/README_182_0.png)
     
 
 
 
 ```python
-shap.waterfall_plot(glm_tweedie_pure_exp_mod[0])
+shap.waterfall_plot(
+    glm_tweedie_pure_exp_mod[0],
+    show=False,
+)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(6, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_waterfall_true.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_169_0.png)
+![png](README_files/README_183_0.png)
     
 
 
@@ -5137,7 +6287,7 @@ Frequency-Severity Modelle bestehen aus zwei getrennten Modellen für die Schade
 
 ```python
 glm_poisson_freq_exp = shap.Explainer(
-    glm_poisson_freq.predict, X_train_glm_sample, output_names=feature_names_glm
+    glm_poisson_freq_sk.predict, X_train_glm_sample, output_names=feature_names_glm
 )
 
 glm_poisson_freq_exp = glm_poisson_freq_exp(X_train_glm_sample)
@@ -5151,7 +6301,7 @@ glm_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [01:06, 12.37it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:38, 18.44it/s]                                                               
 
 
 
@@ -5186,7 +6336,7 @@ shap.summary_plot(glm_poisson_freq_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_176_0.png)
+![png](README_files/README_190_0.png)
     
 
 
@@ -5197,7 +6347,7 @@ shap.waterfall_plot(glm_poisson_freq_exp_mod[0])
 
 
     
-![png](README_files/README_177_0.png)
+![png](README_files/README_191_0.png)
     
 
 
@@ -5220,7 +6370,7 @@ glm_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [01:09, 12.10it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:37, 18.75it/s]                                                               
 
 
 
@@ -5255,7 +6405,7 @@ shap.summary_plot(glm_gamma_sev_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_182_0.png)
+![png](README_files/README_196_0.png)
     
 
 
@@ -5266,7 +6416,7 @@ shap.waterfall_plot(glm_gamma_sev_exp_mod[0])
 
 
     
-![png](README_files/README_183_0.png)
+![png](README_files/README_197_0.png)
     
 
 
@@ -5304,13 +6454,13 @@ shap.waterfall_plot(final_shap_explanation[0])
 
 
     
-![png](README_files/README_187_0.png)
+![png](README_files/README_201_0.png)
     
 
 
 
 ```python
-glm_poisson_freq.predict(
+glm_poisson_freq_sk.predict(
     X_train_glm_sample.iloc[0].to_frame().T
 ) * glm_gamma_sev.predict(X_train_glm_sample.iloc[0].to_frame().T)
 ```
@@ -5346,7 +6496,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    [18:33:59] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
+    [09:56:16] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
 
 
 
@@ -5356,7 +6506,7 @@ shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar")
 
 
     
-![png](README_files/README_192_0.png)
+![png](README_files/README_206_0.png)
     
 
 
@@ -5367,7 +6517,7 @@ shap.waterfall_plot(xgb_poisson_freq_exp[0])
 
 
     
-![png](README_files/README_193_0.png)
+![png](README_files/README_207_0.png)
     
 
 
@@ -5388,28 +6538,52 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [02:04,  7.27it/s]                                                                     
+    ExactExplainer explainer: 1001it [00:57, 14.27it/s]                                                                     
 
 
 
 ```python
-shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar")
+shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar", show=False)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(10, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_freq_bar_true.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_196_0.png)
+![png](README_files/README_210_0.png)
     
 
 
 
 ```python
-shap.waterfall_plot(xgb_poisson_freq_exp[0])
+shap.waterfall_plot(xgb_poisson_freq_exp[0], show=False)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(6, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_freq_waterfall_true.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_197_0.png)
+![png](README_files/README_211_0.png)
     
 
 
@@ -5428,28 +6602,52 @@ xgb_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:42, 18.02it/s]                                                                     
+    ExactExplainer explainer: 1001it [00:13, 17.23it/s]                                                                     
 
 
 
 ```python
-shap.summary_plot(xgb_gamma_sev_exp, plot_type="bar")
+shap.summary_plot(xgb_gamma_sev_exp, plot_type="bar", show=False)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(10, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_sev_bar_true.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_199_0.png)
+![png](README_files/README_213_0.png)
     
 
 
 
 ```python
-shap.waterfall_plot(xgb_gamma_sev_exp[0])
+shap.waterfall_plot(xgb_gamma_sev_exp[0], show=False)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(6, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_sev_waterfall_true.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_200_0.png)
+![png](README_files/README_214_0.png)
     
 
 
@@ -5476,23 +6674,47 @@ final_shap_explanation = shap.Explanation(
 
 
 ```python
-shap.summary_plot(final_shap_explanation, plot_type="bar")
+shap.summary_plot(final_shap_explanation, plot_type="bar", show=False)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(10, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_pure_bar_true.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_203_0.png)
+![png](README_files/README_217_0.png)
     
 
 
 
 ```python
-shap.waterfall_plot(final_shap_explanation[0])
+shap.waterfall_plot(final_shap_explanation[0], show=False)
+# Get the current figure
+fig = plt.gcf()
+
+# Change the figure size
+fig.set_size_inches(6, 6)
+
+# Save
+# fig.savefig(
+#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_pure_waterfall_true.png",
+#     bbox_inches="tight",
+# )
+plt.show()
 ```
 
 
     
-![png](README_files/README_204_0.png)
+![png](README_files/README_218_0.png)
     
 
 
@@ -5524,7 +6746,7 @@ from sklearn.inspection import PartialDependenceDisplay
 
 fig, ax = plt.subplots(figsize=(12, 12))
 
-display = PartialDependenceDisplay.from_estimator(
+PartialDependenceDisplay.from_estimator(
     xgb_poisson_freq,
     X_train_xgb,
     features=feature_names_xgb,
@@ -5532,14 +6754,19 @@ display = PartialDependenceDisplay.from_estimator(
     response_method="auto",
     categorical_features=categorical_features,
     ax=ax,
-)
+);
 ```
 
 
     
-![png](README_files/README_208_0.png)
+![png](README_files/README_222_0.png)
     
 
+
+
+```python
+# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_sklearn.png", bbox_inches="tight")
+```
 
 Diese Plots sind ausreichend, wenn man sich nur einen groben Überblick verschaffen möchte. Allerdings könne sie auch trügerisch sein, da bei der Darstellung die Varianz der Vorhersagen komplett außen vor gelassen wird. Man betrachtet nur eine Metrik.
 
@@ -5618,22 +6845,38 @@ def _plot_num_partial_dependence(estimator, X, feature, ax, target, pi=None, **k
     ax.set_ylabel(f"Predicted {target}")
 
 
-fig, ax = plt.subplots(figsize=(12, 6))
+fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
 _plot_num_partial_dependence(
     xgb_poisson_freq,
     X_train_xgb,
     "BonusMalus",
-    ax,
+    axs[0],
     target="Frequency",
     pi=[67, 95],
 )
+axs[0].set_title("Poisson GBM")
+_plot_num_partial_dependence(
+    glm_poisson_freq_sk,
+    X_train_glm,
+    "BonusMalus",
+    axs[1],
+    target="Frequency",
+    pi=[67, 95],
+)
+axs[1].set_title("Poisson GLM")
+fig.tight_layout();
 ```
 
 
     
-![png](README_files/README_211_0.png)
+![png](README_files/README_226_0.png)
     
 
+
+
+```python
+# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_bonus_malus.png", bbox_inches="tight")
+```
 
 Für kategorische Merkmale kann entweder ein Box- oder Violinplot genutzt werden.
 
@@ -5694,7 +6937,7 @@ def _plot_cat_partial_dependence(
     ax.tick_params(axis="x", labelrotation=45)
 
 
-fig, axs = plt.subplots(figsize=(12, 6))
+fig, axs = plt.subplots(ncols=2, figsize=(12, 6))
 _plot_cat_partial_dependence(
     xgb_poisson_freq,
     X_train_xgb,
@@ -5736,13 +6979,15 @@ _plot_cat_partial_dependence(
         "B5",
         "B6",
     ],
+    showmedians=True,
 )
+axs[1].set_ylim(0, 0.2)
 fig.tight_layout()
 ```
 
 
     
-![png](README_files/README_213_0.png)
+![png](README_files/README_229_0.png)
     
 
 
@@ -5805,7 +7050,7 @@ def _plot_bin_partial_dependence(
 
 fig, ax = plt.subplots(figsize=(12, 6))
 _plot_bin_partial_dependence(
-    glm_poisson_freq,
+    glm_poisson_freq_sk,
     X_train_glm,
     "VehBrand",
     ax,
@@ -5816,7 +7061,7 @@ _plot_bin_partial_dependence(
 
 
     
-![png](README_files/README_215_0.png)
+![png](README_files/README_231_0.png)
     
 
 
@@ -5925,9 +7170,14 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_217_0.png)
+![png](README_files/README_233_0.png)
     
 
+
+
+```python
+# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_manuell.png", bbox_inches="tight")
+```
 
 
 ```python
@@ -5947,7 +7197,7 @@ feature_types = ["bin"] * 7 + ["num"] * 2
 fig, axs = plt.subplots(ncols=3, nrows=3, figsize=(12, 12))
 for feature, feature_type, ax in zip(features, feature_types, axs.flatten()):
     plot_partial_dependence(
-        glm_poisson_freq,
+        glm_poisson_freq_sk,
         X_train_glm,
         feature,
         feature_type=feature_type,
@@ -5961,15 +7211,15 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_218_0.png)
+![png](README_files/README_235_0.png)
     
 
 
-### Monotonie
+## Monotonie
 
 Wir haben in den obigen Beispielen gesehen, dass die Vorhersage, ceteris paribus, für zunhemende Werte des Merkmals "BonusMalus" stark osziliert. Dieses Verhalten ist für ein der Schadenfreiheitsklasse entsprechendes Merkmal eher unerwünscht. Man erwartet hier einen monoton wachsenden Zusammenhang. Im linearen Modell kann sich ein solcher Zusammenhang entweder implzit durch die Verwendung als numerisches Tarifmerkmal ergeben oder explizit durch die Klassenbildung forciert werden. Bei Gradient Boosting Machines ist das nicht der Fall. Hier müssen wir die Monotonie als Nebenbedingung für die Baumbildung festlegen.
 
-#### Schadenhäufigkeit
+### Schadenhäufigkeit
 
 
 ```python
@@ -6005,11 +7255,14 @@ scores = pd.concat(
     axis=1,
     sort=True,
     keys=(
-        "XGBoost Poisson Constrained",
+        "XGBoost Poisson Mon.",
         "XGBoost Poisson",
     ),
 )
 ```
+
+    The history saving thread hit an unexpected error (OperationalError('attempt to write a readonly database')).History will not be written to the database.
+
 
 
 ```python
@@ -6031,7 +7284,7 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
   </thead>
   <tbody>
     <tr>
-      <th>XGBoost Poisson Constrained</th>
+      <th>XGBoost Poisson Mon.</th>
       <td>0.0750</td>
       <td>0.4427</td>
       <td>0.1364</td>
@@ -6049,6 +7302,17 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 <p>2 rows × 4 columns</p>
 
 
+
+
+```python
+# scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_frequency_constrained_train.tex",
+#     float_format="%.4f",
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
+# )
+```
 
 
 ```python
@@ -6070,7 +7334,7 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
   </thead>
   <tbody>
     <tr>
-      <th>XGBoost Poisson Constrained</th>
+      <th>XGBoost Poisson Mon.</th>
       <td>0.0568</td>
       <td>0.4494</td>
       <td>0.1368</td>
@@ -6088,6 +7352,17 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 <p>2 rows × 4 columns</p>
 
 
+
+
+```python
+# scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
+#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_frequency_constrained_test.tex",
+#     float_format="%.4f",
+#     multicolumn_format="c",
+#     na_rep="",
+#     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
+# )
+```
 
 
 ```python
@@ -6117,11 +7392,16 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_224_0.png)
+![png](README_files/README_243_0.png)
     
 
 
-#### Schadenhöhe
+
+```python
+# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_freq_monotone.png", bbox_inches="tight")
+```
+
+### Schadenhöhe
 
 
 ```python
@@ -6278,11 +7558,11 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_229_0.png)
+![png](README_files/README_249_0.png)
     
 
 
-#### Nettorisikoprämie via Frequency-Severity
+### Nettorisikoprämie via Frequency-Severity
 
 
 ```python
@@ -6371,9 +7651,14 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_232_0.png)
+![png](README_files/README_252_0.png)
     
 
+
+
+```python
+fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_freq_sev_monotone.png", bbox_inches="tight")
+```
 
 ## Glossary
 
@@ -6396,3 +7681,8 @@ fig.tight_layout()
 <a id="totalclaimamount"></a>
 
 **Total Claim Amount**: The total amount of money an insurance company pays out for all claims.
+
+
+```python
+
+```
