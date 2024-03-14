@@ -3,6 +3,7 @@
 Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung in der Schadenverischerung mit Python". Am einfachsten kann das Notebook interaktiv über Binder ausgeführt werden. Dazu einfach auf den folgenden Button klicken:
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Diadochokinetic/fremtpl/HEAD?labpath=Risikomodellierung+in+der+Schadenversicherung+mit+Python.ipynb)
+[![NBViewer](https://raw.githubusercontent.com/jupyter/design/e088387232fb13da8fb9ab4ce017e5dd23a114a0/logos/Badges/nbviewer_badge.svg)](https://nbviewer.org/github/Diadochokinetic/fremtpl/blob/main/Risikomodellierung%20in%20der%20Schadenversicherung%20mit%20Python.ipynb)
 
 Alternativ kann auch eine eigene Jupyter-Umgebung mit den in `requirements.txt` hinterlegten Abhängigkeiten genutzt werden. Der grundlegende Aufbau wurde inspieriert durch das scikit-learn Tutorial [Tweedie regression on insurance claims](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
 
@@ -43,7 +44,7 @@ df_freq.set_index("IDpol", inplace=True)
 df_sev = fetch_openml(data_id=41215, as_frame=True, parser="pandas").data
 ```
 
-    /tmp/ipykernel_52314/3148050672.py:2: DeprecationWarning: 
+    /tmp/ipykernel_19031/3148050672.py:2: DeprecationWarning: 
     Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
     (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
     but was not found to be installed on your system.
@@ -1768,6 +1769,8 @@ score_glm_poisson_multiplicative
 
 Alternativ kann man auch ein Poisson GLM trainieren, ohne dass die Koeffizienten in MMT-Faktoren umgewandelt werden müssen. Neben `scikit-learn` gibt es in der Bibliothek `statsmodels` eine eher nach klassischer Statistik orientierte Implementierung. Beide Implementierung bieten uns die Möglichkeit numerische Merkmale und Regularisierung zu verwenden. Wir trainieren das `scikit-learn` Modell mit einer kleinen Regularisierung und das `statsmodel` Modell gänzlich ohne Regularisierung, um es später als Beispiel für die statistische Inferenz in der Modellerklärbarkeit verwenden zu können.
 
+Beachte: Binder stellt nur 2GB Arbeitsspeicher zur Verfügung. Für `scikit-learn` Modelle ist das ausreichend. Für `statsmodels` Modelle kann es zu Problemen kommen. Im Code gibt es die Möglich das `statsmodels` Modell auf 20000 Samples zu limitieren. Hierzu einfach `samples = df_train.index` als Kommentar setzen und  `samples = df_train.sample(int(2E4), random_state=0).index` entkommentieren. Die Ergebnisse für das `statsmodels` Modell werden dadruch deutlich schlechter. Wir benötigen das Modell jedoch später zur Demonstration der Modellerklärbarkeit.
+
 
 ```python
 import statsmodels.api as sm
@@ -1778,11 +1781,15 @@ glm_poisson_freq_sk.fit(
     X_train_glm, df_train["Frequency"], sample_weight=df_train["Exposure"]
 )
 
+# statsmodels is resource hungry and Binder is resource poor
+# samples = df_train.sample(int(2E4), random_state=0).index
+samples = df_train.index
+
 glm_poisson_freq_sm = sm.GLM(
-    df_train["Frequency"],
-    sm.add_constant(X_train_glm),
+    df_train.loc[samples, "Frequency"].values,
+    sm.add_constant(X_train_glm.loc[samples,:]),
     family=sm.families.Poisson(sm.families.links.Log()),
-    var_weights=df_train["Exposure"],
+    var_weights=df_train.loc[samples, "Exposure"],
 ).fit()
 
 scores_glm_poisson_freq_sk = score_estimator(
@@ -1946,7 +1953,7 @@ scores_xgb_poisson_freq = score_estimator(
 scores_xgb_poisson_freq
 ```
 
-    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [21:32:37] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
+    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [16:45:55] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
     Potential solutions:
     - Use a data structure that matches the device ordinal in the booster.
     - Set the device for booster before call to inplace_predict.
@@ -3563,7 +3570,7 @@ Die Gini-Koeffizienten sind deutlich geringer als bei der Schadenhäufigkeit. Da
 
 #### Generalisierte Lineare Modelle
 
-Für die direkte Modellierung der Nettorisikoprämie eignen sich GLMs auf Basis der Tweedie Familie mit einem Exponentialparameter $1<p<2$. Je näher der Parameter bei 1 liegt, desto mehr ähnelt die Verteilung einer Poisson Verteilung. Für Werte nahe der 2, nähert man sich der Gamma Verteilung an.
+Für die direkte Modellierung der Nettorisikoprämie eignen sich GLMs auf Basis der Tweedie Familie mit einem Exponentialparameter $1 \lt p \lt 2$. Je näher der Parameter bei 1 liegt, desto mehr ähnelt die Verteilung einer Poisson Verteilung. Für Werte nahe der 2, nähert man sich der Gamma Verteilung an.
 
 Die Praxis zeigt, dass obwohl es sich bei der Poisson Verteilung um eine diskrete Verteilung handelt, man auch mittels Poisson GLMs gute Ergebnisse für die Nettorisikoprämie erzielen kann. Wir betrachten im Folgenden Poisson und Tweedie GLMs. Auf die Transformation in multiplikative Modelle wird der Übersichtlichkeit halber verzichtet. Diese ist analog den Modellierungen für die Schadenhäufigkeit und -höhe möglich. Für den Exponentialparameter nehmen wir für das Modelltraining den Wert 1.9 an. In einem realen Szenario sollte man hier über die Behandlung als Hyperparameter oder geschäftspolitische Entscheidung nachdenken.
 
@@ -4708,6 +4715,8 @@ Statistische Inferenz ist die Standardmethode in der Risikomodellierung, um die 
 
 Für Modelle, die mittels der `statsmodels` Bibliothek trainiert wurden, können wie einfach die integerierte `summary` Funktion nutzen.
 
+Beachte: Falls beim Modelltraining die Anzahl an Samples reduziert wurde, kann es sein, dass die Statistiken deutlich von denen in der Thesis abweichen.
+
 
 ```python
 summary = glm_poisson_freq_sm.summary()
@@ -4720,7 +4729,7 @@ summary
 <table class="simpletable">
 <caption>Generalized Linear Model Regression Results</caption>
 <tr>
-  <th>Dep. Variable:</th>       <td>Frequency</td>    <th>  No. Observations:  </th>   <td>508509</td>  
+  <th>Dep. Variable:</th>           <td>y</td>        <th>  No. Observations:  </th>   <td>508509</td>  
 </tr>
 <tr>
   <th>Model:</th>                  <td>GLM</td>       <th>  Df Residuals:      </th>   <td>508440</td>  
@@ -4735,10 +4744,10 @@ summary
   <th>Method:</th>                <td>IRLS</td>       <th>  Log-Likelihood:    </th>  <td> -75962.</td> 
 </tr>
 <tr>
-  <th>Date:</th>            <td>Sat, 09 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
+  <th>Date:</th>            <td>Thu, 14 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
 </tr>
 <tr>
-  <th>Time:</th>                <td>21:33:33</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
+  <th>Time:</th>                <td>16:46:43</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
 </tr>
 <tr>
   <th>No. Iterations:</th>          <td>7</td>        <th>  Pseudo R-squ. (CS):</th>   <td>0.01125</td> 
@@ -5023,10 +5032,10 @@ def sklearn_summary(model, X, y, weights=None):
 
     # Calculate the log-likelihood
     if weights is None:
-        weights = np.ones(X.shape[0]) 
-    
+        weights = np.ones(X.shape[0])
+
     y_pred = model.predict(X)
-    log_likelihood = ((y * np.log(y_pred)  - y_pred) * weights).sum()
+    log_likelihood = ((y * np.log(y_pred) - y_pred) * weights).sum()
 
     # Calculate the deviance (-2 log-likelihood)
     deviance = -2 * log_likelihood
@@ -5073,7 +5082,12 @@ def sklearn_summary(model, X, y, weights=None):
     return summary_table
 
 
-summary_table = sklearn_summary(glm_poisson_freq_sk, X_train_glm, df_train["Frequency"], weights=df_train["Exposure"])
+summary_table = sklearn_summary(
+    glm_poisson_freq_sk,
+    X_train_glm,
+    df_train["Frequency"],
+    weights=df_train["Exposure"],
+)
 print(summary_table)
 ```
 
@@ -5081,8 +5095,8 @@ print(summary_table)
      Dep. Variable:        Frequency No. Observations:     508509
              Model: PoissonRegressor     Df Residuals:     508433
             Method:  newton-cholesky         Df Model:         76
-              Date:       03/09/2024   Log-Likelihood:     -68551
-              Time:         21:33:33         Deviance: 1.3710E+05
+              Date:       03/14/2024   Log-Likelihood:     -68551
+              Time:         16:46:43         Deviance: 1.3710E+05
     No. Iterations:                5    Pseudo R-squ.:    0.07672
     -------------------------------------------------------------
 
@@ -5115,7 +5129,62 @@ $$
 
 
 ```python
-def variance_covariance_matrix(X, params, weights=None):
+def whiten(X, weights=None):
+    """
+    Whitener for WLS model, multiplies each column by sqrt(weights).
+
+    Parameters
+    ----------
+    X : array_like
+        Data to be whitened.
+    weights: array-like, default=None
+        Weighted mu.
+    Returns
+    -------
+    array_like
+        The whitened values sqrt(weights)*X.
+    """
+
+    if weights is None:
+        weights = np.ones(X.shape[0])
+
+    X = np.asarray(X)
+    weights = np.asarray(weights)
+    if X.ndim == 1:
+        return X * np.sqrt(weights)
+    elif X.ndim == 2:
+        return np.sqrt(weights)[:, None] * X
+```
+
+
+```python
+def pinv_extended(X, rcond=1e-15):
+    """
+    Return the pinv of an array X as well as the singular values
+    used in computation.
+
+    Code adapted from numpy.
+    """
+    X = np.asarray(X)
+    X = X.conjugate()
+    u, s, vt = np.linalg.svd(X, False)
+    s_orig = np.copy(s)
+    m = u.shape[0]
+    n = vt.shape[1]
+    cutoff = rcond * np.maximum.reduce(s)
+    for i in range(min(n, m)):
+        if s[i] > cutoff:
+            s[i] = 1./s[i]
+        else:
+            s[i] = 0.
+    res = np.dot(np.transpose(vt), np.multiply(s[:, np.newaxis],
+                                               np.transpose(u)))
+    return res, s_orig
+```
+
+
+```python
+def variance_covariance_matrix(X, params, robust=False, weights=None, ridge_alpha=None):
     """Calculate the variance-covariance matrix of a model.
 
     Parameters
@@ -5124,7 +5193,10 @@ def variance_covariance_matrix(X, params, weights=None):
         The input data.
     params : numpy.ndarray
         The parameters of the model.
-
+    weights : numpy.ndarray, default=None
+        The weights of the model.
+    ridge_alpha : float, default=None
+        The regularization strength.
     Returns
     -------
     numpy.ndarray
@@ -5135,8 +5207,18 @@ def variance_covariance_matrix(X, params, weights=None):
 
     y_hat = np.exp(X.dot(params))
     y_hat_weights = y_hat * weights
-    hessian = np.dot(X.T * y_hat_weights, X)
-    return np.linalg.inv(hessian)
+
+    if robust:
+        hessian = -np.dot(X.T * y_hat_weights, X)
+
+        if ridge_alpha is not None:
+            hessian -= ridge_alpha * np.eye(X.shape[1])
+        return np.linalg.inv(-hessian)
+    else:
+        X_w = whiten(X, weights=y_hat_weights)
+        X_pinv, sv = pinv_extended(X_w)
+        return np.dot(X_pinv, X_pinv.T)
+        
 ```
 
 Auf Basis der Varianz-Kovarianz-Matrix lässt sich dann der Standard-Fehler der Koeefizienten $SE(\beta)$ errechnen:
@@ -5206,7 +5288,7 @@ from scipy import stats
 
 def calc_p_value(z_value, df):
     """Calculate the p-value of parameter estimates.
-
+10
     Parameters
     ----------
     z_value : numpy.ndarray
@@ -5258,7 +5340,7 @@ def calc_confidence_intervalls(params, se, df, alpha=0.05):
 
 
 ```python
-def regression_summary(X, params, weights=None, feature_names=None, alpha=0.05):
+def regression_summary(X, params, robust=False, weights=None, feature_names=None, alpha=0.05, ridge_alpha=None):
     """Prints a summary of the regression results.
 
     Parameters
@@ -5267,13 +5349,22 @@ def regression_summary(X, params, weights=None, feature_names=None, alpha=0.05):
         The input data.
     params : numpy.ndarray
         The parameters of the model.
+    weights : numpy.ndarray, default=None
+        The weights of the model.
     feature_names : list
         The names of the features.
     alpha : float
         The significance level.
+    ridge_alpha : float, default=None
+        The regularization strength.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The regression summary.
     """
     df = X.shape[0] - X.shape[1]
-    cov = variance_covariance_matrix(X, params, weights=weights)
+    cov = variance_covariance_matrix(X, params, robust=robust, weights=weights, ridge_alpha=ridge_alpha)
     se = standard_error(cov)
     z = z_value(params, se)
     p = calc_p_value(z, df)
@@ -5286,38 +5377,30 @@ def regression_summary(X, params, weights=None, feature_names=None, alpha=0.05):
 
     return pd.DataFrame(
         {
-            "coef": params,
-            "std err": se,
-            "z": z,
-            "P>|z|": p,
-            f"[{alpha/2}": ci[0],
-            f"{1-alpha/2}]": ci[1],
+            "coef": map("{:.4f}".format, params),
+            "std err": map("{:.3f}".format, se),
+            "z": map("{:.3f}".format, z),
+            "P>|z|": map("{:.3f}".format, p),
+            f"[{alpha/2}": map("{:.3f}".format, ci[0]),
+            f"{1-alpha/2}]": map("{:.3f}".format, ci[1]),
         },
         index=feature_names,
     )
 ```
 
-Leider haben die Tarifmerkmale in unserem Datensatz einige Kolinearitäten, so dass die Hessematrix nicht positiv definit/semidefinit ist. In der Folge erhalten wir für einige Koeffizienten keine sinnvollen Werte für den Standardfehler und alle darauf aufbaueneden Statistiken.
+Wir verifizieren die Funktionen anhand des `statsmodels` Poisson GLMs.
 
 
 ```python
 summary = regression_summary(
-    X=np.append(
-        X_train_glm.values,
-        np.ones(X_train_glm.shape[0]).reshape(-1, 1),
-        axis=1,
-    ),
-    params=np.append(glm_poisson_freq_sk.coef_, glm_poisson_freq_sk.intercept_),
-    weights=df_train["Exposure"].values,
-    feature_names=feature_names_glm + ["Intercept"],
-    alpha=0.05,
+    X=sm.add_constant(X_train_glm.loc[samples,:]),
+    params=glm_poisson_freq_sm.params.values,
+    weights=df_train.loc[samples, "Exposure"],
+    feature_names=glm_poisson_freq_sm.params.index,
 )
+
 summary
 ```
-
-    /tmp/ipykernel_52314/1598025945.py:14: RuntimeWarning: invalid value encountered in sqrt
-      return np.sqrt(np.diagonal(cov))
-
 
 
 
@@ -5336,274 +5419,274 @@ summary
   </thead>
   <tbody>
     <tr>
+      <th>const</th>
+      <td>-1.9992</td>
+      <td>0.018</td>
+      <td>-112.419</td>
+      <td>0.000</td>
+      <td>-2.034</td>
+      <td>-1.964</td>
+    </tr>
+    <tr>
       <th>VehAge_bin_0.0_1.0</th>
-      <td>0.009442</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1887</td>
+      <td>0.032</td>
+      <td>-5.847</td>
+      <td>0.000</td>
+      <td>-0.252</td>
+      <td>-0.125</td>
     </tr>
     <tr>
       <th>VehAge_bin_1.0_2.0</th>
-      <td>0.029882</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1682</td>
+      <td>0.024</td>
+      <td>-7.072</td>
+      <td>0.000</td>
+      <td>-0.215</td>
+      <td>-0.122</td>
     </tr>
     <tr>
       <th>VehAge_bin_2.0_3.0</th>
-      <td>0.106744</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0906</td>
+      <td>0.023</td>
+      <td>-3.876</td>
+      <td>0.000</td>
+      <td>-0.136</td>
+      <td>-0.045</td>
     </tr>
     <tr>
       <th>VehAge_bin_3.0_4.0</th>
-      <td>0.023076</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1759</td>
+      <td>0.025</td>
+      <td>-6.935</td>
+      <td>0.000</td>
+      <td>-0.226</td>
+      <td>-0.126</td>
     </tr>
     <tr>
       <th>VehAge_bin_4.0_6.0</th>
-      <td>0.033388</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1663</td>
+      <td>0.019</td>
+      <td>-8.622</td>
+      <td>0.000</td>
+      <td>-0.204</td>
+      <td>-0.128</td>
     </tr>
     <tr>
       <th>VehAge_bin_6.0_8.0</th>
-      <td>0.113459</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0858</td>
+      <td>0.020</td>
+      <td>-4.370</td>
+      <td>0.000</td>
+      <td>-0.124</td>
+      <td>-0.047</td>
     </tr>
     <tr>
       <th>VehAge_bin_8.0_10.0</th>
-      <td>0.039371</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1608</td>
+      <td>0.021</td>
+      <td>-7.799</td>
+      <td>0.000</td>
+      <td>-0.201</td>
+      <td>-0.120</td>
     </tr>
     <tr>
       <th>VehAge_bin_10.0_12.0</th>
-      <td>-0.011699</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.2125</td>
+      <td>0.021</td>
+      <td>-10.284</td>
+      <td>0.000</td>
+      <td>-0.253</td>
+      <td>-0.172</td>
     </tr>
     <tr>
       <th>VehAge_bin_12.0_15.0</th>
-      <td>-0.067652</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.2693</td>
+      <td>0.020</td>
+      <td>-13.585</td>
+      <td>0.000</td>
+      <td>-0.308</td>
+      <td>-0.230</td>
     </tr>
     <tr>
       <th>VehAge_bin_15.0_100.0</th>
-      <td>-0.276010</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.4811</td>
+      <td>0.023</td>
+      <td>-21.006</td>
+      <td>0.000</td>
+      <td>-0.526</td>
+      <td>-0.436</td>
     </tr>
     <tr>
       <th>DrivAge_bin_18.0_28.0</th>
-      <td>-0.141124</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.3441</td>
+      <td>0.023</td>
+      <td>-15.036</td>
+      <td>0.000</td>
+      <td>-0.389</td>
+      <td>-0.299</td>
     </tr>
     <tr>
       <th>DrivAge_bin_28.0_32.0</th>
-      <td>-0.281297</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.4868</td>
+      <td>0.025</td>
+      <td>-19.636</td>
+      <td>0.000</td>
+      <td>-0.535</td>
+      <td>-0.438</td>
     </tr>
     <tr>
       <th>DrivAge_bin_32.0_36.0</th>
-      <td>-0.183992</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.3870</td>
+      <td>0.023</td>
+      <td>-16.584</td>
+      <td>0.000</td>
+      <td>-0.433</td>
+      <td>-0.341</td>
     </tr>
     <tr>
       <th>DrivAge_bin_36.0_40.0</th>
-      <td>-0.053507</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.2542</td>
+      <td>0.022</td>
+      <td>-11.439</td>
+      <td>0.000</td>
+      <td>-0.298</td>
+      <td>-0.211</td>
     </tr>
     <tr>
       <th>DrivAge_bin_40.0_44.0</th>
-      <td>0.052824</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1459</td>
+      <td>0.022</td>
+      <td>-6.633</td>
+      <td>0.000</td>
+      <td>-0.189</td>
+      <td>-0.103</td>
     </tr>
     <tr>
       <th>DrivAge_bin_44.0_49.0</th>
-      <td>0.190773</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0065</td>
+      <td>0.019</td>
+      <td>-0.337</td>
+      <td>0.736</td>
+      <td>-0.044</td>
+      <td>0.031</td>
     </tr>
     <tr>
       <th>DrivAge_bin_49.0_53.0</th>
-      <td>0.200266</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>0.0034</td>
+      <td>0.021</td>
+      <td>0.165</td>
+      <td>0.869</td>
+      <td>-0.037</td>
+      <td>0.044</td>
     </tr>
     <tr>
       <th>DrivAge_bin_53.0_57.0</th>
-      <td>0.105753</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0918</td>
+      <td>0.023</td>
+      <td>-3.991</td>
+      <td>0.000</td>
+      <td>-0.137</td>
+      <td>-0.047</td>
     </tr>
     <tr>
       <th>DrivAge_bin_57.0_65.0</th>
-      <td>0.039408</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1594</td>
+      <td>0.022</td>
+      <td>-7.314</td>
+      <td>0.000</td>
+      <td>-0.202</td>
+      <td>-0.117</td>
     </tr>
     <tr>
       <th>DrivAge_bin_65.0_100.0</th>
-      <td>0.070895</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1269</td>
+      <td>0.021</td>
+      <td>-6.018</td>
+      <td>0.000</td>
+      <td>-0.168</td>
+      <td>-0.086</td>
     </tr>
     <tr>
       <th>VehBrand_B1</th>
-      <td>0.000730</td>
-      <td>172950.233356</td>
-      <td>4.220094e-09</td>
-      <td>1.000000</td>
-      <td>-338977.034726</td>
-      <td>338977.036186</td>
+      <td>-0.1765</td>
+      <td>0.019</td>
+      <td>-9.414</td>
+      <td>0.000</td>
+      <td>-0.213</td>
+      <td>-0.140</td>
     </tr>
     <tr>
       <th>VehBrand_B10</th>
-      <td>0.012865</td>
-      <td>173075.358857</td>
-      <td>7.433343e-08</td>
-      <td>1.000000</td>
-      <td>-339222.264652</td>
-      <td>339222.290382</td>
+      <td>-0.1691</td>
+      <td>0.041</td>
+      <td>-4.089</td>
+      <td>0.000</td>
+      <td>-0.250</td>
+      <td>-0.088</td>
     </tr>
     <tr>
       <th>VehBrand_B11</th>
-      <td>0.176841</td>
-      <td>173099.926453</td>
-      <td>1.021611e-06</td>
-      <td>0.999999</td>
-      <td>-339270.252393</td>
-      <td>339270.606075</td>
+      <td>0.0034</td>
+      <td>0.044</td>
+      <td>0.076</td>
+      <td>0.939</td>
+      <td>-0.083</td>
+      <td>0.090</td>
     </tr>
     <tr>
       <th>VehBrand_B12</th>
-      <td>-0.267581</td>
-      <td>173204.857835</td>
-      <td>-1.544882e-06</td>
-      <td>0.999999</td>
-      <td>-339476.359034</td>
-      <td>339475.823872</td>
+      <td>-0.4502</td>
+      <td>0.023</td>
+      <td>-19.266</td>
+      <td>0.000</td>
+      <td>-0.496</td>
+      <td>-0.404</td>
     </tr>
     <tr>
       <th>VehBrand_B13</th>
-      <td>0.005887</td>
-      <td>173514.815471</td>
-      <td>3.392584e-08</td>
-      <td>1.000000</td>
-      <td>-340083.592817</td>
-      <td>340083.604590</td>
+      <td>-0.1728</td>
+      <td>0.048</td>
+      <td>-3.612</td>
+      <td>0.000</td>
+      <td>-0.267</td>
+      <td>-0.079</td>
     </tr>
     <tr>
       <th>VehBrand_B14</th>
-      <td>-0.161371</td>
-      <td>173447.965013</td>
-      <td>-9.303731e-07</td>
-      <td>0.999999</td>
-      <td>-339952.735272</td>
-      <td>339952.412529</td>
+      <td>-0.3851</td>
+      <td>0.093</td>
+      <td>-4.124</td>
+      <td>0.000</td>
+      <td>-0.568</td>
+      <td>-0.202</td>
     </tr>
     <tr>
       <th>VehBrand_B2</th>
-      <td>0.005497</td>
-      <td>173338.720485</td>
-      <td>3.171392e-08</td>
-      <td>1.000000</td>
-      <td>-339738.452554</td>
-      <td>339738.463549</td>
+      <td>-0.1716</td>
+      <td>0.019</td>
+      <td>-9.178</td>
+      <td>0.000</td>
+      <td>-0.208</td>
+      <td>-0.135</td>
     </tr>
     <tr>
       <th>VehBrand_B3</th>
-      <td>0.052462</td>
-      <td>173086.526378</td>
-      <td>3.030972e-07</td>
-      <td>1.000000</td>
-      <td>-339244.113046</td>
-      <td>339244.217970</td>
+      <td>-0.1246</td>
+      <td>0.025</td>
+      <td>-4.926</td>
+      <td>0.000</td>
+      <td>-0.174</td>
+      <td>-0.075</td>
     </tr>
     <tr>
       <th>VehBrand_B4</th>
-      <td>0.038347</td>
-      <td>173334.260062</td>
-      <td>2.212310e-07</td>
-      <td>1.000000</td>
-      <td>-339729.677416</td>
-      <td>339729.754110</td>
-    </tr>
-    <tr>
-      <th>VehBrand_B5</th>
-      <td>0.092621</td>
-      <td>172990.462137</td>
-      <td>5.354092e-07</td>
-      <td>1.000000</td>
-      <td>-339055.789986</td>
-      <td>339055.975227</td>
+      <td>-0.1375</td>
+      <td>0.034</td>
+      <td>-4.014</td>
+      <td>0.000</td>
+      <td>-0.205</td>
+      <td>-0.070</td>
     </tr>
     <tr>
       <th>...</th>
@@ -5615,274 +5698,866 @@ summary
       <td>...</td>
     </tr>
     <tr>
+      <th>Region_R11</th>
+      <td>-0.1189</td>
+      <td>0.032</td>
+      <td>-3.747</td>
+      <td>0.000</td>
+      <td>-0.181</td>
+      <td>-0.057</td>
+    </tr>
+    <tr>
       <th>Region_R21</th>
-      <td>0.017442</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0612</td>
+      <td>0.125</td>
+      <td>-0.487</td>
+      <td>0.626</td>
+      <td>-0.307</td>
+      <td>0.185</td>
     </tr>
     <tr>
       <th>Region_R22</th>
-      <td>0.076221</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0041</td>
+      <td>0.065</td>
+      <td>-0.063</td>
+      <td>0.950</td>
+      <td>-0.131</td>
+      <td>0.123</td>
     </tr>
     <tr>
       <th>Region_R23</th>
-      <td>0.011531</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0755</td>
+      <td>0.074</td>
+      <td>-1.021</td>
+      <td>0.307</td>
+      <td>-0.220</td>
+      <td>0.069</td>
     </tr>
     <tr>
       <th>Region_R24</th>
-      <td>-0.042605</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1311</td>
+      <td>0.022</td>
+      <td>-5.936</td>
+      <td>0.000</td>
+      <td>-0.174</td>
+      <td>-0.088</td>
     </tr>
     <tr>
       <th>Region_R25</th>
-      <td>-0.048877</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1418</td>
+      <td>0.055</td>
+      <td>-2.597</td>
+      <td>0.009</td>
+      <td>-0.249</td>
+      <td>-0.035</td>
     </tr>
     <tr>
       <th>Region_R26</th>
-      <td>0.014125</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0731</td>
+      <td>0.061</td>
+      <td>-1.206</td>
+      <td>0.228</td>
+      <td>-0.192</td>
+      <td>0.046</td>
     </tr>
     <tr>
       <th>Region_R31</th>
-      <td>0.021332</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0660</td>
+      <td>0.039</td>
+      <td>-1.684</td>
+      <td>0.092</td>
+      <td>-0.143</td>
+      <td>0.011</td>
     </tr>
     <tr>
       <th>Region_R41</th>
-      <td>-0.140164</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.2391</td>
+      <td>0.054</td>
+      <td>-4.444</td>
+      <td>0.000</td>
+      <td>-0.344</td>
+      <td>-0.134</td>
     </tr>
     <tr>
       <th>Region_R42</th>
-      <td>-0.120217</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.2618</td>
+      <td>0.123</td>
+      <td>-2.121</td>
+      <td>0.034</td>
+      <td>-0.504</td>
+      <td>-0.020</td>
     </tr>
     <tr>
       <th>Region_R43</th>
-      <td>-0.022888</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1310</td>
+      <td>0.178</td>
+      <td>-0.736</td>
+      <td>0.462</td>
+      <td>-0.480</td>
+      <td>0.218</td>
     </tr>
     <tr>
       <th>Region_R52</th>
-      <td>-0.004889</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0936</td>
+      <td>0.032</td>
+      <td>-2.913</td>
+      <td>0.004</td>
+      <td>-0.157</td>
+      <td>-0.031</td>
     </tr>
     <tr>
       <th>Region_R53</th>
-      <td>-0.022718</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1122</td>
+      <td>0.030</td>
+      <td>-3.682</td>
+      <td>0.000</td>
+      <td>-0.172</td>
+      <td>-0.052</td>
     </tr>
     <tr>
       <th>Region_R54</th>
-      <td>0.100048</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>0.0159</td>
+      <td>0.041</td>
+      <td>0.389</td>
+      <td>0.698</td>
+      <td>-0.064</td>
+      <td>0.096</td>
     </tr>
     <tr>
       <th>Region_R72</th>
-      <td>0.025556</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0620</td>
+      <td>0.038</td>
+      <td>-1.640</td>
+      <td>0.101</td>
+      <td>-0.136</td>
+      <td>0.012</td>
     </tr>
     <tr>
       <th>Region_R73</th>
-      <td>-0.218563</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.3275</td>
+      <td>0.059</td>
+      <td>-5.518</td>
+      <td>0.000</td>
+      <td>-0.444</td>
+      <td>-0.211</td>
     </tr>
     <tr>
       <th>Region_R74</th>
-      <td>0.299442</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>0.2669</td>
+      <td>0.080</td>
+      <td>3.341</td>
+      <td>0.001</td>
+      <td>0.110</td>
+      <td>0.423</td>
     </tr>
     <tr>
       <th>Region_R82</th>
-      <td>0.167893</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>0.0805</td>
+      <td>0.024</td>
+      <td>3.385</td>
+      <td>0.001</td>
+      <td>0.034</td>
+      <td>0.127</td>
     </tr>
     <tr>
       <th>Region_R83</th>
-      <td>-0.084361</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1944</td>
+      <td>0.096</td>
+      <td>-2.025</td>
+      <td>0.043</td>
+      <td>-0.383</td>
+      <td>-0.006</td>
     </tr>
     <tr>
       <th>Region_R91</th>
-      <td>-0.064979</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.1560</td>
+      <td>0.039</td>
+      <td>-4.029</td>
+      <td>0.000</td>
+      <td>-0.232</td>
+      <td>-0.080</td>
     </tr>
     <tr>
       <th>Region_R93</th>
-      <td>0.074108</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0143</td>
+      <td>0.026</td>
+      <td>-0.543</td>
+      <td>0.587</td>
+      <td>-0.066</td>
+      <td>0.037</td>
     </tr>
     <tr>
       <th>Region_R94</th>
-      <td>-0.008642</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td>-0.0991</td>
+      <td>0.103</td>
+      <td>-0.958</td>
+      <td>0.338</td>
+      <td>-0.302</td>
+      <td>0.104</td>
     </tr>
     <tr>
       <th>Area_A</th>
-      <td>-0.101173</td>
-      <td>160890.197979</td>
-      <td>-6.288301e-07</td>
-      <td>0.999999</td>
-      <td>-315339.845368</td>
-      <td>315339.643023</td>
+      <td>-0.4524</td>
+      <td>0.057</td>
+      <td>-7.994</td>
+      <td>0.000</td>
+      <td>-0.563</td>
+      <td>-0.341</td>
     </tr>
     <tr>
       <th>Area_B</th>
-      <td>-0.036150</td>
-      <td>160890.197979</td>
-      <td>-2.246859e-07</td>
-      <td>1.000000</td>
-      <td>-315339.780345</td>
-      <td>315339.708046</td>
+      <td>-0.3806</td>
+      <td>0.041</td>
+      <td>-9.329</td>
+      <td>0.000</td>
+      <td>-0.461</td>
+      <td>-0.301</td>
     </tr>
     <tr>
       <th>Area_C</th>
-      <td>-0.033452</td>
-      <td>160890.197979</td>
-      <td>-2.079172e-07</td>
-      <td>1.000000</td>
-      <td>-315339.777647</td>
-      <td>315339.710744</td>
+      <td>-0.3720</td>
+      <td>0.022</td>
+      <td>-17.188</td>
+      <td>0.000</td>
+      <td>-0.414</td>
+      <td>-0.330</td>
     </tr>
     <tr>
       <th>Area_D</th>
-      <td>0.047775</td>
-      <td>160890.197979</td>
-      <td>2.969431e-07</td>
-      <td>1.000000</td>
-      <td>-315339.696420</td>
-      <td>315339.791971</td>
+      <td>-0.2825</td>
+      <td>0.019</td>
+      <td>-14.873</td>
+      <td>0.000</td>
+      <td>-0.320</td>
+      <td>-0.245</td>
     </tr>
     <tr>
       <th>Area_E</th>
-      <td>0.057669</td>
-      <td>160890.197979</td>
-      <td>3.584395e-07</td>
-      <td>1.000000</td>
-      <td>-315339.686526</td>
-      <td>315339.801865</td>
+      <td>-0.2652</td>
+      <td>0.038</td>
+      <td>-7.060</td>
+      <td>0.000</td>
+      <td>-0.339</td>
+      <td>-0.192</td>
     </tr>
     <tr>
       <th>Area_F</th>
-      <td>0.065330</td>
-      <td>160890.197979</td>
-      <td>4.060506e-07</td>
-      <td>1.000000</td>
-      <td>-315339.678866</td>
-      <td>315339.809525</td>
+      <td>-0.2465</td>
+      <td>0.074</td>
+      <td>-3.347</td>
+      <td>0.001</td>
+      <td>-0.391</td>
+      <td>-0.102</td>
     </tr>
     <tr>
       <th>BonusMalus</th>
-      <td>0.027208</td>
-      <td>0.000407</td>
-      <td>6.680051e+01</td>
-      <td>0.000000</td>
-      <td>0.026410</td>
-      <td>0.028007</td>
+      <td>0.0273</td>
+      <td>0.000</td>
+      <td>67.023</td>
+      <td>0.000</td>
+      <td>0.026</td>
+      <td>0.028</td>
     </tr>
     <tr>
       <th>Density_log</th>
-      <td>0.088866</td>
-      <td>0.032103</td>
-      <td>2.768155e+00</td>
-      <td>0.005638</td>
-      <td>0.025945</td>
-      <td>0.151787</td>
+      <td>0.0795</td>
+      <td>0.032</td>
+      <td>2.477</td>
+      <td>0.013</td>
+      <td>0.017</td>
+      <td>0.142</td>
+    </tr>
+  </tbody>
+</table>
+<p>76 rows × 6 columns</p>
+
+
+
+Anwendung am `scikit-learn` Poisson GLM.
+
+Leider haben die Tarifmerkmale in unserem Datensatz einige Kolinearitäten, so dass die Hessematrix nicht positiv definit/semidefinit ist. In der Folge erhalten wir für einige Koeffizienten keine sinnvollen Werte für den Standardfehler und alle darauf aufbaueneden Statistiken.
+
+
+```python
+summary = regression_summary(
+    X=np.append(
+        np.ones(X_train_glm.shape[0]).reshape(-1, 1),
+        X_train_glm.values,
+        axis=1,
+    ),
+    params=np.append(glm_poisson_freq_sk.intercept_, glm_poisson_freq_sk.coef_),
+    weights=df_train["Exposure"].values,
+    feature_names=["const"] + feature_names_glm,
+    alpha=0.05,
+    ridge_alpha=glm_poisson_freq_sk.alpha,
+)
+summary
+```
+
+
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>coef</th>
+      <th>std err</th>
+      <th>z</th>
+      <th>P&gt;|z|</th>
+      <th>[0.025</th>
+      <th>0.975]</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>const</th>
+      <td>-4.1717</td>
+      <td>0.018</td>
+      <td>-234.429</td>
+      <td>0.000</td>
+      <td>-4.207</td>
+      <td>-4.137</td>
     </tr>
     <tr>
-      <th>Intercept</th>
-      <td>-4.171663</td>
-      <td>114603.330695</td>
-      <td>-3.640088e-05</td>
-      <td>0.999971</td>
-      <td>-224623.107056</td>
-      <td>224614.763731</td>
+      <th>VehAge_bin_0.0_1.0</th>
+      <td>0.0094</td>
+      <td>0.032</td>
+      <td>0.293</td>
+      <td>0.770</td>
+      <td>-0.054</td>
+      <td>0.073</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_1.0_2.0</th>
+      <td>0.0299</td>
+      <td>0.024</td>
+      <td>1.256</td>
+      <td>0.209</td>
+      <td>-0.017</td>
+      <td>0.077</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_2.0_3.0</th>
+      <td>0.1067</td>
+      <td>0.023</td>
+      <td>4.562</td>
+      <td>0.000</td>
+      <td>0.061</td>
+      <td>0.153</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_3.0_4.0</th>
+      <td>0.0231</td>
+      <td>0.025</td>
+      <td>0.909</td>
+      <td>0.363</td>
+      <td>-0.027</td>
+      <td>0.073</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_4.0_6.0</th>
+      <td>0.0334</td>
+      <td>0.019</td>
+      <td>1.731</td>
+      <td>0.083</td>
+      <td>-0.004</td>
+      <td>0.071</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_6.0_8.0</th>
+      <td>0.1135</td>
+      <td>0.020</td>
+      <td>5.776</td>
+      <td>0.000</td>
+      <td>0.075</td>
+      <td>0.152</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_8.0_10.0</th>
+      <td>0.0394</td>
+      <td>0.021</td>
+      <td>1.909</td>
+      <td>0.056</td>
+      <td>-0.001</td>
+      <td>0.080</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_10.0_12.0</th>
+      <td>-0.0117</td>
+      <td>0.021</td>
+      <td>-0.566</td>
+      <td>0.571</td>
+      <td>-0.052</td>
+      <td>0.029</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_12.0_15.0</th>
+      <td>-0.0677</td>
+      <td>0.020</td>
+      <td>-3.414</td>
+      <td>0.001</td>
+      <td>-0.106</td>
+      <td>-0.029</td>
+    </tr>
+    <tr>
+      <th>VehAge_bin_15.0_100.0</th>
+      <td>-0.2760</td>
+      <td>0.023</td>
+      <td>-12.070</td>
+      <td>0.000</td>
+      <td>-0.321</td>
+      <td>-0.231</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_18.0_28.0</th>
+      <td>-0.1411</td>
+      <td>0.023</td>
+      <td>-6.168</td>
+      <td>0.000</td>
+      <td>-0.186</td>
+      <td>-0.096</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_28.0_32.0</th>
+      <td>-0.2813</td>
+      <td>0.025</td>
+      <td>-11.369</td>
+      <td>0.000</td>
+      <td>-0.330</td>
+      <td>-0.233</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_32.0_36.0</th>
+      <td>-0.1840</td>
+      <td>0.023</td>
+      <td>-7.895</td>
+      <td>0.000</td>
+      <td>-0.230</td>
+      <td>-0.138</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_36.0_40.0</th>
+      <td>-0.0535</td>
+      <td>0.022</td>
+      <td>-2.409</td>
+      <td>0.016</td>
+      <td>-0.097</td>
+      <td>-0.010</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_40.0_44.0</th>
+      <td>0.0528</td>
+      <td>0.022</td>
+      <td>2.401</td>
+      <td>0.016</td>
+      <td>0.010</td>
+      <td>0.096</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_44.0_49.0</th>
+      <td>0.1908</td>
+      <td>0.019</td>
+      <td>9.878</td>
+      <td>0.000</td>
+      <td>0.153</td>
+      <td>0.229</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_49.0_53.0</th>
+      <td>0.2003</td>
+      <td>0.021</td>
+      <td>9.614</td>
+      <td>0.000</td>
+      <td>0.159</td>
+      <td>0.241</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_53.0_57.0</th>
+      <td>0.1058</td>
+      <td>0.023</td>
+      <td>4.592</td>
+      <td>0.000</td>
+      <td>0.061</td>
+      <td>0.151</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_57.0_65.0</th>
+      <td>0.0394</td>
+      <td>0.022</td>
+      <td>1.808</td>
+      <td>0.071</td>
+      <td>-0.003</td>
+      <td>0.082</td>
+    </tr>
+    <tr>
+      <th>DrivAge_bin_65.0_100.0</th>
+      <td>0.0709</td>
+      <td>0.021</td>
+      <td>3.361</td>
+      <td>0.001</td>
+      <td>0.030</td>
+      <td>0.112</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B1</th>
+      <td>0.0007</td>
+      <td>0.019</td>
+      <td>0.039</td>
+      <td>0.969</td>
+      <td>-0.036</td>
+      <td>0.037</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B10</th>
+      <td>0.0129</td>
+      <td>0.041</td>
+      <td>0.311</td>
+      <td>0.755</td>
+      <td>-0.068</td>
+      <td>0.094</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B11</th>
+      <td>0.1768</td>
+      <td>0.044</td>
+      <td>4.004</td>
+      <td>0.000</td>
+      <td>0.090</td>
+      <td>0.263</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B12</th>
+      <td>-0.2676</td>
+      <td>0.023</td>
+      <td>-11.489</td>
+      <td>0.000</td>
+      <td>-0.313</td>
+      <td>-0.222</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B13</th>
+      <td>0.0059</td>
+      <td>0.048</td>
+      <td>0.123</td>
+      <td>0.902</td>
+      <td>-0.088</td>
+      <td>0.100</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B14</th>
+      <td>-0.1614</td>
+      <td>0.091</td>
+      <td>-1.766</td>
+      <td>0.077</td>
+      <td>-0.341</td>
+      <td>0.018</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B2</th>
+      <td>0.0055</td>
+      <td>0.019</td>
+      <td>0.295</td>
+      <td>0.768</td>
+      <td>-0.031</td>
+      <td>0.042</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B3</th>
+      <td>0.0525</td>
+      <td>0.025</td>
+      <td>2.079</td>
+      <td>0.038</td>
+      <td>0.003</td>
+      <td>0.102</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B4</th>
+      <td>0.0383</td>
+      <td>0.034</td>
+      <td>1.120</td>
+      <td>0.263</td>
+      <td>-0.029</td>
+      <td>0.105</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>Region_R11</th>
+      <td>-0.0288</td>
+      <td>0.032</td>
+      <td>-0.909</td>
+      <td>0.363</td>
+      <td>-0.091</td>
+      <td>0.033</td>
+    </tr>
+    <tr>
+      <th>Region_R21</th>
+      <td>0.0174</td>
+      <td>0.126</td>
+      <td>0.138</td>
+      <td>0.890</td>
+      <td>-0.229</td>
+      <td>0.264</td>
+    </tr>
+    <tr>
+      <th>Region_R22</th>
+      <td>0.0762</td>
+      <td>0.065</td>
+      <td>1.172</td>
+      <td>0.241</td>
+      <td>-0.051</td>
+      <td>0.204</td>
+    </tr>
+    <tr>
+      <th>Region_R23</th>
+      <td>0.0115</td>
+      <td>0.074</td>
+      <td>0.156</td>
+      <td>0.876</td>
+      <td>-0.133</td>
+      <td>0.157</td>
+    </tr>
+    <tr>
+      <th>Region_R24</th>
+      <td>-0.0426</td>
+      <td>0.022</td>
+      <td>-1.934</td>
+      <td>0.053</td>
+      <td>-0.086</td>
+      <td>0.001</td>
+    </tr>
+    <tr>
+      <th>Region_R25</th>
+      <td>-0.0489</td>
+      <td>0.054</td>
+      <td>-0.898</td>
+      <td>0.369</td>
+      <td>-0.156</td>
+      <td>0.058</td>
+    </tr>
+    <tr>
+      <th>Region_R26</th>
+      <td>0.0141</td>
+      <td>0.061</td>
+      <td>0.233</td>
+      <td>0.816</td>
+      <td>-0.105</td>
+      <td>0.133</td>
+    </tr>
+    <tr>
+      <th>Region_R31</th>
+      <td>0.0213</td>
+      <td>0.039</td>
+      <td>0.545</td>
+      <td>0.586</td>
+      <td>-0.055</td>
+      <td>0.098</td>
+    </tr>
+    <tr>
+      <th>Region_R41</th>
+      <td>-0.1402</td>
+      <td>0.054</td>
+      <td>-2.619</td>
+      <td>0.009</td>
+      <td>-0.245</td>
+      <td>-0.035</td>
+    </tr>
+    <tr>
+      <th>Region_R42</th>
+      <td>-0.1202</td>
+      <td>0.120</td>
+      <td>-0.999</td>
+      <td>0.318</td>
+      <td>-0.356</td>
+      <td>0.116</td>
+    </tr>
+    <tr>
+      <th>Region_R43</th>
+      <td>-0.0229</td>
+      <td>0.176</td>
+      <td>-0.130</td>
+      <td>0.897</td>
+      <td>-0.368</td>
+      <td>0.322</td>
+    </tr>
+    <tr>
+      <th>Region_R52</th>
+      <td>-0.0049</td>
+      <td>0.032</td>
+      <td>-0.152</td>
+      <td>0.879</td>
+      <td>-0.068</td>
+      <td>0.058</td>
+    </tr>
+    <tr>
+      <th>Region_R53</th>
+      <td>-0.0227</td>
+      <td>0.030</td>
+      <td>-0.747</td>
+      <td>0.455</td>
+      <td>-0.082</td>
+      <td>0.037</td>
+    </tr>
+    <tr>
+      <th>Region_R54</th>
+      <td>0.1000</td>
+      <td>0.041</td>
+      <td>2.440</td>
+      <td>0.015</td>
+      <td>0.020</td>
+      <td>0.180</td>
+    </tr>
+    <tr>
+      <th>Region_R72</th>
+      <td>0.0256</td>
+      <td>0.038</td>
+      <td>0.676</td>
+      <td>0.499</td>
+      <td>-0.048</td>
+      <td>0.100</td>
+    </tr>
+    <tr>
+      <th>Region_R73</th>
+      <td>-0.2186</td>
+      <td>0.059</td>
+      <td>-3.720</td>
+      <td>0.000</td>
+      <td>-0.334</td>
+      <td>-0.103</td>
+    </tr>
+    <tr>
+      <th>Region_R74</th>
+      <td>0.2994</td>
+      <td>0.082</td>
+      <td>3.652</td>
+      <td>0.000</td>
+      <td>0.139</td>
+      <td>0.460</td>
+    </tr>
+    <tr>
+      <th>Region_R82</th>
+      <td>0.1679</td>
+      <td>0.024</td>
+      <td>7.074</td>
+      <td>0.000</td>
+      <td>0.121</td>
+      <td>0.214</td>
+    </tr>
+    <tr>
+      <th>Region_R83</th>
+      <td>-0.0844</td>
+      <td>0.095</td>
+      <td>-0.888</td>
+      <td>0.374</td>
+      <td>-0.271</td>
+      <td>0.102</td>
+    </tr>
+    <tr>
+      <th>Region_R91</th>
+      <td>-0.0650</td>
+      <td>0.039</td>
+      <td>-1.681</td>
+      <td>0.093</td>
+      <td>-0.141</td>
+      <td>0.011</td>
+    </tr>
+    <tr>
+      <th>Region_R93</th>
+      <td>0.0741</td>
+      <td>0.026</td>
+      <td>2.818</td>
+      <td>0.005</td>
+      <td>0.023</td>
+      <td>0.126</td>
+    </tr>
+    <tr>
+      <th>Region_R94</th>
+      <td>-0.0086</td>
+      <td>0.103</td>
+      <td>-0.084</td>
+      <td>0.933</td>
+      <td>-0.211</td>
+      <td>0.194</td>
+    </tr>
+    <tr>
+      <th>Area_A</th>
+      <td>-0.1012</td>
+      <td>0.057</td>
+      <td>-1.788</td>
+      <td>0.074</td>
+      <td>-0.212</td>
+      <td>0.010</td>
+    </tr>
+    <tr>
+      <th>Area_B</th>
+      <td>-0.0361</td>
+      <td>0.041</td>
+      <td>-0.886</td>
+      <td>0.376</td>
+      <td>-0.116</td>
+      <td>0.044</td>
+    </tr>
+    <tr>
+      <th>Area_C</th>
+      <td>-0.0335</td>
+      <td>0.022</td>
+      <td>-1.546</td>
+      <td>0.122</td>
+      <td>-0.076</td>
+      <td>0.009</td>
+    </tr>
+    <tr>
+      <th>Area_D</th>
+      <td>0.0478</td>
+      <td>0.019</td>
+      <td>2.514</td>
+      <td>0.012</td>
+      <td>0.011</td>
+      <td>0.085</td>
+    </tr>
+    <tr>
+      <th>Area_E</th>
+      <td>0.0577</td>
+      <td>0.038</td>
+      <td>1.535</td>
+      <td>0.125</td>
+      <td>-0.016</td>
+      <td>0.131</td>
+    </tr>
+    <tr>
+      <th>Area_F</th>
+      <td>0.0653</td>
+      <td>0.074</td>
+      <td>0.887</td>
+      <td>0.375</td>
+      <td>-0.079</td>
+      <td>0.210</td>
+    </tr>
+    <tr>
+      <th>BonusMalus</th>
+      <td>0.0272</td>
+      <td>0.000</td>
+      <td>66.801</td>
+      <td>0.000</td>
+      <td>0.026</td>
+      <td>0.028</td>
+    </tr>
+    <tr>
+      <th>Density_log</th>
+      <td>0.0889</td>
+      <td>0.032</td>
+      <td>2.768</td>
+      <td>0.006</td>
+      <td>0.026</td>
+      <td>0.152</td>
     </tr>
   </tbody>
 </table>
@@ -5967,7 +6642,7 @@ plt.show()
 
 
     
-![png](README_files/README_176_0.png)
+![png](README_files/README_181_0.png)
     
 
 
@@ -5996,7 +6671,7 @@ plt.show()
 
 
     
-![png](README_files/README_178_0.png)
+![png](README_files/README_183_0.png)
     
 
 
@@ -6082,7 +6757,7 @@ plt.show()
 
 
     
-![png](README_files/README_184_0.png)
+![png](README_files/README_189_0.png)
     
 
 
@@ -6109,7 +6784,7 @@ plt.show()
 
 
     
-![png](README_files/README_185_0.png)
+![png](README_files/README_190_0.png)
     
 
 
@@ -6138,7 +6813,7 @@ plt.show()
 
 
     
-![png](README_files/README_187_0.png)
+![png](README_files/README_192_0.png)
     
 
 
@@ -6164,7 +6839,7 @@ plt.show()
 
 
     
-![png](README_files/README_188_0.png)
+![png](README_files/README_193_0.png)
     
 
 
@@ -6187,7 +6862,7 @@ glm_tweedie_pure_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:38, 20.76it/s]                         
+    PermutationExplainer explainer: 1001it [00:40, 19.86it/s]                          
 
 
 
@@ -6239,7 +6914,7 @@ plt.show()
 
 
     
-![png](README_files/README_194_0.png)
+![png](README_files/README_199_0.png)
     
 
 
@@ -6265,7 +6940,7 @@ plt.show()
 
 
     
-![png](README_files/README_195_0.png)
+![png](README_files/README_200_0.png)
     
 
 
@@ -6306,7 +6981,7 @@ glm_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:35, 20.46it/s]                         
+    PermutationExplainer explainer: 1001it [00:37, 19.98it/s]                         
 
 
 
@@ -6334,9 +7009,6 @@ glm_poisson_freq_exp_mod = shap.Explanation(
 )
 ```
 
-    ERROR! Session/line number was not unique in database. History logging moved to new session 6
-
-
 
 ```python
 shap.summary_plot(glm_poisson_freq_exp_mod, plot_type="bar")
@@ -6344,7 +7016,7 @@ shap.summary_plot(glm_poisson_freq_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_202_0.png)
+![png](README_files/README_207_0.png)
     
 
 
@@ -6355,7 +7027,7 @@ shap.waterfall_plot(glm_poisson_freq_exp_mod[0])
 
 
     
-![png](README_files/README_203_0.png)
+![png](README_files/README_208_0.png)
     
 
 
@@ -6378,7 +7050,7 @@ glm_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:35, 20.22it/s]                         
+    PermutationExplainer explainer: 1001it [00:38, 18.99it/s]                         
 
 
 
@@ -6413,7 +7085,7 @@ shap.summary_plot(glm_gamma_sev_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_208_0.png)
+![png](README_files/README_213_0.png)
     
 
 
@@ -6424,7 +7096,7 @@ shap.waterfall_plot(glm_gamma_sev_exp_mod[0])
 
 
     
-![png](README_files/README_209_0.png)
+![png](README_files/README_214_0.png)
     
 
 
@@ -6462,7 +7134,7 @@ shap.waterfall_plot(final_shap_explanation[0])
 
 
     
-![png](README_files/README_213_0.png)
+![png](README_files/README_218_0.png)
     
 
 
@@ -6504,7 +7176,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    [21:35:29] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
+    [18:36:37] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
 
 
 
@@ -6514,7 +7186,7 @@ shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar")
 
 
     
-![png](README_files/README_218_0.png)
+![png](README_files/README_223_0.png)
     
 
 
@@ -6525,7 +7197,7 @@ shap.waterfall_plot(xgb_poisson_freq_exp[0])
 
 
     
-![png](README_files/README_219_0.png)
+![png](README_files/README_224_0.png)
     
 
 
@@ -6548,7 +7220,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:59, 14.22it/s]                          
+    ExactExplainer explainer: 1001it [01:02, 13.74it/s]                         
 
 
 
@@ -6570,7 +7242,7 @@ plt.show()
 
 
     
-![png](README_files/README_222_0.png)
+![png](README_files/README_227_0.png)
     
 
 
@@ -6593,7 +7265,7 @@ plt.show()
 
 
     
-![png](README_files/README_223_0.png)
+![png](README_files/README_228_0.png)
     
 
 
@@ -6614,7 +7286,7 @@ xgb_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:14, 22.60it/s]                         
+    ExactExplainer explainer: 1001it [00:16, 26.96it/s]                         
 
 
 
@@ -6636,7 +7308,7 @@ plt.show()
 
 
     
-![png](README_files/README_226_0.png)
+![png](README_files/README_231_0.png)
     
 
 
@@ -6659,7 +7331,7 @@ plt.show()
 
 
     
-![png](README_files/README_227_0.png)
+![png](README_files/README_232_0.png)
     
 
 
@@ -6705,7 +7377,7 @@ plt.show()
 
 
     
-![png](README_files/README_231_0.png)
+![png](README_files/README_236_0.png)
     
 
 
@@ -6728,7 +7400,7 @@ plt.show()
 
 
     
-![png](README_files/README_232_0.png)
+![png](README_files/README_237_0.png)
     
 
 
@@ -6775,7 +7447,7 @@ PartialDependenceDisplay.from_estimator(
 
 
     
-![png](README_files/README_236_0.png)
+![png](README_files/README_241_0.png)
     
 
 
@@ -6885,7 +7557,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_240_0.png)
+![png](README_files/README_245_0.png)
     
 
 
@@ -7003,7 +7675,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_243_0.png)
+![png](README_files/README_248_0.png)
     
 
 
@@ -7077,7 +7749,7 @@ _plot_bin_partial_dependence(
 
 
     
-![png](README_files/README_245_0.png)
+![png](README_files/README_250_0.png)
     
 
 
@@ -7190,7 +7862,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_249_0.png)
+![png](README_files/README_254_0.png)
     
 
 
@@ -7233,7 +7905,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_252_0.png)
+![png](README_files/README_257_0.png)
     
 
 
@@ -7413,7 +8085,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_261_0.png)
+![png](README_files/README_266_0.png)
     
 
 
@@ -7583,7 +8255,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_269_0.png)
+![png](README_files/README_274_0.png)
     
 
 
@@ -7680,7 +8352,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_273_0.png)
+![png](README_files/README_278_0.png)
     
 
 
