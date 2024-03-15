@@ -1,6 +1,6 @@
 # Risikomodellierung in der Schadenversicherung mit Python
 
-Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung in der Schadenverischerung mit Python". Am einfachsten kann das Notebook interaktiv über Binder ausgeführt werden. Dazu einfach auf den folgenden Button klicken:
+Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung in der Schadenverischerung mit Python". Das Notebook kann mittels Binder interaktiv ausgeführt werden oder pre-rendered im Viewer angesehen werden:
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Diadochokinetic/fremtpl/HEAD?labpath=Risikomodellierung+in+der+Schadenversicherung+mit+Python.ipynb)
 [![NBViewer](https://raw.githubusercontent.com/jupyter/design/e088387232fb13da8fb9ab4ce017e5dd23a114a0/logos/Badges/nbviewer_badge.svg)](https://nbviewer.org/github/Diadochokinetic/fremtpl/blob/main/Risikomodellierung%20in%20der%20Schadenversicherung%20mit%20Python.ipynb)
@@ -35,6 +35,9 @@ html_formatter.for_type(
     ),
 )
 
+# Show 200 rows of a DataFrame
+pd.set_option('display.max_rows', 200)
+
 # freMTPL2freq dataset from https://www.openml.org/d/41214
 df_freq = fetch_openml(data_id=41214, as_frame=True, parser="pandas").data
 df_freq["IDpol"] = df_freq["IDpol"].astype(int)
@@ -43,16 +46,6 @@ df_freq.set_index("IDpol", inplace=True)
 # freMTPL2sev dataset from https://www.openml.org/d/41215
 df_sev = fetch_openml(data_id=41215, as_frame=True, parser="pandas").data
 ```
-
-    /tmp/ipykernel_19031/3148050672.py:2: DeprecationWarning: 
-    Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
-    (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
-    but was not found to be installed on your system.
-    If this would cause problems for you,
-    please provide us feedback at https://github.com/pandas-dev/pandas/issues/54466
-            
-      import pandas as pd
-
 
 ### Datenaufbereitung
 
@@ -1787,7 +1780,7 @@ samples = df_train.index
 
 glm_poisson_freq_sm = sm.GLM(
     df_train.loc[samples, "Frequency"].values,
-    sm.add_constant(X_train_glm.loc[samples,:]),
+    sm.add_constant(X_train_glm.loc[samples, :]),
     family=sm.families.Poisson(sm.families.links.Log()),
     var_weights=df_train.loc[samples, "Exposure"],
 ).fit()
@@ -1952,16 +1945,6 @@ scores_xgb_poisson_freq = score_estimator(
 
 scores_xgb_poisson_freq
 ```
-
-    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [16:45:55] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
-    Potential solutions:
-    - Use a data structure that matches the device ordinal in the booster.
-    - Set the device for booster before call to inplace_predict.
-    
-    This warning will only be shown once.
-    
-      warnings.warn(smsg, UserWarning)
-
 
 
 
@@ -4744,10 +4727,10 @@ summary
   <th>Method:</th>                <td>IRLS</td>       <th>  Log-Likelihood:    </th>  <td> -75962.</td> 
 </tr>
 <tr>
-  <th>Date:</th>            <td>Thu, 14 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
+  <th>Date:</th>            <td>Fri, 15 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
 </tr>
 <tr>
-  <th>Time:</th>                <td>16:46:43</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
+  <th>Time:</th>                <td>09:35:52</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
 </tr>
 <tr>
   <th>No. Iterations:</th>          <td>7</td>        <th>  Pseudo R-squ. (CS):</th>   <td>0.01125</td> 
@@ -5004,7 +4987,7 @@ summary
 # summary_df.columns = ["feature"] + list(summary_df.iloc[0])[1:]
 # summary_df = summary_df.drop(0)
 # summary_df.set_index("feature", drop=True, inplace=True)
-# summary_df[summary_df.index.isin(["const", "BonusMalus", "Density_log"])].to_latex(
+# summary_df[summary_df.index.isin(["const", "BonusMalus", "Density_log", "Area_A", "Area_B"])].to_latex(
 #     buf="/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_coef.tex",
 #     multicolumn_format="c",
 #     na_rep="",
@@ -5095,8 +5078,8 @@ print(summary_table)
      Dep. Variable:        Frequency No. Observations:     508509
              Model: PoissonRegressor     Df Residuals:     508433
             Method:  newton-cholesky         Df Model:         76
-              Date:       03/14/2024   Log-Likelihood:     -68551
-              Time:         16:46:43         Deviance: 1.3710E+05
+              Date:       03/15/2024   Log-Likelihood:     -68551
+              Time:         09:35:52         Deviance: 1.3710E+05
     No. Iterations:                5    Pseudo R-squ.:    0.07672
     -------------------------------------------------------------
 
@@ -5118,7 +5101,7 @@ Mit der Anzahl an Observationen $n$, $y_i$ der $i$-ten Ausprägung der Zielvaria
 Die Hesse Matrix der log-likelihood Funktion:
 
 $$
-H(\beta) = \sum_{i=1}^n -exp(\beta^T x_i) \cdot x_i x_i^T
+H(\beta) = - X^T \hat{Y} X
 $$
 
 Daraus ergibt sich Varianz-Kovarianz-Matrix:
@@ -5127,65 +5110,12 @@ $$
 V(\beta) = (-H)^{-1}
 $$
 
-
-```python
-def whiten(X, weights=None):
-    """
-    Whitener for WLS model, multiplies each column by sqrt(weights).
-
-    Parameters
-    ----------
-    X : array_like
-        Data to be whitened.
-    weights: array-like, default=None
-        Weighted mu.
-    Returns
-    -------
-    array_like
-        The whitened values sqrt(weights)*X.
-    """
-
-    if weights is None:
-        weights = np.ones(X.shape[0])
-
-    X = np.asarray(X)
-    weights = np.asarray(weights)
-    if X.ndim == 1:
-        return X * np.sqrt(weights)
-    elif X.ndim == 2:
-        return np.sqrt(weights)[:, None] * X
-```
+Diese theoretische Vorgehensweise erfordert im Folgenden, dass die Varianz-Kovarianz-Matrix positiv definit ist. Bei starken Kolineratitäten der Merkmale, kann dies nicht erfüllt sein. So auch in unserem Beispieldatensatz. Daher betrachten wir zusätzlich einen Ansatz auf Basis der Penrose-Moore Pseudoinversen. 
 
 
 ```python
-def pinv_extended(X, rcond=1e-15):
-    """
-    Return the pinv of an array X as well as the singular values
-    used in computation.
-
-    Code adapted from numpy.
-    """
-    X = np.asarray(X)
-    X = X.conjugate()
-    u, s, vt = np.linalg.svd(X, False)
-    s_orig = np.copy(s)
-    m = u.shape[0]
-    n = vt.shape[1]
-    cutoff = rcond * np.maximum.reduce(s)
-    for i in range(min(n, m)):
-        if s[i] > cutoff:
-            s[i] = 1./s[i]
-        else:
-            s[i] = 0.
-    res = np.dot(np.transpose(vt), np.multiply(s[:, np.newaxis],
-                                               np.transpose(u)))
-    return res, s_orig
-```
-
-
-```python
-def variance_covariance_matrix(X, params, robust=False, weights=None, ridge_alpha=None):
-    """Calculate the variance-covariance matrix of a model.
+def variance_covariance_matrix(X, params, robust=False, weights=None):
+    """Calculate the variance-covariance matrix of a Poisson model.
 
     Parameters
     ----------
@@ -5193,10 +5123,10 @@ def variance_covariance_matrix(X, params, robust=False, weights=None, ridge_alph
         The input data.
     params : numpy.ndarray
         The parameters of the model.
+    robust : bool, default=False
+        If True, we expect the inverse of the negative Hessian to be positive definite.
     weights : numpy.ndarray, default=None
         The weights of the model.
-    ridge_alpha : float, default=None
-        The regularization strength.
     Returns
     -------
     numpy.ndarray
@@ -5208,17 +5138,12 @@ def variance_covariance_matrix(X, params, robust=False, weights=None, ridge_alph
     y_hat = np.exp(X.dot(params))
     y_hat_weights = y_hat * weights
 
-    if robust:
-        hessian = -np.dot(X.T * y_hat_weights, X)
+    hessian = -np.dot(X.T * y_hat_weights, X)
 
-        if ridge_alpha is not None:
-            hessian -= ridge_alpha * np.eye(X.shape[1])
+    if robust:
         return np.linalg.inv(-hessian)
     else:
-        X_w = whiten(X, weights=y_hat_weights)
-        X_pinv, sv = pinv_extended(X_w)
-        return np.dot(X_pinv, X_pinv.T)
-        
+        return np.linalg.pinv(-hessian)
 ```
 
 Auf Basis der Varianz-Kovarianz-Matrix lässt sich dann der Standard-Fehler der Koeefizienten $SE(\beta)$ errechnen:
@@ -5288,18 +5213,18 @@ from scipy import stats
 
 def calc_p_value(z_value, df):
     """Calculate the p-value of parameter estimates.
-10
-    Parameters
-    ----------
-    z_value : numpy.ndarray
-        The z-value of the parameter estimates.
-    df : int
-        The degrees of freedom.
+    10
+        Parameters
+        ----------
+        z_value : numpy.ndarray
+            The z-value of the parameter estimates.
+        df : int
+            The degrees of freedom.
 
-    Returns
-    -------
-    numpy.ndarray
-        The p-value.
+        Returns
+        -------
+        numpy.ndarray
+            The p-value.
     """
     return (1 - stats.t.cdf(np.abs(z_value), df)) * 2
 ```
@@ -5340,7 +5265,14 @@ def calc_confidence_intervalls(params, se, df, alpha=0.05):
 
 
 ```python
-def regression_summary(X, params, robust=False, weights=None, feature_names=None, alpha=0.05, ridge_alpha=None):
+def regression_summary(
+    X,
+    params,
+    robust=False,
+    weights=None,
+    feature_names=None,
+    alpha=0.05,
+):
     """Prints a summary of the regression results.
 
     Parameters
@@ -5355,8 +5287,6 @@ def regression_summary(X, params, robust=False, weights=None, feature_names=None
         The names of the features.
     alpha : float
         The significance level.
-    ridge_alpha : float, default=None
-        The regularization strength.
 
     Returns
     -------
@@ -5364,7 +5294,9 @@ def regression_summary(X, params, robust=False, weights=None, feature_names=None
         The regression summary.
     """
     df = X.shape[0] - X.shape[1]
-    cov = variance_covariance_matrix(X, params, robust=robust, weights=weights, ridge_alpha=ridge_alpha)
+    cov = variance_covariance_matrix(
+        X, params, robust=robust, weights=weights
+    )
     se = standard_error(cov)
     z = z_value(params, se)
     p = calc_p_value(z, df)
@@ -5393,7 +5325,7 @@ Wir verifizieren die Funktionen anhand des `statsmodels` Poisson GLMs.
 
 ```python
 summary = regression_summary(
-    X=sm.add_constant(X_train_glm.loc[samples,:]),
+    X=sm.add_constant(X_train_glm.loc[samples, :]),
     params=glm_poisson_freq_sm.params.values,
     weights=df_train.loc[samples, "Exposure"],
     feature_names=glm_poisson_freq_sm.params.index,
@@ -5689,13 +5621,148 @@ summary
       <td>-0.070</td>
     </tr>
     <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
+      <th>VehBrand_B5</th>
+      <td>-0.0827</td>
+      <td>0.029</td>
+      <td>-2.835</td>
+      <td>0.005</td>
+      <td>-0.140</td>
+      <td>-0.026</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B6</th>
+      <td>-0.1326</td>
+      <td>0.032</td>
+      <td>-4.079</td>
+      <td>0.000</td>
+      <td>-0.196</td>
+      <td>-0.069</td>
+    </tr>
+    <tr>
+      <th>VehPower_4</th>
+      <td>-0.3616</td>
+      <td>0.025</td>
+      <td>-14.292</td>
+      <td>0.000</td>
+      <td>-0.411</td>
+      <td>-0.312</td>
+    </tr>
+    <tr>
+      <th>VehPower_5</th>
+      <td>-0.3006</td>
+      <td>0.024</td>
+      <td>-12.417</td>
+      <td>0.000</td>
+      <td>-0.348</td>
+      <td>-0.253</td>
+    </tr>
+    <tr>
+      <th>VehPower_6</th>
+      <td>-0.2577</td>
+      <td>0.024</td>
+      <td>-10.927</td>
+      <td>0.000</td>
+      <td>-0.304</td>
+      <td>-0.211</td>
+    </tr>
+    <tr>
+      <th>VehPower_7</th>
+      <td>-0.2834</td>
+      <td>0.023</td>
+      <td>-12.353</td>
+      <td>0.000</td>
+      <td>-0.328</td>
+      <td>-0.238</td>
+    </tr>
+    <tr>
+      <th>VehPower_8</th>
+      <td>-0.2427</td>
+      <td>0.032</td>
+      <td>-7.634</td>
+      <td>0.000</td>
+      <td>-0.305</td>
+      <td>-0.180</td>
+    </tr>
+    <tr>
+      <th>VehPower_9</th>
+      <td>-0.1380</td>
+      <td>0.035</td>
+      <td>-3.918</td>
+      <td>0.000</td>
+      <td>-0.207</td>
+      <td>-0.069</td>
+    </tr>
+    <tr>
+      <th>VehPower_10</th>
+      <td>-0.1246</td>
+      <td>0.035</td>
+      <td>-3.539</td>
+      <td>0.000</td>
+      <td>-0.194</td>
+      <td>-0.056</td>
+    </tr>
+    <tr>
+      <th>VehPower_11</th>
+      <td>-0.0279</td>
+      <td>0.043</td>
+      <td>-0.645</td>
+      <td>0.519</td>
+      <td>-0.113</td>
+      <td>0.057</td>
+    </tr>
+    <tr>
+      <th>VehPower_12</th>
+      <td>-0.0784</td>
+      <td>0.064</td>
+      <td>-1.232</td>
+      <td>0.218</td>
+      <td>-0.203</td>
+      <td>0.046</td>
+    </tr>
+    <tr>
+      <th>VehPower_13</th>
+      <td>-0.0411</td>
+      <td>0.090</td>
+      <td>-0.455</td>
+      <td>0.649</td>
+      <td>-0.218</td>
+      <td>0.136</td>
+    </tr>
+    <tr>
+      <th>VehPower_14</th>
+      <td>-0.0513</td>
+      <td>0.106</td>
+      <td>-0.485</td>
+      <td>0.627</td>
+      <td>-0.258</td>
+      <td>0.156</td>
+    </tr>
+    <tr>
+      <th>VehPower_15</th>
+      <td>-0.0919</td>
+      <td>0.108</td>
+      <td>-0.849</td>
+      <td>0.396</td>
+      <td>-0.304</td>
+      <td>0.120</td>
+    </tr>
+    <tr>
+      <th>VehGas_Diesel</th>
+      <td>-0.9240</td>
+      <td>0.012</td>
+      <td>-77.335</td>
+      <td>0.000</td>
+      <td>-0.947</td>
+      <td>-0.901</td>
+    </tr>
+    <tr>
+      <th>VehGas_Regular</th>
+      <td>-1.0752</td>
+      <td>0.012</td>
+      <td>-91.981</td>
+      <td>0.000</td>
+      <td>-1.098</td>
+      <td>-1.052</td>
     </tr>
     <tr>
       <th>Region_R11</th>
@@ -5973,9 +6040,7 @@ summary
 
 
 
-Anwendung am `scikit-learn` Poisson GLM.
-
-Leider haben die Tarifmerkmale in unserem Datensatz einige Kolinearitäten, so dass die Hessematrix nicht positiv definit/semidefinit ist. In der Folge erhalten wir für einige Koeffizienten keine sinnvollen Werte für den Standardfehler und alle darauf aufbaueneden Statistiken.
+Da wir für das `statsmodels` Modell die gleichen Statistiken für die Koeffizienten erhalten können wir unsere manuelle Implementierung nun für das `scikit-learn` Poisson GLM verwenden.
 
 
 ```python
@@ -5989,7 +6054,6 @@ summary = regression_summary(
     weights=df_train["Exposure"].values,
     feature_names=["const"] + feature_names_glm,
     alpha=0.05,
-    ridge_alpha=glm_poisson_freq_sk.alpha,
 )
 summary
 ```
@@ -6281,13 +6345,148 @@ summary
       <td>0.105</td>
     </tr>
     <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
+      <th>VehBrand_B5</th>
+      <td>0.0926</td>
+      <td>0.029</td>
+      <td>3.180</td>
+      <td>0.001</td>
+      <td>0.036</td>
+      <td>0.150</td>
+    </tr>
+    <tr>
+      <th>VehBrand_B6</th>
+      <td>0.0437</td>
+      <td>0.032</td>
+      <td>1.346</td>
+      <td>0.178</td>
+      <td>-0.020</td>
+      <td>0.107</td>
+    </tr>
+    <tr>
+      <th>VehPower_4</th>
+      <td>-0.1853</td>
+      <td>0.025</td>
+      <td>-7.290</td>
+      <td>0.000</td>
+      <td>-0.235</td>
+      <td>-0.135</td>
+    </tr>
+    <tr>
+      <th>VehPower_5</th>
+      <td>-0.1239</td>
+      <td>0.024</td>
+      <td>-5.089</td>
+      <td>0.000</td>
+      <td>-0.172</td>
+      <td>-0.076</td>
+    </tr>
+    <tr>
+      <th>VehPower_6</th>
+      <td>-0.0815</td>
+      <td>0.024</td>
+      <td>-3.438</td>
+      <td>0.001</td>
+      <td>-0.128</td>
+      <td>-0.035</td>
+    </tr>
+    <tr>
+      <th>VehPower_7</th>
+      <td>-0.1071</td>
+      <td>0.023</td>
+      <td>-4.642</td>
+      <td>0.000</td>
+      <td>-0.152</td>
+      <td>-0.062</td>
+    </tr>
+    <tr>
+      <th>VehPower_8</th>
+      <td>-0.0668</td>
+      <td>0.032</td>
+      <td>-2.095</td>
+      <td>0.036</td>
+      <td>-0.129</td>
+      <td>-0.004</td>
+    </tr>
+    <tr>
+      <th>VehPower_9</th>
+      <td>0.0348</td>
+      <td>0.035</td>
+      <td>0.985</td>
+      <td>0.325</td>
+      <td>-0.034</td>
+      <td>0.104</td>
+    </tr>
+    <tr>
+      <th>VehPower_10</th>
+      <td>0.0482</td>
+      <td>0.035</td>
+      <td>1.363</td>
+      <td>0.173</td>
+      <td>-0.021</td>
+      <td>0.117</td>
+    </tr>
+    <tr>
+      <th>VehPower_11</th>
+      <td>0.1393</td>
+      <td>0.044</td>
+      <td>3.201</td>
+      <td>0.001</td>
+      <td>0.054</td>
+      <td>0.225</td>
+    </tr>
+    <tr>
+      <th>VehPower_12</th>
+      <td>0.0854</td>
+      <td>0.064</td>
+      <td>1.335</td>
+      <td>0.182</td>
+      <td>-0.040</td>
+      <td>0.211</td>
+    </tr>
+    <tr>
+      <th>VehPower_13</th>
+      <td>0.1080</td>
+      <td>0.092</td>
+      <td>1.179</td>
+      <td>0.238</td>
+      <td>-0.072</td>
+      <td>0.288</td>
+    </tr>
+    <tr>
+      <th>VehPower_14</th>
+      <td>0.0898</td>
+      <td>0.107</td>
+      <td>0.837</td>
+      <td>0.402</td>
+      <td>-0.120</td>
+      <td>0.300</td>
+    </tr>
+    <tr>
+      <th>VehPower_15</th>
+      <td>0.0591</td>
+      <td>0.109</td>
+      <td>0.540</td>
+      <td>0.589</td>
+      <td>-0.155</td>
+      <td>0.274</td>
+    </tr>
+    <tr>
+      <th>VehGas_Diesel</th>
+      <td>0.0754</td>
+      <td>0.012</td>
+      <td>6.310</td>
+      <td>0.000</td>
+      <td>0.052</td>
+      <td>0.099</td>
+    </tr>
+    <tr>
+      <th>VehGas_Regular</th>
+      <td>-0.0754</td>
+      <td>0.012</td>
+      <td>-6.449</td>
+      <td>0.000</td>
+      <td>-0.098</td>
+      <td>-0.052</td>
     </tr>
     <tr>
       <th>Region_R11</th>
@@ -6567,16 +6766,8 @@ summary
 
 
 ```python
-# summary[summary.index.isin(["Intercept", "BonusMalus", "Density_log", "VehGas_Regular", "VehGas_Diesel"])].to_latex(
+# summary[summary.index.isin(["const", "BonusMalus", "Density_log", "Area_A", "Area_B"])].to_latex(
 #     buf="/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_coef_sk.tex",
-#     formatters=[
-#         "{:.4f}".format,
-#         "{:.3f}".format,
-#         "{:.3f}".format,
-#         "{:.3f}".format,
-#         "{:.3f}".format,
-#         "{:.3f}".format,
-#     ],
 #     multicolumn_format="c",
 #     na_rep="",
 #     escape=True
@@ -6642,7 +6833,7 @@ plt.show()
 
 
     
-![png](README_files/README_181_0.png)
+![png](README_files/README_178_0.png)
     
 
 
@@ -6671,7 +6862,7 @@ plt.show()
 
 
     
-![png](README_files/README_183_0.png)
+![png](README_files/README_180_0.png)
     
 
 
@@ -6757,7 +6948,7 @@ plt.show()
 
 
     
-![png](README_files/README_189_0.png)
+![png](README_files/README_186_0.png)
     
 
 
@@ -6784,7 +6975,7 @@ plt.show()
 
 
     
-![png](README_files/README_190_0.png)
+![png](README_files/README_187_0.png)
     
 
 
@@ -6813,7 +7004,7 @@ plt.show()
 
 
     
-![png](README_files/README_192_0.png)
+![png](README_files/README_189_0.png)
     
 
 
@@ -6839,7 +7030,7 @@ plt.show()
 
 
     
-![png](README_files/README_193_0.png)
+![png](README_files/README_190_0.png)
     
 
 
@@ -6862,7 +7053,7 @@ glm_tweedie_pure_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:40, 19.86it/s]                          
+    PermutationExplainer explainer: 1001it [00:34, 20.51it/s]                                                               
 
 
 
@@ -6914,7 +7105,7 @@ plt.show()
 
 
     
-![png](README_files/README_199_0.png)
+![png](README_files/README_196_0.png)
     
 
 
@@ -6940,7 +7131,7 @@ plt.show()
 
 
     
-![png](README_files/README_200_0.png)
+![png](README_files/README_197_0.png)
     
 
 
@@ -6981,7 +7172,7 @@ glm_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:37, 19.98it/s]                         
+    PermutationExplainer explainer: 1001it [00:36, 19.11it/s]                                                               
 
 
 
@@ -7016,7 +7207,7 @@ shap.summary_plot(glm_poisson_freq_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_207_0.png)
+![png](README_files/README_204_0.png)
     
 
 
@@ -7027,7 +7218,7 @@ shap.waterfall_plot(glm_poisson_freq_exp_mod[0])
 
 
     
-![png](README_files/README_208_0.png)
+![png](README_files/README_205_0.png)
     
 
 
@@ -7050,7 +7241,7 @@ glm_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:38, 18.99it/s]                         
+    PermutationExplainer explainer: 1001it [00:36, 19.40it/s]                                                               
 
 
 
@@ -7085,7 +7276,7 @@ shap.summary_plot(glm_gamma_sev_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_213_0.png)
+![png](README_files/README_210_0.png)
     
 
 
@@ -7096,7 +7287,7 @@ shap.waterfall_plot(glm_gamma_sev_exp_mod[0])
 
 
     
-![png](README_files/README_214_0.png)
+![png](README_files/README_211_0.png)
     
 
 
@@ -7134,7 +7325,7 @@ shap.waterfall_plot(final_shap_explanation[0])
 
 
     
-![png](README_files/README_218_0.png)
+![png](README_files/README_215_0.png)
     
 
 
@@ -7176,7 +7367,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    [18:36:37] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
+    [09:37:46] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
 
 
 
@@ -7186,7 +7377,7 @@ shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar")
 
 
     
-![png](README_files/README_223_0.png)
+![png](README_files/README_220_0.png)
     
 
 
@@ -7197,7 +7388,7 @@ shap.waterfall_plot(xgb_poisson_freq_exp[0])
 
 
     
-![png](README_files/README_224_0.png)
+![png](README_files/README_221_0.png)
     
 
 
@@ -7220,7 +7411,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [01:02, 13.74it/s]                         
+    ExactExplainer explainer: 1001it [01:00, 13.44it/s]                                                                     
 
 
 
@@ -7242,7 +7433,7 @@ plt.show()
 
 
     
-![png](README_files/README_227_0.png)
+![png](README_files/README_224_0.png)
     
 
 
@@ -7265,7 +7456,7 @@ plt.show()
 
 
     
-![png](README_files/README_228_0.png)
+![png](README_files/README_225_0.png)
     
 
 
@@ -7286,7 +7477,7 @@ xgb_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:16, 26.96it/s]                         
+    ExactExplainer explainer: 1001it [00:18, 29.25it/s]                                                                     
 
 
 
@@ -7308,7 +7499,7 @@ plt.show()
 
 
     
-![png](README_files/README_231_0.png)
+![png](README_files/README_228_0.png)
     
 
 
@@ -7331,7 +7522,7 @@ plt.show()
 
 
     
-![png](README_files/README_232_0.png)
+![png](README_files/README_229_0.png)
     
 
 
@@ -7377,7 +7568,7 @@ plt.show()
 
 
     
-![png](README_files/README_236_0.png)
+![png](README_files/README_233_0.png)
     
 
 
@@ -7400,7 +7591,7 @@ plt.show()
 
 
     
-![png](README_files/README_237_0.png)
+![png](README_files/README_234_0.png)
     
 
 
@@ -7447,7 +7638,7 @@ PartialDependenceDisplay.from_estimator(
 
 
     
-![png](README_files/README_241_0.png)
+![png](README_files/README_238_0.png)
     
 
 
@@ -7557,7 +7748,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_245_0.png)
+![png](README_files/README_242_0.png)
     
 
 
@@ -7675,7 +7866,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_248_0.png)
+![png](README_files/README_245_0.png)
     
 
 
@@ -7749,7 +7940,7 @@ _plot_bin_partial_dependence(
 
 
     
-![png](README_files/README_250_0.png)
+![png](README_files/README_247_0.png)
     
 
 
@@ -7862,7 +8053,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_254_0.png)
+![png](README_files/README_251_0.png)
     
 
 
@@ -7905,7 +8096,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_257_0.png)
+![png](README_files/README_254_0.png)
     
 
 
@@ -8085,7 +8276,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_266_0.png)
+![png](README_files/README_263_0.png)
     
 
 
@@ -8255,7 +8446,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_274_0.png)
+![png](README_files/README_271_0.png)
     
 
 
@@ -8352,7 +8543,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_278_0.png)
+![png](README_files/README_275_0.png)
     
 
 
