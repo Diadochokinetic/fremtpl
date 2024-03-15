@@ -36,7 +36,7 @@ html_formatter.for_type(
 )
 
 # Show 200 rows of a DataFrame
-pd.set_option('display.max_rows', 200)
+pd.set_option("display.max_rows", 200)
 
 # freMTPL2freq dataset from https://www.openml.org/d/41214
 df_freq = fetch_openml(data_id=41214, as_frame=True, parser="pandas").data
@@ -46,6 +46,16 @@ df_freq.set_index("IDpol", inplace=True)
 # freMTPL2sev dataset from https://www.openml.org/d/41215
 df_sev = fetch_openml(data_id=41215, as_frame=True, parser="pandas").data
 ```
+
+    /tmp/ipykernel_8666/1811049792.py:2: DeprecationWarning: 
+    Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
+    (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
+    but was not found to be installed on your system.
+    If this would cause problems for you,
+    please provide us feedback at https://github.com/pandas-dev/pandas/issues/54466
+            
+      import pandas as pd
+
 
 ### Datenaufbereitung
 
@@ -1946,6 +1956,16 @@ scores_xgb_poisson_freq = score_estimator(
 scores_xgb_poisson_freq
 ```
 
+    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [10:24:18] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
+    Potential solutions:
+    - Use a data structure that matches the device ordinal in the booster.
+    - Set the device for booster before call to inplace_predict.
+    
+    This warning will only be shown once.
+    
+      warnings.warn(smsg, UserWarning)
+
+
 
 
 
@@ -2057,6 +2077,13 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
   </thead>
   <tbody>
     <tr>
+      <th>Marginalsummenverfahren</th>
+      <td>0.0494</td>
+      <td>0.4550</td>
+      <td>0.1375</td>
+      <td>0.2437</td>
+    </tr>
+    <tr>
       <th>GLM Poisson Multiplikativ</th>
       <td>0.0493</td>
       <td>0.4550</td>
@@ -2086,7 +2113,7 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
     </tr>
   </tbody>
 </table>
-<p>4 rows × 4 columns</p>
+<p>5 rows × 4 columns</p>
 
 
 
@@ -2123,6 +2150,13 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
   </thead>
   <tbody>
     <tr>
+      <th>Marginalsummenverfahren</th>
+      <td>0.0465</td>
+      <td>0.4543</td>
+      <td>0.1374</td>
+      <td>0.2235</td>
+    </tr>
+    <tr>
       <th>GLM Poisson Multiplikativ</th>
       <td>0.0466</td>
       <td>0.4543</td>
@@ -2152,7 +2186,7 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
     </tr>
   </tbody>
 </table>
-<p>4 rows × 4 columns</p>
+<p>5 rows × 4 columns</p>
 
 
 
@@ -2349,6 +2383,11 @@ train_freq_summary
       <td>19800</td>
     </tr>
     <tr>
+      <th>Marginalsummenverfahren</th>
+      <td>0.073729</td>
+      <td>19801</td>
+    </tr>
+    <tr>
       <th>GLM Poisson Multiplikativ</th>
       <td>0.073716</td>
       <td>19797</td>
@@ -2370,7 +2409,7 @@ train_freq_summary
     </tr>
   </tbody>
 </table>
-<p>5 rows × 2 columns</p>
+<p>6 rows × 2 columns</p>
 
 
 
@@ -2407,6 +2446,11 @@ test_freq_summary
       <td>6606</td>
     </tr>
     <tr>
+      <th>Marginalsummenverfahren</th>
+      <td>0.073829</td>
+      <td>6629</td>
+    </tr>
+    <tr>
       <th>GLM Poisson Multiplikativ</th>
       <td>0.073809</td>
       <td>6627</td>
@@ -2428,7 +2472,7 @@ test_freq_summary
     </tr>
   </tbody>
 </table>
-<p>5 rows × 2 columns</p>
+<p>6 rows × 2 columns</p>
 
 
 
@@ -4730,7 +4774,7 @@ summary
   <th>Date:</th>            <td>Fri, 15 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
 </tr>
 <tr>
-  <th>Time:</th>                <td>09:35:52</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
+  <th>Time:</th>                <td>10:25:05</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
 </tr>
 <tr>
   <th>No. Iterations:</th>          <td>7</td>        <th>  Pseudo R-squ. (CS):</th>   <td>0.01125</td> 
@@ -5079,7 +5123,7 @@ print(summary_table)
              Model: PoissonRegressor     Df Residuals:     508433
             Method:  newton-cholesky         Df Model:         76
               Date:       03/15/2024   Log-Likelihood:     -68551
-              Time:         09:35:52         Deviance: 1.3710E+05
+              Time:         10:25:05         Deviance: 1.3710E+05
     No. Iterations:                5    Pseudo R-squ.:    0.07672
     -------------------------------------------------------------
 
@@ -5294,9 +5338,7 @@ def regression_summary(
         The regression summary.
     """
     df = X.shape[0] - X.shape[1]
-    cov = variance_covariance_matrix(
-        X, params, robust=robust, weights=weights
-    )
+    cov = variance_covariance_matrix(X, params, robust=robust, weights=weights)
     se = standard_error(cov)
     z = z_value(params, se)
     p = calc_p_value(z, df)
@@ -7053,7 +7095,7 @@ glm_tweedie_pure_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:34, 20.51it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:37, 19.63it/s]                                                               
 
 
 
@@ -7172,7 +7214,7 @@ glm_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:36, 19.11it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:36, 18.97it/s]                                                               
 
 
 
@@ -7241,7 +7283,7 @@ glm_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:36, 19.40it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:34, 19.82it/s]                                                               
 
 
 
@@ -7367,7 +7409,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    [09:37:46] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
+    [10:27:02] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
 
 
 
@@ -7411,7 +7453,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [01:00, 13.44it/s]                                                                     
+    ExactExplainer explainer: 1001it [00:52, 15.47it/s]                                                                     
 
 
 
@@ -7477,7 +7519,7 @@ xgb_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:18, 29.25it/s]                                                                     
+    ExactExplainer explainer: 1001it [00:12, 12.29it/s]                                                                     
 
 
 
