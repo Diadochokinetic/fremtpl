@@ -47,7 +47,7 @@ df_freq.set_index("IDpol", inplace=True)
 df_sev = fetch_openml(data_id=41215, as_frame=True, parser="pandas").data
 ```
 
-    /tmp/ipykernel_8666/1811049792.py:2: DeprecationWarning: 
+    /tmp/ipykernel_4476/1811049792.py:2: DeprecationWarning: 
     Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
     (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
     but was not found to be installed on your system.
@@ -78,7 +78,7 @@ for column_name in df.columns[df.dtypes.values == object]:
     df[column_name] = df[column_name].str.strip("'")
 ```
 
-Die Schadenanzahl wird später als Gewicht in der Modellierung der Schadenhähe verwendet. Da hierbei nur strikt positive Werte verwendet werden können, wird die Schadenanzahl für Schäden ohne Aufwand auf 0 gesetzt.
+Die Schadenanzahl wird später als Gewicht in der Modellierung der Schadenhöhe verwendet. Da hierbei nur strikt positive Werte verwendet werden können, wird die Schadenanzahl für Schäden ohne Aufwand auf 0 gesetzt.
 
 
 ```python
@@ -299,7 +299,7 @@ mask_test = df_test["ClaimAmount"] > 0
 
 #### Marginalsummenverfahren spezifische Schritte
 
-Die Implementierung des Marginalsummenverfahrens erfordert, dass alle Merkmale binär sind. Für die Merkmale ["VehAge", "DrivAge", "VehBrand", "VehPower", "VehGas", "Region", "Area"] können wir die Aufbereitung aus dem [scikit-learn Tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) verwenden. Für die Merkmale ["BonusMalus", "Density"] müssen wir die binären Merkmale selbst erstellen.
+Die Implementierung des Marginalsummenverfahrens erfordert, dass alle Merkmale binär sind. Für die Merkmale ["VehAge", "DrivAge", "VehBrand", "VehPower", "VehGas", "Region", "Area"] können wir das Feature Engineering aus dem [scikit-learn Tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) verwenden. Für die Merkmale ["BonusMalus", "Density"] müssen wir die binären Merkmale selbst erstellen.
 
 Beachte: In einem realen Szenario ist die Merkmalskonstruktion ein entscheidender Teil des Modellierungsprozesses. Es kann sehr mühsam und zeitaufwändig sein. In diesem Notebook gehen wir davon aus, dass die transformierten Merkmale gegeben sind und konzentrieren uns auf den Modellierungsteil.
 
@@ -396,7 +396,7 @@ onehot_features = column_trans_mmt.named_transformers_[
 feature_names_mmt.extend(onehot_features)
 ```
 
-Aus den 9 urpsürnglichen Merkmalen werden 91 binär transformierte Merkmale.
+Aus den 9 ursprünglichen Merkmalen werden 91 binär transformierte Merkmale.
 
 
 ```python
@@ -442,7 +442,7 @@ df_counts = pd.concat(
     {k: pd.DataFrame(v, columns=["Kategorie", "Anzahl"]) for k, v in counts.items()},
     axis=1,
 )
-df_counts
+df_counts.fillna("")
 ```
 
 
@@ -537,8 +537,8 @@ df_counts
       <td>10154.0</td>
       <td>6</td>
       <td>111678.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R22</td>
       <td>5949.0</td>
       <td>C</td>
@@ -558,8 +558,8 @@ df_counts
       <td>124757.0</td>
       <td>7</td>
       <td>108919.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R23</td>
       <td>6658.0</td>
       <td>D</td>
@@ -579,8 +579,8 @@ df_counts
       <td>9188.0</td>
       <td>8</td>
       <td>35399.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R24</td>
       <td>120359.0</td>
       <td>E</td>
@@ -600,8 +600,8 @@ df_counts
       <td>3009.0</td>
       <td>9</td>
       <td>22654.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R25</td>
       <td>8058.0</td>
       <td>F</td>
@@ -621,12 +621,12 @@ df_counts
       <td>119846.0</td>
       <td>10</td>
       <td>23413.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R26</td>
       <td>7919.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>(86, 100]</td>
       <td>40754.0</td>
       <td>(6.5, 7.0]</td>
@@ -642,12 +642,12 @@ df_counts
       <td>40079.0</td>
       <td>11</td>
       <td>13763.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R31</td>
       <td>20516.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>(100, 120]</td>
       <td>4164.0</td>
       <td>(7.0, 8.0]</td>
@@ -663,12 +663,12 @@ df_counts
       <td>18857.0</td>
       <td>12</td>
       <td>6176.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R41</td>
       <td>9699.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>(120, 300]</td>
       <td>1665.0</td>
       <td>(8.0, 11.0]</td>
@@ -684,268 +684,268 @@ df_counts
       <td>26145.0</td>
       <td>13</td>
       <td>2403.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R42</td>
       <td>1654.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>10</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>B6</td>
       <td>21419.0</td>
       <td>14</td>
       <td>1755.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R43</td>
       <td>975.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>11</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>15</td>
       <td>2199.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
       <td>R52</td>
       <td>29103.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>12</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R53</td>
       <td>31549.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>13</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R54</td>
       <td>14255.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>14</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R72</td>
       <td>23490.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>15</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R73</td>
       <td>12901.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>16</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R74</td>
       <td>3370.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>17</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R82</td>
       <td>63741.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>18</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R83</td>
       <td>4001.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>19</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R91</td>
       <td>26815.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>20</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R93</td>
       <td>59500.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <th>21</th>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
       <td>R94</td>
       <td>3413.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
   </tbody>
 </table>
@@ -1203,13 +1203,13 @@ def score_estimator(
 
 ### Gesamter Schadenaufwand
 
-Der Gesamtschadenaufwand der Vorhersage sollte so nah wie möglich am Gesamtschadenaufwand der tatsächlichen Daten liegen. Wenn der Gesamtschadenaufwand der Vorhersage zu hoch ist, wird der Versicherer zu viel Prämie verlangen und könnte Kunden verlieren. Wenn der Gesamtschadenaufwand der Vorhersage zu niedrig ist, wird der Versicherer nicht genug Prämie verlangen und könnte bankrott gehen.
+Der Gesamtschadenaufwand der Vorhersage sollte so nah wie möglich am Gesamtschadenaufwand der tatsächlichen Daten liegen. Wenn der Gesamtschadenaufwand der Vorhersage zu hoch ist, wird der Versicherer zu viel Prämie verlangen und könnte Kunden verlieren. Wenn der Gesamtschadenaufwand der Vorhersage zu niedrig ist, wird der Versicherer nicht genug Prämie verlangen und finanzielle Verluste erleiden.
 
 Wir vergleichen $\sum_{i=1}^{n} ClaimAmount_{i}$ mit $\sum_{i=1}^{n} PurePremiumPred_i \cdot Exposure_i$. Im Fall der Häufigkeits- und Schadenhöhenmodelle wird der $PurePremiumPred$ als $FreqPred_i \cdot SevPred_i$ berechnet.
 
 ### Risikodifferenzierung
 
-Die Fähigkeit Risiken zu differenzieren ist essentiell für den Versicherer, um für jedes Risiko die richtige Prämie zu verlangen. Wir verwenden den Gini-Koeffzienten als quantitatives Maß in Kombination mit den korrespondierenden Lorenzkurven zur visuellen Darstellung.
+Die Fähigkeit Risiken zu differenzieren ist essentiell für den Versicherer, um für jedes Risiko die richtige Prämie zu verlangen. Wir verwenden den Gini-Koeffzienten als quantitatives Maß in Kombination mit den korrespondierenden Lorenzkurven zur visuellen Darstellung. Hierzu werden im Folgenden ein paar Hilfsfunktionen vorab definiert, die wir dann bei der Evaluation der einzelnen Modelle später nutzen können.
 
 
 ```python
@@ -1564,11 +1564,11 @@ class MarginalTotalsRegression:
 
 Der Einfachheit halber verwenden wir das erste Merkmal in jeder Gruppe als Referenzkategorie. In einem realen Szenario würden wir die Referenzkategorie mit einer Heuristik wählen.
 
-Achtung! Die obige Implementierung ist sehr langsam. Es dauert ~ 320 Iterationen und ~ 30 Minuten, um zu konvergieren. Man kann diesen Teil überspringen, indem man `run_mmt = False` in der untenstehenden Zelle setzen. Die Ergebnisse für das MSV können der Thesis entnommen werden.
+Achtung! Die obige Implementierung ist sehr langsam. Es dauert ~ 320 Iterationen und ~ 30 Minuten, um zu konvergieren. Man kann diesen Teil überspringen, indem man `run_mmt = False` in der untenstehenden Zelle setzt. Die Ergebnisse für das MSV können der Thesis entnommen werden.
 
 
 ```python
-run_mmt = False
+run_mmt = True
 ```
 
 
@@ -1594,7 +1594,7 @@ if run_mmt:
     scores_mmt
 ```
 
-Basiswert und Faktoren in den letzten Iterationen.
+Falls das MSV ausgeführt wurde, können wir in der folgenden Zelle den ermittelten Basiswert und die Faktoren sehen.
 
 
 ```python
@@ -1604,7 +1604,7 @@ if run_mmt:
 
 ### Generalisierte Lineare Modelle
 
-Glücklicherweise sind wir nicht an die obige, langsame Implementierung des MSV gebunden. Die Faktoren, die sich aus dem MSV ergebenen, können auch aus einem [Poisson GLM abgeleitet](https://www.cambridge.org/core/journals/astin-bulletin-journal-of-the-iaa/article/on-automobile-insurance-ratemaking/8986C8F3B46597B172F2FCAFCC170B2C) werden. Hierbei ist es wichtig, dass das Poisson GLM mit Interzept und ohne Regularisierung trainiert wird. Zur Durchführung dieser Transformation nutzen wir die folgende Hilfsklasse. Diese kann unabhängig der Zielvariablen für die Transformation von Koeffizienten und Interzept in Faktoren verwendet werden.
+Glücklicherweise sind wir nicht an die obige, langsame Implementierung des MSV gebunden. Die Faktoren, die sich aus dem MSV ergebenen, können auch aus einem [Poisson GLM abgeleitet](https://www.cambridge.org/core/journals/astin-bulletin-journal-of-the-iaa/article/on-automobile-insurance-ratemaking/8986C8F3B46597B172F2FCAFCC170B2C) werden. Hierbei ist es wichtig, dass das Poisson GLM mit Interzept und ohne Regularisierung trainiert wird. Zur Durchführung dieser Transformation nutzen wir die folgende Hilfsklasse. Diese kann unabhängig von der Zielvariablen für die Transformation von Koeffizienten und Interzept in Faktoren verwendet werden.
 
 
 ```python
@@ -1770,9 +1770,9 @@ score_glm_poisson_multiplicative
 
 
 
-Alternativ kann man auch ein Poisson GLM trainieren, ohne dass die Koeffizienten in MMT-Faktoren umgewandelt werden müssen. Neben `scikit-learn` gibt es in der Bibliothek `statsmodels` eine eher nach klassischer Statistik orientierte Implementierung. Beide Implementierung bieten uns die Möglichkeit numerische Merkmale und Regularisierung zu verwenden. Wir trainieren das `scikit-learn` Modell mit einer kleinen Regularisierung und das `statsmodel` Modell gänzlich ohne Regularisierung, um es später als Beispiel für die statistische Inferenz in der Modellerklärbarkeit verwenden zu können.
+Alternativ kann man auch ein Poisson GLM trainieren, ohne dass die Koeffizienten in MMT-Faktoren umgewandelt werden müssen. Neben `scikit-learn` gibt es in der Bibliothek `statsmodels` eine eher nach klassischer Statistik orientierte Implementierung. Beide Implementierungen bieten uns die Möglichkeit numerische Merkmale und Regularisierung zu verwenden. Wir trainieren das `scikit-learn` Modell mit einer Ridge Regularisierung und das `statsmodel` Modell gänzlich ohne Regularisierung, um es später als Beispiel für die statistische Inferenz in der Modellerklärbarkeit verwenden zu können.
 
-Beachte: Binder stellt nur 2GB Arbeitsspeicher zur Verfügung. Für `scikit-learn` Modelle ist das ausreichend. Für `statsmodels` Modelle kann es zu Problemen kommen. Im Code gibt es die Möglich das `statsmodels` Modell auf 20000 Samples zu limitieren. Hierzu einfach `samples = df_train.index` als Kommentar setzen und  `samples = df_train.sample(int(2E4), random_state=0).index` entkommentieren. Die Ergebnisse für das `statsmodels` Modell werden dadruch deutlich schlechter. Wir benötigen das Modell jedoch später zur Demonstration der Modellerklärbarkeit.
+Beachte: Binder stellt nur 2GB Arbeitsspeicher zur Verfügung. Für `scikit-learn` Modelle ist das ausreichend. Für `statsmodels` Modelle kann es zu Problemen kommen. Im Code gibt es die Möglich das `statsmodels` Modell auf 20000 Samples zu limitieren. Hierzu einfach `samples = df_train.index` als Kommentar setzen und  `samples = df_train.sample(int(2E4), random_state=0).index` entkommentieren. Die Ergebnisse für das `statsmodels` Modell werden dadurch deutlich schlechter. Wir benötigen das Modell jedoch später zur Demonstration der Modellerklärbarkeit.
 
 
 ```python
@@ -1826,6 +1826,8 @@ scores = pd.concat(
 )
 ```
 
+Poisson GLM Scores für die Traingsdaten:
+
 
 ```python
 scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
@@ -1864,6 +1866,8 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 <p>2 rows × 4 columns</p>
 
 
+
+Poisson GLM Scores für die Testdaten:
 
 
 ```python
@@ -1956,7 +1960,7 @@ scores_xgb_poisson_freq = score_estimator(
 scores_xgb_poisson_freq
 ```
 
-    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [10:24:18] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
+    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [09:11:31] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
     Potential solutions:
     - Use a data structure that matches the device ordinal in the booster.
     - Set the device for booster before call to inplace_predict.
@@ -2055,7 +2059,7 @@ else:
     )
 ```
 
-Trainingsdaten
+Scores aller Schadenhäufigkeitsmodelle für die Traingsdaten:
 
 
 ```python
@@ -2128,7 +2132,7 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 # )
 ```
 
-Testdaten
+Scores aller Schadenhäufigkeitsmodelle für die Testdaten:
 
 
 ```python
@@ -2205,7 +2209,7 @@ Für die mittlere absolute Abweichung $MAE$ und die mittlere quadratische Abweic
 
 ### Gesamtzahl der Schäden
 
-Eine Betrachtung des gesamten Schadenaufwands ergibt isoliert für die Schadenhäufigkeit keinen Sinn. Alternativ hierzu kann jedoch die Gesamtzahl der Schäden betrachtet werden.
+Eine Betrachtung des gesamten Schadenaufwands ergibt isoliert für die Schadenhäufigkeit keinen Sinn. Alternativ hierzu kann jedoch die Gesamtzahl der Schäden betrachtet werden. Dies tun wir im Folgenden für die Trainings- und Testdaten.
 
 
 ```python
@@ -2360,6 +2364,8 @@ test_freq_summary = pd.DataFrame(
 )
 ```
 
+Schadenhäufigkeiten und Anzahl der Schäden in den Trainingsdaten.
+
 
 ```python
 train_freq_summary
@@ -2422,6 +2428,8 @@ train_freq_summary
 #     na_rep="",
 # )
 ```
+
+Schadenhäufigkeiten und Anzahl der Schäden in den Testdaten.
 
 
 ```python
@@ -2535,9 +2543,11 @@ ax.legend(loc="upper right");
 
 
     
-![png](README_files/README_76_0.png)
+![png](README_files/README_80_0.png)
     
 
+
+Da sich die Plots durchaus stark überlappen, werfen wir hier noch einmal einen Blick auf jede einzelne Verteilung.
 
 
 ```python
@@ -2560,13 +2570,15 @@ for (label, y_pred), color, ax in zip(model_predictions.items(), colors, axs.fla
 
 
     
-![png](README_files/README_77_0.png)
+![png](README_files/README_82_0.png)
     
 
 
 Betrachten wir die Verteilungen der Vorhersagen für die Schadenhäufigkeit, dann lassen sich ein paar Unterschiede zwischen den Modellen feststellen. Das multiplikative Modell unterscheidet sich in den Häufigkeiten zwischen 0.1 bis 0.2 deutlich von den anderen beiden Modellen. Es hat an dieser Stelle eine viel höhere Dichte. Das Poisson GLM und das Gradient Boosting Modell unterscheiden sich im Bereich mit der größten Dichte. Dieser liegt beim GBM bei etwas geringeren Schadenhäufigkeiten.
 
 ### Risikodifferenzierung
+
+Wir können jetzt unsere vordefinierten Funktionen nutzen, um die Risikodifferenzierung der Schadenhäufigkeitsmodelle zu visualisieren.
 
 
 ```python
@@ -2601,7 +2613,7 @@ else:
 
 
     
-![png](README_files/README_80_0.png)
+![png](README_files/README_85_0.png)
     
 
 
@@ -2613,7 +2625,7 @@ Für die Modellierung kommen in der Theorie verschiedene rechtsschiefe, stets po
 
 Beachte:
 - Wir nutzen die obigen Filtermasken, um die Schäden $(-\infty, 0]$ herauszufiltern.
-- Die Anzahl der Schäden wird als Geweicht in der Modellierung verwendet.
+- Die Anzahl der Schäden wird als Gewicht in der Modellierung verwendet.
 - Aus Performancegründen betrachten wir nur das multiplikative Poisson GLM, auf eine erneute Anwendung des MSV wird verzichtet.
 
 ### Generalsierte Lineare Modelle
@@ -3021,6 +3033,8 @@ scores_dummy
 
 ### Vorhersagekraft der Schadenhöhe
 
+Wir haben bereits beim Training der obigen Modelle vereinzelt die Scores sehen können. Im Folgenden betrachten wir die Ergebnisse der Vorhersagemetriken gesamtheitlich.
+
 
 ```python
 scores = pd.concat(
@@ -3042,6 +3056,8 @@ scores = pd.concat(
     ),
 )
 ```
+
+Scores aller Schadenöhemodelle für die Traingsdaten:
 
 
 ```python
@@ -3119,6 +3135,8 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 #     header=["$D^2$", "$D_G$", "$MAE$", "$MSE$"],
 # )
 ```
+
+Scores aller Schadenhöhemodelle für die Testsdaten:
 
 
 ```python
@@ -3199,6 +3217,8 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 Auf dem Trainingsdatensatz können sich die Gradient Boosting Modelle leicht von den anderen Modellen absetzen. Allerdings sind diese Differenzen auf dem Testdatensatz deutlich geringer. Generell sind die Modelle kaum in der Lage sich nennenswert vom Dummy Modell zu unterscheiden. Der Anteil der erklärten Poisson Abweichung lässt darauf schließen, dass sie immer noch etwas besser sind. Allerdings ist der Lift durch die Modelle bedeutend kleiner als bei der Schadenhäufigkeit.
 
 ### Gesamt- und Durchschnittsschaden
+
+Wir betrachten den Durchschnitts- und Gesamtschaden, sowie das Minimum und Maximum der Vorhersagen durch die Modelle, sowie den realen Daten.
 
 
 ```python
@@ -3313,6 +3333,8 @@ test_sev_summary = pd.DataFrame(
 )
 ```
 
+Durchschnitts- und Gesamtschaden in den Trainingsdaten:
+
 
 ```python
 train_sev_summary
@@ -3400,6 +3422,8 @@ train_sev_summary
 #     ],
 # )
 ```
+
+Durchnitts- und Gesamtschaden in den Testdaten:
 
 
 ```python
@@ -3531,9 +3555,11 @@ ax.legend(loc="upper right");
 
 
     
-![png](README_files/README_107_0.png)
+![png](README_files/README_116_0.png)
     
 
+
+Auch hier werfen wir wieder einen Blick auf die einzelnen Verteilungen.
 
 
 ```python
@@ -3559,7 +3585,7 @@ for (label, y_pred), color, ax, ylim in zip(
 
 
     
-![png](README_files/README_108_0.png)
+![png](README_files/README_118_0.png)
     
 
 
@@ -3585,7 +3611,7 @@ plot_risk_ranking(
 
 
     
-![png](README_files/README_111_0.png)
+![png](README_files/README_121_0.png)
     
 
 
@@ -4115,6 +4141,8 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 
 ### Vorhersagekraft der Nettorisikoprämie
 
+Im folgenden betrachten wir 
+
 
 ```python
 scores = pd.concat(
@@ -4140,6 +4168,8 @@ scores = pd.concat(
     ),
 )
 ```
+
+Scores aller Nettorisikoprämienmodelle für die Traingsdaten:
 
 
 ```python
@@ -4268,6 +4298,8 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 # )
 ```
 
+Scores aller Nettorisikoprämienmodelle für die Testdaten:
+
 
 ```python
 scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
@@ -4395,9 +4427,11 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 # )
 ```
 
-Die Gradient Boosting Modelle liefern durchweg bessere oder gleichwertige Werte für die Metriken, als ihre GLM-Pendants. Dies gilt sowohl auf dem Traings-, als auch auf den Testdaten. Die Produkt-Modelle schneiden in der Regel besser ab, als ihre direkt modellierten Pendants. Insgesamt betrachtet, liefern das GBM-Produktmodell, sowie das GBM/GLM Produktmodell, die besten Ergebnisse für die Vorhersagekraft der Nettorisikoprämie.
+Die Gradient Boosting Modelle liefern durchweg bessere oder gleichwertige Werte für die Metriken, als ihre GLM-Pendants. Dies gilt sowohl auf dem Trainings-, als auch auf den Testdaten. Die Produkt-Modelle schneiden in der Regel besser ab, als ihre direkt modellierten Pendants. Insgesamt betrachtet, liefern das GBM-Produktmodell, sowie das GBM/GLM Produktmodell, die besten Ergebnisse für die Vorhersagekraft der Nettorisikoprämie.
 
 ### Gesamtschaden
+
+Um sicherzustellen, dass der Gesamtschadenbedarf korrekt berücksichtigt wird, müssen wir die modellierte Nettorisikoprämie mit dem Schadenaufwand vergleichen.
 
 
 ```python
@@ -4484,6 +4518,8 @@ test_pure_summary = pd.DataFrame(
 )
 ```
 
+Prognostizierter und realer Gesamtschaden der Trainingsdaten.
+
 
 ```python
 train_pure_summary
@@ -4550,6 +4586,8 @@ train_pure_summary
 #     na_rep="",
 # )
 ```
+
+Prognostizierter und realer Gesamtschaden der Testdaten
 
 
 ```python
@@ -4665,9 +4703,11 @@ ax.legend(loc="upper right");
 
 
     
-![png](README_files/README_143_0.png)
+![png](README_files/README_157_0.png)
     
 
+
+Auch hier überlappen die Verteilungen stark, so dass wir wieder einen Blick auf die einzelnen Verteilungen werfen müssen.
 
 
 ```python
@@ -4692,13 +4732,15 @@ for (label, y_pred), color, ax in zip(model_predictions.items(), colors, axs.fla
 
 
     
-![png](README_files/README_144_0.png)
+![png](README_files/README_159_0.png)
     
 
 
 Auffällig ist der zweite Häufungspunkt der Dichte bei ca. 250 des kalibrierten Tweedie GBM. Die Produktmodelle haben im Vergleich zu den direkten Modellen etwas mehr Wahrscheinlichkeitsmasse über die Schwelle von 600 hinaus. Ansonsten sind sich die Verteilungen recht ähnlich.
 
 ### Risikodifferenzierung
+
+Werfen wir nun einen Blick auf die finale Risikodifferenzierung der Modelle für die Nettorisikoprämie.
 
 
 ```python
@@ -4726,7 +4768,7 @@ plot_risk_ranking(
 
 
     
-![png](README_files/README_147_0.png)
+![png](README_files/README_162_0.png)
     
 
 
@@ -4736,7 +4778,7 @@ Wie bereits bei der Schadenhäufigkeit und -höhe, sind alle Modelle weit weg vo
 
 ### Statistische Inferenz für GLMs
 
-Statistische Inferenz ist die Standardmethode in der Risikomodellierung, um die Einfüsse der Tarifmerkmale im GLM zu erklären. Dieser Methodik ist leider nicht auf Gradient Boosting Modelle übertragbar und auch nicht in den Standard Machine Learning Bibliotheken, wie `scikit-learn` implmentiert. Der Fokus liegt in diesen Bibliotheken eher auf der Vorhersagekraft, als auf der statistischen Infenz der exogenen Variablen. In statistisch orientierten Bibliotheken wie `statsmodels` finden wir jedoch entsprechende Implementierungen.
+Statistische Inferenz ist die Standardmethode in der Risikomodellierung, um die Einfüsse der Tarifmerkmale im GLM zu erklären. Dieser Methodik ist leider nicht auf Gradient Boosting Modelle übertragbar und auch nicht in den Standard Machine Learning Bibliotheken, wie `scikit-learn` implementiert. Der Fokus liegt in diesen Bibliotheken eher auf der Vorhersagekraft, als auf der statistischen Infenz der exogenen Variablen. In statistisch orientierten Bibliotheken wie `statsmodels` finden wir jedoch entsprechende Implementierungen.
 
 #### statsmodels
 
@@ -4771,10 +4813,10 @@ summary
   <th>Method:</th>                <td>IRLS</td>       <th>  Log-Likelihood:    </th>  <td> -75962.</td> 
 </tr>
 <tr>
-  <th>Date:</th>            <td>Fri, 15 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
+  <th>Date:</th>            <td>Sat, 30 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
 </tr>
 <tr>
-  <th>Time:</th>                <td>10:25:05</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
+  <th>Time:</th>                <td>09:12:28</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
 </tr>
 <tr>
   <th>No. Iterations:</th>          <td>7</td>        <th>  Pseudo R-squ. (CS):</th>   <td>0.01125</td> 
@@ -5122,8 +5164,8 @@ print(summary_table)
      Dep. Variable:        Frequency No. Observations:     508509
              Model: PoissonRegressor     Df Residuals:     508433
             Method:  newton-cholesky         Df Model:         76
-              Date:       03/15/2024   Log-Likelihood:     -68551
-              Time:         10:25:05         Deviance: 1.3710E+05
+              Date:       03/30/2024   Log-Likelihood:     -68551
+              Time:         09:12:28         Deviance: 1.3710E+05
     No. Iterations:                5    Pseudo R-squ.:    0.07672
     -------------------------------------------------------------
 
@@ -5196,7 +5238,7 @@ $$
 SE(\beta) = \sqrt{diag(V(\beta))}
 $$
 
-An dieser Stelle können wir in der Praxis auf Probleme stoßen. Damit die Standard-Fehler der Koeffizienten korrekt berechnet werden können, muss die Varianz-Kovarianz-Matrix positiv definit oder positiv semidiginit sein. Diese Bedingung ist bei starken Kolinearitäten nicht erfüllt.
+An dieser Stelle können wir in der Praxis auf Probleme stoßen. Damit die Standard-Fehler der Koeffizienten korrekt berechnet werden können, muss die Varianz-Kovarianz-Matrix positiv definit oder positiv semidefinit sein. Diese Bedingung ist bei starken Kolinearitäten nicht erfüllt.
 
 
 ```python
@@ -6818,7 +6860,7 @@ summary
 
 ### SHAP
 
-SHAP (SHapley Additive exPlanations) ist eine Methode, die auf der Spieltheorie basiert und die Einflüsse der Merkmale zur Vorhersage erklärt. SHAP ist eine modell-agnostische Methode und kann auf alle Modelle angewendet werden. Mittels der SHAP-Methode kann sowohl die Makro- als auch die Mikroerklärbarkeit der Modelle untersucht werden.
+SHAP (SHapley Additive exPlanations) ist eine Methode, die auf der Spieltheorie basiert und die Einflüsse der Merkmale zur Vorhersage erklärt. SHAP ist eine modell-agnostische Methode und kann auf alle Modelle angewendet werden. Mittels der SHAP-Methode kann sowohl die globale als auch lokale Erklärbarkeit der Modelle untersucht werden.
 
 
 ```python
@@ -6829,9 +6871,9 @@ np.random.seed(42)
 
 #### SHAP für GLMs
 
-Wir betrachten zunächst die Generalisierten Linearen Modelle. Hierfür gibt es im SHAP-Paket eine spezielle Implementierung, die die spezielle Struktur der GLMs ausnutzt. Wir starten mit der Makroebebene.
+Wir betrachten zunächst die Generalisierten Linearen Modelle. Hierfür gibt es im SHAP-Paket eine spezielle Implementierung, die die spezielle Struktur der GLMs ausnutzt. Wir starten mit der globalen Ebene, also dem mittleren Einfluss auf das Modellergebnis.
 
-Beachte: Binder stellt nur eine begrenzte Menge an Resourcen zur Verfügung. Daher wird die Anzahl der betrachteten Samples hier limitiert. Stehen auf einer anderen Machine mehr Resourcen zur Verfügung, dann kann die n_samples Variable erhöht werden.
+Beachte: Binder stellt nur eine begrenzte Menge an Resourcen zur Verfügung. Daher wird die Anzahl der betrachteten Samples hier limitiert. Stehen auf einer anderen Maschine mehr Resourcen zur Verfügung, dann kann die n_samples Variable erhöht werden.
 
 
 ```python
@@ -6875,7 +6917,7 @@ plt.show()
 
 
     
-![png](README_files/README_178_0.png)
+![png](README_files/README_193_0.png)
     
 
 
@@ -6890,9 +6932,13 @@ shap.summary_plot(
 )
 # Get the current figure
 fig = plt.gcf()
+ax = plt.gca()
+
+# get position for first plot
+pos = ax.get_position()
 
 # Change the figure size
-fig.set_size_inches(10, 6)
+fig.set_size_inches(8, 3)
 
 # Save
 # fig.savefig(
@@ -6904,7 +6950,7 @@ plt.show()
 
 
     
-![png](README_files/README_180_0.png)
+![png](README_files/README_195_0.png)
     
 
 
@@ -6990,7 +7036,7 @@ plt.show()
 
 
     
-![png](README_files/README_186_0.png)
+![png](README_files/README_201_0.png)
     
 
 
@@ -7003,9 +7049,13 @@ shap.summary_plot(
 )
 # Get the current figure
 fig = plt.gcf()
+ax = plt.gca()
+
+# rescale axis based on first plot
+# ax.set_position(pos)
 
 # Change the figure size
-fig.set_size_inches(10, 6)
+fig.set_size_inches(8, 3)
 
 # Save
 # fig.savefig(
@@ -7017,11 +7067,11 @@ plt.show()
 
 
     
-![png](README_files/README_187_0.png)
+![png](README_files/README_202_0.png)
     
 
 
-Neben der Makroebene liefert SHAP auch die Möglichkeit, die Mikroebene zu betrachten. Hierbei wird für jede Beobachtung der Einfluss der Merkmale auf die Vorhersage dargestellt. Wir betrachten hierbei die Merkmale mit dem höchsten Einfluss.
+Neben der globalen Ebene liefert SHAP auch die Möglichkeit, die lokale Ebene zu betrachten. Hierbei wird für jede Beobachtung einzeln der Einfluss der Merkmale auf die Vorhersage dargestellt. Wir betrachten hierbei die Merkmale mit dem höchsten Einfluss.
 
 
 ```python
@@ -7046,7 +7096,7 @@ plt.show()
 
 
     
-![png](README_files/README_189_0.png)
+![png](README_files/README_204_0.png)
     
 
 
@@ -7072,7 +7122,7 @@ plt.show()
 
 
     
-![png](README_files/README_190_0.png)
+![png](README_files/README_205_0.png)
     
 
 
@@ -7095,7 +7145,7 @@ glm_tweedie_pure_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:37, 19.63it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:38, 19.93it/s]                         
 
 
 
@@ -7147,7 +7197,7 @@ plt.show()
 
 
     
-![png](README_files/README_196_0.png)
+![png](README_files/README_211_0.png)
     
 
 
@@ -7173,7 +7223,7 @@ plt.show()
 
 
     
-![png](README_files/README_197_0.png)
+![png](README_files/README_212_0.png)
     
 
 
@@ -7197,6 +7247,8 @@ Frequency-Severity Modelle bestehen aus zwei getrennten Modellen für die Schade
 
 ##### Schadenhäufigkeit
 
+Berechnung der SHAP-Werte für das Poisson GLM.
+
 
 ```python
 glm_poisson_freq_exp = shap.Explainer(
@@ -7214,8 +7266,10 @@ glm_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:36, 18.97it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:34, 20.72it/s]                         
 
+
+Transformation der binären SHAP-Werte.
 
 
 ```python
@@ -7249,7 +7303,7 @@ shap.summary_plot(glm_poisson_freq_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_204_0.png)
+![png](README_files/README_220_0.png)
     
 
 
@@ -7260,11 +7314,13 @@ shap.waterfall_plot(glm_poisson_freq_exp_mod[0])
 
 
     
-![png](README_files/README_205_0.png)
+![png](README_files/README_221_0.png)
     
 
 
 ##### Schadenhöhe
+
+Berechnung der SHAP-Werte für das Gamma GLM.
 
 
 ```python
@@ -7283,8 +7339,10 @@ glm_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:34, 19.82it/s]                                                               
+    PermutationExplainer explainer: 1001it [00:36, 20.97it/s]                         
 
+
+Transformation der binären SHAP-Werte.
 
 
 ```python
@@ -7318,7 +7376,7 @@ shap.summary_plot(glm_gamma_sev_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_210_0.png)
+![png](README_files/README_227_0.png)
     
 
 
@@ -7329,7 +7387,7 @@ shap.waterfall_plot(glm_gamma_sev_exp_mod[0])
 
 
     
-![png](README_files/README_211_0.png)
+![png](README_files/README_228_0.png)
     
 
 
@@ -7367,9 +7425,11 @@ shap.waterfall_plot(final_shap_explanation[0])
 
 
     
-![png](README_files/README_215_0.png)
+![png](README_files/README_232_0.png)
     
 
+
+Wir erhalten nun die kombinierten SHAP-Werte für die erste Prediction des frequency-severity Modelle und können die Summe über die tatsächliche Predicition verifizieren.
 
 
 ```python
@@ -7387,7 +7447,7 @@ glm_poisson_freq_sk.predict(
 
 #### SHAP für GBMs
 
-Der TreeExplainer ist der schnellste Algorithmus, um SHAP-Werte für baumbasierte Boosting Modelle zu ermitteln.
+Der `TreeExplainer` ist der schnellste Algorithmus, um SHAP-Werte für baumbasierte Boosting Modelle zu ermitteln.
 
 
 ```python
@@ -7409,7 +7469,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    [10:27:02] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
+    [09:14:29] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
 
 
 
@@ -7419,7 +7479,7 @@ shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar")
 
 
     
-![png](README_files/README_220_0.png)
+![png](README_files/README_238_0.png)
     
 
 
@@ -7430,13 +7490,15 @@ shap.waterfall_plot(xgb_poisson_freq_exp[0])
 
 
     
-![png](README_files/README_221_0.png)
+![png](README_files/README_239_0.png)
     
 
 
 Wir sind an dieser Stelle mit den gleichen Herausforderungen wie beim GLM konfrontiert. Der native Algorithmus bewegt sich im log-transformierten Wertebereich und wir haben nur eine begrenzte Interpretierbarkeit.
 
 Schadenhäufigkeit:
+
+Entsprechend müssen wir auch hier wieder auf den etwas weniger performaten `PermutationExplainer` zurückgreifen.
 
 
 ```python
@@ -7453,7 +7515,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:52, 15.47it/s]                                                                     
+    ExactExplainer explainer: 1001it [01:06, 12.76it/s]                          
 
 
 
@@ -7475,7 +7537,7 @@ plt.show()
 
 
     
-![png](README_files/README_224_0.png)
+![png](README_files/README_242_0.png)
     
 
 
@@ -7498,11 +7560,13 @@ plt.show()
 
 
     
-![png](README_files/README_225_0.png)
+![png](README_files/README_243_0.png)
     
 
 
 Schadenhöhe
+
+Ebenso müssen wir auch für die Schadenhöhe auf den `PermutationExplainer` zurückgreifen.
 
 
 ```python
@@ -7519,7 +7583,7 @@ xgb_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:12, 12.29it/s]                                                                     
+    ExactExplainer explainer: 1001it [00:15, 22.93it/s]                         
 
 
 
@@ -7541,7 +7605,7 @@ plt.show()
 
 
     
-![png](README_files/README_228_0.png)
+![png](README_files/README_246_0.png)
     
 
 
@@ -7564,11 +7628,13 @@ plt.show()
 
 
     
-![png](README_files/README_229_0.png)
+![png](README_files/README_247_0.png)
     
 
 
 Frequency-Severity via `mshap`
+
+Wir können die SHAP-Werte der Schadenhäufigkeit und -höhe wieder mittels `mshap` kombinieren.
 
 
 ```python
@@ -7610,7 +7676,7 @@ plt.show()
 
 
     
-![png](README_files/README_233_0.png)
+![png](README_files/README_251_0.png)
     
 
 
@@ -7633,9 +7699,11 @@ plt.show()
 
 
     
-![png](README_files/README_234_0.png)
+![png](README_files/README_252_0.png)
     
 
+
+Analog zum GLM können wir auch hier wieder die Summe der kombinierten SHAP-Werte mit der tatsächlichen Predicition verifizieren.
 
 
 ```python
@@ -7680,7 +7748,7 @@ PartialDependenceDisplay.from_estimator(
 
 
     
-![png](README_files/README_238_0.png)
+![png](README_files/README_257_0.png)
     
 
 
@@ -7790,7 +7858,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_242_0.png)
+![png](README_files/README_261_0.png)
     
 
 
@@ -7908,7 +7976,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_245_0.png)
+![png](README_files/README_264_0.png)
     
 
 
@@ -7960,7 +8028,7 @@ def _plot_bin_partial_dependence(
         ax.boxplot(predictions, labels=category_names, showfliers=False, **kwargs)
     elif plot_type == "violin":
         ax.violinplot(predictions, showextrema=False, **kwargs)
-        ax.set_xticks(np.arange(1, len(feature_indexes) + 1))
+        ax.set_xticks(np.arange(1, len(category_names) + 1))
         ax.set_xticklabels(category_names)
     else:
         raise ValueError(f"Unsupported plot type: {plot_type}")
@@ -7982,7 +8050,7 @@ _plot_bin_partial_dependence(
 
 
     
-![png](README_files/README_247_0.png)
+![png](README_files/README_266_0.png)
     
 
 
@@ -8095,7 +8163,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_251_0.png)
+![png](README_files/README_270_0.png)
     
 
 
@@ -8138,15 +8206,17 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_254_0.png)
+![png](README_files/README_273_0.png)
     
 
 
 ## Monotonie
 
-Wir haben in den obigen Beispielen gesehen, dass die Vorhersage, ceteris paribus, für zunhemende Werte des Merkmals "BonusMalus" stark osziliert. Dieses Verhalten ist für ein der Schadenfreiheitsklasse entsprechendes Merkmal eher unerwünscht. Man erwartet hier einen monoton wachsenden Zusammenhang. Im linearen Modell kann sich ein solcher Zusammenhang entweder implzit durch die Verwendung als numerisches Tarifmerkmal ergeben oder explizit durch die Klassenbildung forciert werden. Bei Gradient Boosting Machines ist das nicht der Fall. Hier müssen wir die Monotonie als Nebenbedingung für die Baumbildung festlegen.
+Wir haben in den obigen Beispielen gesehen, dass die Vorhersage, ceteris paribus, für zunhemende Werte des Merkmals "BonusMalus" stark osziliert. Dieses Verhalten ist für ein der Schadenfreiheitsklasse entsprechendes Merkmal eher unerwünscht. Man erwartet hier einen monoton wachsenden Zusammenhang. Im linearen Modell kann sich ein solcher Zusammenhang entweder implizit durch die Verwendung als numerisches Tarifmerkmal ergeben oder explizit durch die Klassenbildung forciert werden. Bei Gradient Boosting Modellen ist das nicht der Fall. Hier müssen wir die Monotonie als Nebenbedingung für die Baumbildung festlegen.
 
 ### Schadenhäufigkeit
+
+Wir trainieren das Poisson Gradient Boosting Modell erneut. Diesmal geben wir dem Algorithmus eine Nebenbindung für einen monoton steigenden Zusammenhang von `BonusMalus` und der Schadenhäufigkeit vor. Für die anderen Merkmale wird keine Monotonie vorgegeben.
 
 
 ```python
@@ -8187,6 +8257,8 @@ scores = pd.concat(
     ),
 )
 ```
+
+Wir vergleichen die Scores des uneingeschränkten GBMs, sowie des GBMs mit Monotoniebedingung auf den Trainingsdaten.
 
 
 ```python
@@ -8237,6 +8309,8 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 #     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
 # )
 ```
+
+Wir vergleichen die Scores des uneingeschränkten GBMs, sowie des GBMs mit Monotoniebedingung auf den Testdaten.
 
 
 ```python
@@ -8318,7 +8392,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_263_0.png)
+![png](README_files/README_284_0.png)
     
 
 
@@ -8330,6 +8404,8 @@ fig.tight_layout()
 Wir sehen, dass wir die Monotoniebedingung per Parameter für `BonusMalus` erzwingen können.
 
 ### Schadenhöhe
+
+Wir geben die gleiche Monotoniebedingung auch einem Gamma GBM vor und trainieren erneut.
 
 
 ```python
@@ -8380,6 +8456,8 @@ scores = pd.concat(
 )
 ```
 
+Wir vergleichen die Scores des uneingeschränkten GBMs, sowie des GBMs mit Monotoniebedingung auf den Traingsdaten.
+
 
 ```python
 scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
@@ -8418,6 +8496,8 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 <p>2 rows × 4 columns</p>
 
 
+
+Wir vergleichen die Scores des uneingeschränkten GBMs, sowie des GBMs mit Monotoniebedingung auf den Testdaten.
 
 
 ```python
@@ -8458,7 +8538,7 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 
 
 
-Auch für die Schadenhähe kostet die Monotoniebedingung etwas an Vorhersagekraft.
+Auch für die Schadenhöhe kostet die Monotoniebedingung etwas an Vorhersagekraft.
 
 
 ```python
@@ -8488,11 +8568,11 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_271_0.png)
+![png](README_files/README_294_0.png)
     
 
 
-Aber auch hier kann die Monotonie erfolgreich erwzungen werden.
+Aber auch hier kann die Monotonie erfolgreich erzwungen werden.
 
 ### Nettorisikoprämie via Frequency-Severity
 
@@ -8585,7 +8665,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_275_0.png)
+![png](README_files/README_298_0.png)
     
 
 
@@ -8598,3 +8678,7 @@ fig.tight_layout()
 ```
 
 In allen Kombinationen, in denen mindestens ein Modell ohne Monotoniebedingung vorkommt, liegt keine Monotonie für die Nettorisikoprämie vor. Nur die Kombination aus Poisson GBM und Gamma GBM, jeweils mit Monotoniebedingung, liefert einen monotonen Zusammenhang zwischen `BonusMalus` und der Nettorisikoprämie.
+
+## Fazit
+
+Mit den gezeigten Code-Beispielen haben wir gesehen, wie eine Risikomodellierung und deren Evaluierung in Python vorgenommen werden kann. Für Einblicke in die dahinterliegende Theorie wird auf die zu Grunde liegende Masterthesis verwiesen.
