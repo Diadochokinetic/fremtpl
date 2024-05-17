@@ -5,7 +5,7 @@ Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung i
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Diadochokinetic/fremtpl/HEAD?labpath=Risikomodellierung+in+der+Schadenversicherung+mit+Python.ipynb)
 [![NBViewer](https://raw.githubusercontent.com/jupyter/design/e088387232fb13da8fb9ab4ce017e5dd23a114a0/logos/Badges/nbviewer_badge.svg)](https://nbviewer.org/github/Diadochokinetic/fremtpl/blob/main/Risikomodellierung%20in%20der%20Schadenversicherung%20mit%20Python.ipynb)
 
-Alternativ kann auch eine eigene Jupyter-Umgebung mit den in `requirements.txt` hinterlegten Abhängigkeiten genutzt werden. Der grundlegende Aufbau wurde inspieriert durch das scikit-learn Tutorial [Tweedie regression on insurance claims](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
+Alternativ kann auch eine eigene Jupyter-Umgebung mit den in `requirements.txt` hinterlegten Abhängigkeiten genutzt werden. Der grundlegende Aufbau wurde inspiriert durch das scikit-learn Tutorial [Tweedie regression on insurance claims](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
 
 Es werden verschiedene Modelltypen vorgestellt. Wir betrachten hierbei ältere Modelle, wie das Marginalsummenverfahren nach Bailey, die aktuell überlicherweise verwendeten Generalisierten Linearen Modelle (GLMs), sowie die potentiell für die Risikomodellierung interessanten Gradient Boosting Modelle (GBMs). Es wird gezeigt, wie diese Modelle zur Ermittlung der Netto-Risikoprämie verwendet werden können. Dabei werden direkte Modellierungsansätze, sowie kombinierte Ansätze auf Basis der Schadenhäufigkeit und -höhe vorgestellt. Die entwickelten Modelle werden anhand verschiedener Dimensionen bewertet:
 
@@ -47,7 +47,7 @@ df_freq.set_index("IDpol", inplace=True)
 df_sev = fetch_openml(data_id=41215, as_frame=True, parser="pandas").data
 ```
 
-    /tmp/ipykernel_4476/1811049792.py:2: DeprecationWarning: 
+    /tmp/ipykernel_5114/1811049792.py:2: DeprecationWarning: 
     Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
     (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
     but was not found to be installed on your system.
@@ -259,17 +259,6 @@ display(sample.T)
 </table>
 <p>15 rows × 5 columns</p>
 
-
-
-```python
-# TODO - Entfernen, wenn Arbeit fertig.
-# sample.T.to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/dataset_final.tex",
-#     float_format="%.2f",
-#     caption=("Beispiele aus dem zusammengeführten Datensatz mit den Zielvariablen", "Datensatz mit Zielvariablen"),
-#     label="tab:dataset_final"
-# )
-```
 
 Train-Test Split mit den Standard Parametern
 
@@ -953,19 +942,6 @@ df_counts.fillna("")
 
 
 
-
-```python
-# TODO - Entfernen, wenn Arbeit fertig.
-# for col in cols:
-#     df_counts[col].dropna().to_latex(
-#     buf=f"/home/fabian/Projects/master-thesis/thesis/Tables/{col}_all_binary.tex",
-#     float_format="%.0f",
-#     multicolumn_format="c",
-#     na_rep="",
-#     index=False
-# )
-```
-
 #### GLM spezifische Schritte
 
 Im Gegensatz zum Marginalsummenverfahren, können GLMs auch kontinuierliche Merkmale verarbeiten. Für die GLM können wir das Preprocessing genau so verwenden, wie es im [scikit-learn Tutorial](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html) vorgestellt wird.
@@ -1304,7 +1280,7 @@ plot_risk_ranking(
 
 
     
-![png](README_files/README_40_0.png)
+![png](README_files/README_38_0.png)
     
 
 
@@ -1960,7 +1936,7 @@ scores_xgb_poisson_freq = score_estimator(
 scores_xgb_poisson_freq
 ```
 
-    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [09:11:31] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
+    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [08:05:21] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
     Potential solutions:
     - Use a data structure that matches the device ordinal in the booster.
     - Set the device for booster before call to inplace_predict.
@@ -2121,17 +2097,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 
 
 
-
-```python
-# scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_frequency_train.tex",
-#     float_format="%.4f",
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
-# )
-```
-
 Scores aller Schadenhäufigkeitsmodelle für die Testdaten:
 
 
@@ -2193,17 +2158,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 <p>5 rows × 4 columns</p>
 
 
-
-
-```python
-# scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_frequency_test.tex",
-#     float_format="%.4f",
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
-# )
-```
 
 Für die mittlere absolute Abweichung $MAE$ und die mittlere quadratische Abweichung $MSE$ bewegen sich die Differenzen für alle vier Modelle in der dritten Nachkommastelle. In der Theorie sollten die Metriken für das Marginalsummenverfahren und das multiplikative Modelle auf Basis eines Poisson GLM, die exakt gleichen Werte liefern. Praktisch sind diese auch fast identisch, mit vernachlässigbar kleinen Abweichungen in der vierte Nachkommastellen. Das ist dem Umstand geschuldet, dass beide Verfahren numerisch implementiert sind und die Abbruchbedingungen nicht 1:1 übertragbar sind. Beide Poisson GLMs schneiden in den Metriken etwas schlechter ab, als die multiplikativen Modelle. Die Differenzen sind aber auch nur in der dritten Nachkommastelle und somit eher gering. Das Gradient Boosting Modell kann zumindest für den erklärten Teil der Poisson Abweichung $D^2$ und in der Poisson Abweichung $D_P$ sich mit Differenzen in der zweiten Nachkommastelle von den anderen Modellen etwas absetzen.
 
@@ -2419,16 +2373,6 @@ train_freq_summary
 
 
 
-
-```python
-# train_freq_summary.to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/freq_summary_train.tex",
-#     float_format="%.4f",
-#     multicolumn_format="c",
-#     na_rep="",
-# )
-```
-
 Schadenhäufigkeiten und Anzahl der Schäden in den Testdaten.
 
 
@@ -2484,16 +2428,6 @@ test_freq_summary
 
 
 
-
-```python
-# test_freq_summary.to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/freq_summary_test.tex",
-#     float_format="%.4f",
-#     multicolumn_format="c",
-#     na_rep="",
-# )
-```
-
 Auf dem Trainingsdatensatz sind alle Modelle in der Lage die Gesamtzahl der Schäden nahe an der Realität zu prognostizieren. Auf dem Testdatensatz überschätzen alle Modelle die Anzahl der Schäden leicht. Das Gradient Boosting Modell liegt hierbei am nächsten an der Realität. Die Differenzen sind allerdings alle nur sehr gering, so dass man in dieser Dimension die Modelle als gleichwertig betrachten kann.
 
 Verteilung der Vorhersagen für die Schadenhäufigkeit:
@@ -2535,15 +2469,11 @@ ax.set(
     ylabel="Dichte",
 )
 ax.legend(loc="upper right");
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/dist_freq_predictions.png",
-#     bbox_inches="tight",
-# )
 ```
 
 
     
-![png](README_files/README_80_0.png)
+![png](README_files/README_74_0.png)
     
 
 
@@ -2570,7 +2500,7 @@ for (label, y_pred), color, ax in zip(model_predictions.items(), colors, axs.fla
 
 
     
-![png](README_files/README_82_0.png)
+![png](README_files/README_76_0.png)
     
 
 
@@ -2594,7 +2524,6 @@ if run_mmt:
             "Marginalsummenverfahren": mmt.predict(X_test_mmt),
         },
         ylabel="Anteil der gesamten Schäden",
-        # plot="/home/fabian/Projects/master-thesis/thesis/Figures/lorenz_curve_frequency.png",
     )
 
 else:
@@ -2613,7 +2542,7 @@ else:
 
 
     
-![png](README_files/README_85_0.png)
+![png](README_files/README_79_0.png)
     
 
 
@@ -3119,23 +3048,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 
 
 
-
-```python
-# scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_severity_train.tex",
-#     # float_format="%.4f",
-#     formatters=[
-#         "{:.4f}".format,
-#         "{:.4f}".format,
-#         "{:.0f}".format,
-#         "{:.3E}".format,
-#     ],
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=["$D^2$", "$D_G$", "$MAE$", "$MSE$"],
-# )
-```
-
 Scores aller Schadenhöhemodelle für die Testsdaten:
 
 
@@ -3197,22 +3109,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 <p>5 rows × 4 columns</p>
 
 
-
-
-```python
-# scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_severity_test.tex",
-#     formatters=[
-#         "{:.4f}".format,
-#         "{:.4f}".format,
-#         "{:.0f}".format,
-#         "{:.3E}".format,
-#     ],
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=["$D^2$", "$D_G$", "$MAE$", "$MSE$"],
-# )
-```
 
 Auf dem Trainingsdatensatz können sich die Gradient Boosting Modelle leicht von den anderen Modellen absetzen. Allerdings sind diese Differenzen auf dem Testdatensatz deutlich geringer. Generell sind die Modelle kaum in der Lage sich nennenswert vom Dummy Modell zu unterscheiden. Der Anteil der erklärten Poisson Abweichung lässt darauf schließen, dass sie immer noch etwas besser sind. Allerdings ist der Lift durch die Modelle bedeutend kleiner als bei der Schadenhäufigkeit.
 
@@ -3402,27 +3298,6 @@ train_sev_summary
 
 
 
-
-```python
-# train_sev_summary.to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/sev_summary_train.tex",
-#     formatters=[
-#         "{:.0f}".format,
-#         "{:.3E}".format,
-#         "{:.0f}".format,
-#         "{:.0f}".format,
-#     ],
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=[
-#         "Mittelwert",
-#         "Gesamt",
-#         "Min",
-#         "Max",
-#     ],
-# )
-```
-
 Durchnitts- und Gesamtschaden in den Testdaten:
 
 
@@ -3492,27 +3367,6 @@ test_sev_summary
 
 
 
-
-```python
-# test_sev_summary.to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/sev_summary_test.tex",
-#     formatters=[
-#         "{:.0f}".format,
-#         "{:.3E}".format,
-#         "{:.0f}".format,
-#         "{:.0f}".format,
-#     ],
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=[
-#         "Mittelwert",
-#         "Gesamt",
-#         "Min",
-#         "Max",
-#     ],
-# )
-```
-
 Wir sehen, dass das unkalibrierte Gradient Boosting Modell den Gesamt- und Durchschnittsschaden sowohl auf dem Trainings-, als auch auf dem Testdatensatz massiv unterschätzt. Ein solches Modell würde in der Praxis zu massiven Verlusten für den Versicherer führen. Die anderen Modelle können den Gesamtschaden auf dem Trainingsdatensatz in ähnlichen Größenordnungen vorhersagen. Auf dem Testdatensatz wird es etwas schwieriger. Der Durchschnittsschaden unterscheidet sich recht stark vom Trainingsdatensatz. Das führt dazu, dass einige Modelle den Bedarf hier auch überschätzen.
 
 Verteilungen der vorhergesagten Schadenhöhe:
@@ -3547,15 +3401,11 @@ ax.set(
     ylabel="Dichte",
 )
 ax.legend(loc="upper right");
-
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/dist_sev_predictions.png"
-# )
 ```
 
 
     
-![png](README_files/README_116_0.png)
+![png](README_files/README_106_0.png)
     
 
 
@@ -3585,7 +3435,7 @@ for (label, y_pred), color, ax, ylim in zip(
 
 
     
-![png](README_files/README_118_0.png)
+![png](README_files/README_108_0.png)
     
 
 
@@ -3605,13 +3455,12 @@ plot_risk_ranking(
         "GLM Gamma Multiplikativ": glm_gamma_multiplicative.predict(X_test_mmt),
         "GBM Gamma": xgb_gamma_sev.predict(X_test_xgb),
     },
-    # plot="/home/fabian/Projects/master-thesis/thesis/Figures/lorenz_curve_severity.png",
 )
 ```
 
 
     
-![png](README_files/README_121_0.png)
+![png](README_files/README_111_0.png)
     
 
 
@@ -4277,27 +4126,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 
 
 
-
-```python
-# scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_pure_train.tex",
-#     # float_format="%.4f",
-#     formatters=[
-#         "{:.4f}".format,
-#         "{:.2f}".format,
-#         "{:.2f}".format,
-#         "{:.2f}".format,
-#         "{:.2f}".format,
-#         "{:.2f}".format,
-#         "{:.0f}".format,
-#         "{:.2E}".format,
-#     ],
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=["$D^2$", "$D_{{T_{{p=1.5}}}}$", "$D_{{T_{{p=1.7}}}}$", "$D_{{T_{{p=1.8}}}}$", "$D_{{T_{{p=1.9}}}}$", "$D_{{T_{{p=1.99}}}}$", "$MAE$", "$MSE$"],
-# )
-```
-
 Scores aller Nettorisikoprämienmodelle für die Testdaten:
 
 
@@ -4405,27 +4233,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 <p>7 rows × 8 columns</p>
 
 
-
-
-```python
-# scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_pure_test.tex",
-#     # float_format="%.4f",
-#     formatters=[
-#         "{:.4f}".format,
-#         "{:.2f}".format,
-#         "{:.2f}".format,
-#         "{:.2f}".format,
-#         "{:.2f}".format,
-#         "{:.2f}".format,
-#         "{:.0f}".format,
-#         "{:.2E}".format,
-#     ],
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=["$D^2$", "$D_{{T_{{p=1.5}}}}$", "$D_{{T_{{p=1.7}}}}$", "$D_{{T_{{p=1.8}}}}$", "$D_{{T_{{p=1.9}}}}$", "$D_{{T_{{p=1.99}}}}$", "$MAE$", "$MSE$"],
-# )
-```
 
 Die Gradient Boosting Modelle liefern durchweg bessere oder gleichwertige Werte für die Metriken, als ihre GLM-Pendants. Dies gilt sowohl auf dem Trainings-, als auch auf den Testdaten. Die Produkt-Modelle schneiden in der Regel besser ab, als ihre direkt modellierten Pendants. Insgesamt betrachtet, liefern das GBM-Produktmodell, sowie das GBM/GLM Produktmodell, die besten Ergebnisse für die Vorhersagekraft der Nettorisikoprämie.
 
@@ -4574,19 +4381,6 @@ train_pure_summary
 
 
 
-
-```python
-# train_pure_summary.to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/pure_summary_train.tex",
-#     # float_format="%.4f",
-#     formatters=[
-#         "{:.4E}".format,
-#     ],
-#     multicolumn_format="c",
-#     na_rep="",
-# )
-```
-
 Prognostizierter und realer Gesamtschaden der Testdaten
 
 
@@ -4643,19 +4437,6 @@ test_pure_summary
 
 
 
-
-```python
-# test_pure_summary.to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/pure_summary_test.tex",
-#     # float_format="%.4f",
-#     formatters=[
-#         "{:.4E}".format,
-#     ],
-#     multicolumn_format="c",
-#     na_rep="",
-# )
-```
-
 Es wird sofort ersichtlich, dass das unkalibrierte Gradient Boosting Modell, wie auch schon bei der Schadenhöhe, den Gesamtschadenbedarf auf Trainings- und Testdaten massiv unterschätzt. Die anderen Modelle sind auf dem Trainingsdatensatz fast alle relativ gut in der Lage den Gesamtschadenbedarf abzuschätzen. Das Tweedie GLM überschätzt den Gesamtschadnebedarf im Vergleich zu den anderen Modellen etwas. Auf dem Testdatensatz sehen wir wieder ein ähnliches Bild, wie auch schon bei der Schadenhöhe. Alle Modelle, außer dem unkalibrierten GBM, überschätzen den Gesamtschaden leicht. Das kalibrierte Tweedie GBM und das GBM/GLM Produktmodelle liefern den besten Schätzer für den Gesamtschaden der Testdaten.
 
 Verteilungen der Vorhersagen für die Nettorisikoprämie.
@@ -4703,7 +4484,7 @@ ax.legend(loc="upper right");
 
 
     
-![png](README_files/README_157_0.png)
+![png](README_files/README_143_0.png)
     
 
 
@@ -4726,13 +4507,11 @@ for (label, y_pred), color, ax in zip(model_predictions.items(), colors, axs.fla
     )
     ax.legend(loc="upper right")
     ax.set_ylim(0, 0.0125)
-
-# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/dist_pure_predictions.png", bbox_inches="tight")
 ```
 
 
     
-![png](README_files/README_159_0.png)
+![png](README_files/README_145_0.png)
     
 
 
@@ -4762,13 +4541,12 @@ plot_risk_ranking(
         ),
     },
     ylabel="Anteil der gesamten Schäden",
-    # plot="/home/fabian/Projects/master-thesis/thesis/Figures/lorenz_curve_pure.png",
 )
 ```
 
 
     
-![png](README_files/README_162_0.png)
+![png](README_files/README_148_0.png)
     
 
 
@@ -4813,10 +4591,10 @@ summary
   <th>Method:</th>                <td>IRLS</td>       <th>  Log-Likelihood:    </th>  <td> -75962.</td> 
 </tr>
 <tr>
-  <th>Date:</th>            <td>Sat, 30 Mar 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
+  <th>Date:</th>            <td>Fri, 17 May 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
 </tr>
 <tr>
-  <th>Time:</th>                <td>09:12:28</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
+  <th>Time:</th>                <td>08:06:17</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
 </tr>
 <tr>
   <th>No. Iterations:</th>          <td>7</td>        <th>  Pseudo R-squ. (CS):</th>   <td>0.01125</td> 
@@ -5061,26 +4839,6 @@ summary
 
 
 
-
-```python
-# with open("/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_stat.tex", "w") as file:
-#     file.write(summary.tables[0].as_latex_tabular(center=False))
-```
-
-
-```python
-# summary_df = pd.DataFrame(summary.tables[1].data)
-# summary_df.columns = ["feature"] + list(summary_df.iloc[0])[1:]
-# summary_df = summary_df.drop(0)
-# summary_df.set_index("feature", drop=True, inplace=True)
-# summary_df[summary_df.index.isin(["const", "BonusMalus", "Density_log", "Area_A", "Area_B"])].to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_coef.tex",
-#     multicolumn_format="c",
-#     na_rep="",
-#     escape=True
-# )
-```
-
 #### scikit-learn
 
 Für `scikit-learn` müssen wir solche Zusammenfassungen manuell erstellen.
@@ -5164,17 +4922,11 @@ print(summary_table)
      Dep. Variable:        Frequency No. Observations:     508509
              Model: PoissonRegressor     Df Residuals:     508433
             Method:  newton-cholesky         Df Model:         76
-              Date:       03/30/2024   Log-Likelihood:     -68551
-              Time:         09:12:28         Deviance: 1.3710E+05
+              Date:       05/17/2024   Log-Likelihood:     -68551
+              Time:         08:06:18         Deviance: 1.3710E+05
     No. Iterations:                5    Pseudo R-squ.:    0.07672
     -------------------------------------------------------------
 
-
-
-```python
-# with open("/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_stat_sk.tex", "w") as file:
-#     file.write(summary_table.as_latex_tabular(center=False))
-```
 
 Der Vollständigkeit halber betrachten wir im Folgenden die Implementierung für ein `scikit-learn` Poisson GLM mit der log-likelihood Funktion:
 
@@ -6848,16 +6600,6 @@ summary
 
 
 
-
-```python
-# summary[summary.index.isin(["const", "BonusMalus", "Density_log", "Area_A", "Area_B"])].to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/poisson_freq_summary_coef_sk.tex",
-#     multicolumn_format="c",
-#     na_rep="",
-#     escape=True
-# )
-```
-
 ### SHAP
 
 SHAP (SHapley Additive exPlanations) ist eine Methode, die auf der Spieltheorie basiert und die Einflüsse der Merkmale zur Vorhersage erklärt. SHAP ist eine modell-agnostische Methode und kann auf alle Modelle angewendet werden. Mittels der SHAP-Methode kann sowohl die globale als auch lokale Erklärbarkeit der Modelle untersucht werden.
@@ -6907,17 +6649,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(10, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_bar_raw.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_193_0.png)
+![png](README_files/README_175_0.png)
     
 
 
@@ -6940,17 +6677,12 @@ pos = ax.get_position()
 # Change the figure size
 fig.set_size_inches(8, 3)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_beeswarm_raw.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_195_0.png)
+![png](README_files/README_177_0.png)
     
 
 
@@ -7026,17 +6758,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(10, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_bar_agg.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_201_0.png)
+![png](README_files/README_183_0.png)
     
 
 
@@ -7051,23 +6778,15 @@ shap.summary_plot(
 fig = plt.gcf()
 ax = plt.gca()
 
-# rescale axis based on first plot
-# ax.set_position(pos)
-
 # Change the figure size
 fig.set_size_inches(8, 3)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_beeswarm_agg.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_202_0.png)
+![png](README_files/README_184_0.png)
     
 
 
@@ -7086,17 +6805,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(16, 3)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_force_log.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_204_0.png)
+![png](README_files/README_186_0.png)
     
 
 
@@ -7112,17 +6826,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(6, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_waterfall_raw.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_205_0.png)
+![png](README_files/README_187_0.png)
     
 
 
@@ -7145,7 +6854,7 @@ glm_tweedie_pure_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:38, 19.93it/s]                         
+    PermutationExplainer explainer: 1001it [00:32, 22.49it/s]                         
 
 
 
@@ -7187,17 +6896,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(16, 3)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_force_true.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_211_0.png)
+![png](README_files/README_193_0.png)
     
 
 
@@ -7213,17 +6917,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(6, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_glm_waterfall_true.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_212_0.png)
+![png](README_files/README_194_0.png)
     
 
 
@@ -7266,7 +6965,7 @@ glm_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:34, 20.72it/s]                         
+    PermutationExplainer explainer: 1001it [00:30, 22.12it/s]                          
 
 
 Transformation der binären SHAP-Werte.
@@ -7303,7 +7002,7 @@ shap.summary_plot(glm_poisson_freq_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_220_0.png)
+![png](README_files/README_202_0.png)
     
 
 
@@ -7314,7 +7013,7 @@ shap.waterfall_plot(glm_poisson_freq_exp_mod[0])
 
 
     
-![png](README_files/README_221_0.png)
+![png](README_files/README_203_0.png)
     
 
 
@@ -7339,7 +7038,7 @@ glm_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:36, 20.97it/s]                         
+    PermutationExplainer explainer: 1001it [00:30, 22.57it/s]                         
 
 
 Transformation der binären SHAP-Werte.
@@ -7376,7 +7075,7 @@ shap.summary_plot(glm_gamma_sev_exp_mod, plot_type="bar")
 
 
     
-![png](README_files/README_227_0.png)
+![png](README_files/README_209_0.png)
     
 
 
@@ -7387,7 +7086,7 @@ shap.waterfall_plot(glm_gamma_sev_exp_mod[0])
 
 
     
-![png](README_files/README_228_0.png)
+![png](README_files/README_210_0.png)
     
 
 
@@ -7425,7 +7124,7 @@ shap.waterfall_plot(final_shap_explanation[0])
 
 
     
-![png](README_files/README_232_0.png)
+![png](README_files/README_214_0.png)
     
 
 
@@ -7469,7 +7168,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    [09:14:29] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
+    [08:08:01] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
 
 
 
@@ -7479,7 +7178,7 @@ shap.summary_plot(xgb_poisson_freq_exp, plot_type="bar")
 
 
     
-![png](README_files/README_238_0.png)
+![png](README_files/README_220_0.png)
     
 
 
@@ -7490,7 +7189,7 @@ shap.waterfall_plot(xgb_poisson_freq_exp[0])
 
 
     
-![png](README_files/README_239_0.png)
+![png](README_files/README_221_0.png)
     
 
 
@@ -7515,7 +7214,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [01:06, 12.76it/s]                          
+    ExactExplainer explainer: 1001it [00:58, 14.34it/s]                         
 
 
 
@@ -7527,17 +7226,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(10, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_freq_bar_true.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_242_0.png)
+![png](README_files/README_224_0.png)
     
 
 
@@ -7550,17 +7244,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(6, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_freq_waterfall_true.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_243_0.png)
+![png](README_files/README_225_0.png)
     
 
 
@@ -7583,7 +7272,7 @@ xgb_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:15, 22.93it/s]                         
+    ExactExplainer explainer: 1001it [00:15, 24.32it/s]                          
 
 
 
@@ -7595,17 +7284,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(10, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_sev_bar_true.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_246_0.png)
+![png](README_files/README_228_0.png)
     
 
 
@@ -7618,17 +7302,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(6, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_sev_waterfall_true.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_247_0.png)
+![png](README_files/README_229_0.png)
     
 
 
@@ -7666,17 +7345,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(10, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_pure_bar_true.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_251_0.png)
+![png](README_files/README_233_0.png)
     
 
 
@@ -7689,17 +7363,12 @@ fig = plt.gcf()
 # Change the figure size
 fig.set_size_inches(6, 6)
 
-# Save
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/shap_gbm_pure_waterfall_true.png",
-#     bbox_inches="tight",
-# )
 plt.show()
 ```
 
 
     
-![png](README_files/README_252_0.png)
+![png](README_files/README_234_0.png)
     
 
 
@@ -7748,14 +7417,9 @@ PartialDependenceDisplay.from_estimator(
 
 
     
-![png](README_files/README_257_0.png)
+![png](README_files/README_239_0.png)
     
 
-
-
-```python
-# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_sklearn.png", bbox_inches="tight")
-```
 
 Diese Plots sind ausreichend, wenn man sich nur einen groben Überblick verschaffen möchte. Allerdings könne sie auch trügerisch sein, da bei der Darstellung die Varianz der Vorhersagen komplett außen vor gelassen wird. Man betrachtet nur eine Metrik.
 
@@ -7858,14 +7522,9 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_261_0.png)
+![png](README_files/README_242_0.png)
     
 
-
-
-```python
-# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_bonus_malus.png", bbox_inches="tight")
-```
 
 Für kategorische Merkmale kann entweder ein Box- oder Violinplot genutzt werden.
 
@@ -7976,7 +7635,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_264_0.png)
+![png](README_files/README_244_0.png)
     
 
 
@@ -8050,7 +7709,7 @@ _plot_bin_partial_dependence(
 
 
     
-![png](README_files/README_266_0.png)
+![png](README_files/README_246_0.png)
     
 
 
@@ -8163,14 +7822,9 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_270_0.png)
+![png](README_files/README_250_0.png)
     
 
-
-
-```python
-# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_manuell.png", bbox_inches="tight")
-```
 
 Partial Dependence Plots für das Poisson GLM:
 
@@ -8206,7 +7860,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_273_0.png)
+![png](README_files/README_252_0.png)
     
 
 
@@ -8299,17 +7953,6 @@ scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1)
 
 
 
-
-```python
-# scores.T.loc[(slice(None), "train"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_frequency_constrained_train.tex",
-#     float_format="%.4f",
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
-# )
-```
-
 Wir vergleichen die Scores des uneingeschränkten GBMs, sowie des GBMs mit Monotoniebedingung auf den Testdaten.
 
 
@@ -8351,17 +7994,6 @@ scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1)
 
 
 
-
-```python
-# scores.T.loc[(slice(None), "test"), :].droplevel(1).rename_axis(None, axis=1).to_latex(
-#     buf="/home/fabian/Projects/master-thesis/thesis/Tables/scores_frequency_constrained_test.tex",
-#     float_format="%.4f",
-#     multicolumn_format="c",
-#     na_rep="",
-#     header=["$D^2$", "$D_P$", "$MAE$", "$MSE$"],
-# )
-```
-
 Das Modell mit Monotoniebedingung schneidet in allen Metriken sowohl auf dem Trainings- als auch Testdatensatz etwas schlechter ab, als das Modell ohne Monotoniebedingung. Vergleichen wir die Metriken mit den ursprünglichen Ergebnissen der anderen Modelle in [Vorhersagekraft der Schadenhäufigkeit](scores_frequency). Dann liefert das Poisson GBM mit forcierter Montonie immer noch die besten Ergebnisse für die Schadenhäufigkeit.
 
 
@@ -8392,14 +8024,9 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_284_0.png)
+![png](README_files/README_261_0.png)
     
 
-
-
-```python
-# fig.savefig("/home/fabian/Projects/master-thesis/thesis/Figures/pdp_freq_monotone.png", bbox_inches="tight")
-```
 
 Wir sehen, dass wir die Monotoniebedingung per Parameter für `BonusMalus` erzwingen können.
 
@@ -8568,7 +8195,7 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_294_0.png)
+![png](README_files/README_270_0.png)
     
 
 
@@ -8665,17 +8292,9 @@ fig.tight_layout()
 
 
     
-![png](README_files/README_298_0.png)
+![png](README_files/README_274_0.png)
     
 
-
-
-```python
-# fig.savefig(
-#     "/home/fabian/Projects/master-thesis/thesis/Figures/pdp_freq_sev_monotone.png",
-#     bbox_inches="tight",
-# )
-```
 
 In allen Kombinationen, in denen mindestens ein Modell ohne Monotoniebedingung vorkommt, liegt keine Monotonie für die Nettorisikoprämie vor. Nur die Kombination aus Poisson GBM und Gamma GBM, jeweils mit Monotoniebedingung, liefert einen monotonen Zusammenhang zwischen `BonusMalus` und der Nettorisikoprämie.
 
