@@ -1,8 +1,7 @@
 # Risikomodellierung in der Schadenversicherung mit Python
 
-Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung in der Schadenverischerung mit Python". Das Notebook kann mittels Binder interaktiv ausgeführt werden oder pre-rendered im Viewer angesehen werden:
+Dieses Notebook dient als Begleitmaterial zur Masterthesis "Risikomodellierung in der Schaden- und Unfallversicherung mittels Gradient Boosting in Python". Das Notebook kann pre-rendered im Viewer angesehen werden:
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Diadochokinetic/fremtpl/HEAD?labpath=Risikomodellierung+in+der+Schadenversicherung+mit+Python.ipynb)
 [![NBViewer](https://raw.githubusercontent.com/jupyter/design/e088387232fb13da8fb9ab4ce017e5dd23a114a0/logos/Badges/nbviewer_badge.svg)](https://nbviewer.org/github/Diadochokinetic/fremtpl/blob/main/Risikomodellierung%20in%20der%20Schadenversicherung%20mit%20Python.ipynb)
 
 Alternativ kann auch eine eigene Jupyter-Umgebung mit den in `requirements.txt` hinterlegten Abhängigkeiten genutzt werden. Der grundlegende Aufbau wurde inspiriert durch das scikit-learn Tutorial [Tweedie regression on insurance claims](https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html).
@@ -47,7 +46,7 @@ df_freq.set_index("IDpol", inplace=True)
 df_sev = fetch_openml(data_id=41215, as_frame=True, parser="pandas").data
 ```
 
-    /tmp/ipykernel_5114/1811049792.py:2: DeprecationWarning: 
+    /tmp/ipykernel_12193/1811049792.py:2: DeprecationWarning: 
     Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
     (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
     but was not found to be installed on your system.
@@ -1567,16 +1566,636 @@ if run_mmt:
         weights="Exposure",
     )
 
-    scores_mmt
+    display(scores_mmt)
 ```
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>subset</th>
+      <th>train</th>
+      <th>test</th>
+    </tr>
+    <tr>
+      <th>metric</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>D² explained</th>
+      <td>0.0494</td>
+      <td>0.0465</td>
+    </tr>
+    <tr>
+      <th>mean Poisson dev</th>
+      <td>0.4550</td>
+      <td>0.4543</td>
+    </tr>
+    <tr>
+      <th>mean abs. error</th>
+      <td>0.1375</td>
+      <td>0.1374</td>
+    </tr>
+    <tr>
+      <th>mean squared error</th>
+      <td>0.2437</td>
+      <td>0.2235</td>
+    </tr>
+  </tbody>
+</table>
+<p>4 rows × 2 columns</p>
+
 
 Falls das MSV ausgeführt wurde, können wir in der folgenden Zelle den ermittelten Basiswert und die Faktoren sehen.
 
 
 ```python
 if run_mmt:
-    mmt.results_.tail()
+    display(mmt.results_.tail())
 ```
+
+
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>basevalue</th>
+      <th>VehAge_bin_0.0_1.0</th>
+      <th>VehAge_bin_1.0_2.0</th>
+      <th>VehAge_bin_2.0_3.0</th>
+      <th>VehAge_bin_3.0_4.0</th>
+      <th>VehAge_bin_4.0_6.0</th>
+      <th>VehAge_bin_6.0_8.0</th>
+      <th>VehAge_bin_8.0_10.0</th>
+      <th>VehAge_bin_10.0_12.0</th>
+      <th>VehAge_bin_12.0_15.0</th>
+      <th>VehAge_bin_15.0_100.0</th>
+      <th>DrivAge_bin_18.0_28.0</th>
+      <th>DrivAge_bin_28.0_32.0</th>
+      <th>DrivAge_bin_32.0_36.0</th>
+      <th>DrivAge_bin_36.0_40.0</th>
+      <th>DrivAge_bin_40.0_44.0</th>
+      <th>DrivAge_bin_44.0_48.0</th>
+      <th>DrivAge_bin_48.0_53.0</th>
+      <th>DrivAge_bin_53.0_57.0</th>
+      <th>DrivAge_bin_57.0_65.0</th>
+      <th>DrivAge_bin_65.0_100.0</th>
+      <th>VehBrand_B1</th>
+      <th>VehBrand_B10</th>
+      <th>VehBrand_B11</th>
+      <th>VehBrand_B12</th>
+      <th>VehBrand_B13</th>
+      <th>VehBrand_B14</th>
+      <th>VehBrand_B2</th>
+      <th>VehBrand_B3</th>
+      <th>VehBrand_B4</th>
+      <th>VehBrand_B5</th>
+      <th>VehBrand_B6</th>
+      <th>VehPower_4</th>
+      <th>VehPower_5</th>
+      <th>VehPower_6</th>
+      <th>VehPower_7</th>
+      <th>VehPower_8</th>
+      <th>VehPower_9</th>
+      <th>VehPower_10</th>
+      <th>VehPower_11</th>
+      <th>VehPower_12</th>
+      <th>VehPower_13</th>
+      <th>VehPower_14</th>
+      <th>VehPower_15</th>
+      <th>VehGas_Diesel</th>
+      <th>VehGas_Regular</th>
+      <th>Region_R11</th>
+      <th>Region_R21</th>
+      <th>Region_R22</th>
+      <th>Region_R23</th>
+      <th>Region_R24</th>
+      <th>Region_R25</th>
+      <th>Region_R26</th>
+      <th>Region_R31</th>
+      <th>Region_R41</th>
+      <th>Region_R42</th>
+      <th>Region_R43</th>
+      <th>Region_R52</th>
+      <th>Region_R53</th>
+      <th>Region_R54</th>
+      <th>Region_R72</th>
+      <th>Region_R73</th>
+      <th>Region_R74</th>
+      <th>Region_R82</th>
+      <th>Region_R83</th>
+      <th>Region_R91</th>
+      <th>Region_R93</th>
+      <th>Region_R94</th>
+      <th>Area_A</th>
+      <th>Area_B</th>
+      <th>Area_C</th>
+      <th>Area_D</th>
+      <th>Area_E</th>
+      <th>Area_F</th>
+      <th>BonusMalusBin_(0, 55]</th>
+      <th>BonusMalusBin_(55, 57]</th>
+      <th>BonusMalusBin_(57, 60]</th>
+      <th>BonusMalusBin_(60, 68]</th>
+      <th>BonusMalusBin_(68, 74]</th>
+      <th>BonusMalusBin_(74, 86]</th>
+      <th>BonusMalusBin_(86, 100]</th>
+      <th>BonusMalusBin_(100, 120]</th>
+      <th>BonusMalusBin_(120, 300]</th>
+      <th>DensityBin_(-0.001, 2.5]</th>
+      <th>DensityBin_(2.5, 3.0]</th>
+      <th>DensityBin_(3.0, 3.8]</th>
+      <th>DensityBin_(3.8, 5.0]</th>
+      <th>DensityBin_(5.0, 6.0]</th>
+      <th>DensityBin_(6.0, 6.5]</th>
+      <th>DensityBin_(6.5, 7.0]</th>
+      <th>DensityBin_(7.0, 8.0]</th>
+      <th>DensityBin_(8.0, 11.0]</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>312</th>
+      <td>0.031563</td>
+      <td>1.0</td>
+      <td>1.016554</td>
+      <td>1.093530</td>
+      <td>1.006452</td>
+      <td>1.016882</td>
+      <td>1.104899</td>
+      <td>1.024592</td>
+      <td>0.975784</td>
+      <td>0.921885</td>
+      <td>0.747483</td>
+      <td>1.0</td>
+      <td>0.809794</td>
+      <td>0.915483</td>
+      <td>1.082945</td>
+      <td>1.243224</td>
+      <td>1.451953</td>
+      <td>1.472750</td>
+      <td>1.350317</td>
+      <td>1.261908</td>
+      <td>1.313275</td>
+      <td>1.0</td>
+      <td>1.006720</td>
+      <td>1.194329</td>
+      <td>0.762735</td>
+      <td>0.999560</td>
+      <td>0.810833</td>
+      <td>1.003377</td>
+      <td>1.049827</td>
+      <td>1.030050</td>
+      <td>1.096869</td>
+      <td>1.040862</td>
+      <td>1.0</td>
+      <td>1.059849</td>
+      <td>1.104726</td>
+      <td>1.078191</td>
+      <td>1.120410</td>
+      <td>1.240219</td>
+      <td>1.262483</td>
+      <td>1.391212</td>
+      <td>1.332739</td>
+      <td>1.395858</td>
+      <td>1.372984</td>
+      <td>1.290566</td>
+      <td>1.0</td>
+      <td>0.864861</td>
+      <td>1.0</td>
+      <td>1.060930</td>
+      <td>1.100650</td>
+      <td>1.020504</td>
+      <td>0.993305</td>
+      <td>0.984115</td>
+      <td>1.052010</td>
+      <td>1.043820</td>
+      <td>0.903527</td>
+      <td>0.885343</td>
+      <td>1.012266</td>
+      <td>1.021489</td>
+      <td>1.000831</td>
+      <td>1.133495</td>
+      <td>1.053795</td>
+      <td>0.798166</td>
+      <td>1.460416</td>
+      <td>1.216388</td>
+      <td>0.909606</td>
+      <td>0.944344</td>
+      <td>1.095273</td>
+      <td>1.017094</td>
+      <td>1.0</td>
+      <td>1.104105</td>
+      <td>1.156489</td>
+      <td>1.183921</td>
+      <td>1.296389</td>
+      <td>1.413108</td>
+      <td>1.0</td>
+      <td>1.386243</td>
+      <td>2.076660</td>
+      <td>2.462219</td>
+      <td>2.345661</td>
+      <td>2.502340</td>
+      <td>3.516210</td>
+      <td>6.747949</td>
+      <td>9.794389</td>
+      <td>1.0</td>
+      <td>0.908398</td>
+      <td>1.084478</td>
+      <td>1.059169</td>
+      <td>1.045742</td>
+      <td>1.209565</td>
+      <td>1.256603</td>
+      <td>1.183278</td>
+      <td>1.181881</td>
+    </tr>
+    <tr>
+      <th>313</th>
+      <td>0.031561</td>
+      <td>1.0</td>
+      <td>1.016555</td>
+      <td>1.093531</td>
+      <td>1.006453</td>
+      <td>1.016884</td>
+      <td>1.104902</td>
+      <td>1.024594</td>
+      <td>0.975787</td>
+      <td>0.921888</td>
+      <td>0.747485</td>
+      <td>1.0</td>
+      <td>0.809792</td>
+      <td>0.915479</td>
+      <td>1.082937</td>
+      <td>1.243213</td>
+      <td>1.451936</td>
+      <td>1.472733</td>
+      <td>1.350302</td>
+      <td>1.261895</td>
+      <td>1.313260</td>
+      <td>1.0</td>
+      <td>1.006718</td>
+      <td>1.194327</td>
+      <td>0.762736</td>
+      <td>0.999560</td>
+      <td>0.810831</td>
+      <td>1.003377</td>
+      <td>1.049827</td>
+      <td>1.030050</td>
+      <td>1.096869</td>
+      <td>1.040861</td>
+      <td>1.0</td>
+      <td>1.059850</td>
+      <td>1.104726</td>
+      <td>1.078191</td>
+      <td>1.120410</td>
+      <td>1.240219</td>
+      <td>1.262483</td>
+      <td>1.391211</td>
+      <td>1.332734</td>
+      <td>1.395854</td>
+      <td>1.372976</td>
+      <td>1.290566</td>
+      <td>1.0</td>
+      <td>0.864861</td>
+      <td>1.0</td>
+      <td>1.060930</td>
+      <td>1.100658</td>
+      <td>1.020502</td>
+      <td>0.993296</td>
+      <td>0.984099</td>
+      <td>1.052007</td>
+      <td>1.043821</td>
+      <td>0.903518</td>
+      <td>0.885345</td>
+      <td>1.012267</td>
+      <td>1.021482</td>
+      <td>1.000822</td>
+      <td>1.133488</td>
+      <td>1.053788</td>
+      <td>0.798162</td>
+      <td>1.460416</td>
+      <td>1.216385</td>
+      <td>0.909595</td>
+      <td>0.944345</td>
+      <td>1.095273</td>
+      <td>1.017100</td>
+      <td>1.0</td>
+      <td>1.103645</td>
+      <td>1.155919</td>
+      <td>1.183145</td>
+      <td>1.295467</td>
+      <td>1.412089</td>
+      <td>1.0</td>
+      <td>1.386227</td>
+      <td>2.076637</td>
+      <td>2.462189</td>
+      <td>2.345629</td>
+      <td>2.502306</td>
+      <td>3.516154</td>
+      <td>6.747842</td>
+      <td>9.794201</td>
+      <td>1.0</td>
+      <td>0.908475</td>
+      <td>1.084569</td>
+      <td>1.059694</td>
+      <td>1.046345</td>
+      <td>1.210364</td>
+      <td>1.257532</td>
+      <td>1.184172</td>
+      <td>1.182821</td>
+    </tr>
+    <tr>
+      <th>314</th>
+      <td>0.031559</td>
+      <td>1.0</td>
+      <td>1.016556</td>
+      <td>1.093533</td>
+      <td>1.006455</td>
+      <td>1.016885</td>
+      <td>1.104904</td>
+      <td>1.024596</td>
+      <td>0.975790</td>
+      <td>0.921890</td>
+      <td>0.747486</td>
+      <td>1.0</td>
+      <td>0.809790</td>
+      <td>0.915474</td>
+      <td>1.082929</td>
+      <td>1.243201</td>
+      <td>1.451920</td>
+      <td>1.472716</td>
+      <td>1.350286</td>
+      <td>1.261882</td>
+      <td>1.313245</td>
+      <td>1.0</td>
+      <td>1.006717</td>
+      <td>1.194325</td>
+      <td>0.762737</td>
+      <td>0.999559</td>
+      <td>0.810830</td>
+      <td>1.003377</td>
+      <td>1.049827</td>
+      <td>1.030050</td>
+      <td>1.096869</td>
+      <td>1.040859</td>
+      <td>1.0</td>
+      <td>1.059850</td>
+      <td>1.104726</td>
+      <td>1.078190</td>
+      <td>1.120409</td>
+      <td>1.240219</td>
+      <td>1.262484</td>
+      <td>1.391211</td>
+      <td>1.332729</td>
+      <td>1.395851</td>
+      <td>1.372967</td>
+      <td>1.290566</td>
+      <td>1.0</td>
+      <td>0.864860</td>
+      <td>1.0</td>
+      <td>1.060930</td>
+      <td>1.100666</td>
+      <td>1.020499</td>
+      <td>0.993287</td>
+      <td>0.984082</td>
+      <td>1.052004</td>
+      <td>1.043822</td>
+      <td>0.903510</td>
+      <td>0.885346</td>
+      <td>1.012268</td>
+      <td>1.021475</td>
+      <td>1.000813</td>
+      <td>1.133481</td>
+      <td>1.053781</td>
+      <td>0.798159</td>
+      <td>1.460416</td>
+      <td>1.216383</td>
+      <td>0.909583</td>
+      <td>0.944346</td>
+      <td>1.095274</td>
+      <td>1.017106</td>
+      <td>1.0</td>
+      <td>1.103189</td>
+      <td>1.155354</td>
+      <td>1.182375</td>
+      <td>1.294554</td>
+      <td>1.411080</td>
+      <td>1.0</td>
+      <td>1.386210</td>
+      <td>2.076614</td>
+      <td>2.462160</td>
+      <td>2.345598</td>
+      <td>2.502273</td>
+      <td>3.516097</td>
+      <td>6.747734</td>
+      <td>9.794015</td>
+      <td>1.0</td>
+      <td>0.908550</td>
+      <td>1.084659</td>
+      <td>1.060214</td>
+      <td>1.046942</td>
+      <td>1.211155</td>
+      <td>1.258454</td>
+      <td>1.185060</td>
+      <td>1.183753</td>
+    </tr>
+    <tr>
+      <th>315</th>
+      <td>0.031557</td>
+      <td>1.0</td>
+      <td>1.016556</td>
+      <td>1.093534</td>
+      <td>1.006456</td>
+      <td>1.016887</td>
+      <td>1.104907</td>
+      <td>1.024599</td>
+      <td>0.975793</td>
+      <td>0.921893</td>
+      <td>0.747488</td>
+      <td>1.0</td>
+      <td>0.809788</td>
+      <td>0.915469</td>
+      <td>1.082921</td>
+      <td>1.243190</td>
+      <td>1.451904</td>
+      <td>1.472699</td>
+      <td>1.350270</td>
+      <td>1.261870</td>
+      <td>1.313230</td>
+      <td>1.0</td>
+      <td>1.006715</td>
+      <td>1.194324</td>
+      <td>0.762738</td>
+      <td>0.999559</td>
+      <td>0.810828</td>
+      <td>1.003376</td>
+      <td>1.049826</td>
+      <td>1.030049</td>
+      <td>1.096869</td>
+      <td>1.040858</td>
+      <td>1.0</td>
+      <td>1.059850</td>
+      <td>1.104726</td>
+      <td>1.078190</td>
+      <td>1.120409</td>
+      <td>1.240219</td>
+      <td>1.262484</td>
+      <td>1.391210</td>
+      <td>1.332724</td>
+      <td>1.395847</td>
+      <td>1.372959</td>
+      <td>1.290566</td>
+      <td>1.0</td>
+      <td>0.864860</td>
+      <td>1.0</td>
+      <td>1.060930</td>
+      <td>1.100674</td>
+      <td>1.020497</td>
+      <td>0.993278</td>
+      <td>0.984066</td>
+      <td>1.052001</td>
+      <td>1.043823</td>
+      <td>0.903502</td>
+      <td>0.885348</td>
+      <td>1.012269</td>
+      <td>1.021468</td>
+      <td>1.000804</td>
+      <td>1.133474</td>
+      <td>1.053773</td>
+      <td>0.798155</td>
+      <td>1.460415</td>
+      <td>1.216380</td>
+      <td>0.909571</td>
+      <td>0.944347</td>
+      <td>1.095274</td>
+      <td>1.017112</td>
+      <td>1.0</td>
+      <td>1.102737</td>
+      <td>1.154794</td>
+      <td>1.181612</td>
+      <td>1.293648</td>
+      <td>1.410079</td>
+      <td>1.0</td>
+      <td>1.386194</td>
+      <td>2.076591</td>
+      <td>2.462130</td>
+      <td>2.345567</td>
+      <td>2.502241</td>
+      <td>3.516042</td>
+      <td>6.747628</td>
+      <td>9.793829</td>
+      <td>1.0</td>
+      <td>0.908624</td>
+      <td>1.084747</td>
+      <td>1.060729</td>
+      <td>1.047534</td>
+      <td>1.211940</td>
+      <td>1.259367</td>
+      <td>1.185939</td>
+      <td>1.184677</td>
+    </tr>
+    <tr>
+      <th>316</th>
+      <td>0.031555</td>
+      <td>1.0</td>
+      <td>1.016557</td>
+      <td>1.093535</td>
+      <td>1.006457</td>
+      <td>1.016889</td>
+      <td>1.104909</td>
+      <td>1.024601</td>
+      <td>0.975795</td>
+      <td>0.921896</td>
+      <td>0.747490</td>
+      <td>1.0</td>
+      <td>0.809786</td>
+      <td>0.915465</td>
+      <td>1.082913</td>
+      <td>1.243179</td>
+      <td>1.451888</td>
+      <td>1.472681</td>
+      <td>1.350255</td>
+      <td>1.261857</td>
+      <td>1.313215</td>
+      <td>1.0</td>
+      <td>1.006714</td>
+      <td>1.194322</td>
+      <td>0.762738</td>
+      <td>0.999558</td>
+      <td>0.810826</td>
+      <td>1.003376</td>
+      <td>1.049826</td>
+      <td>1.030049</td>
+      <td>1.096869</td>
+      <td>1.040856</td>
+      <td>1.0</td>
+      <td>1.059851</td>
+      <td>1.104726</td>
+      <td>1.078189</td>
+      <td>1.120408</td>
+      <td>1.240219</td>
+      <td>1.262484</td>
+      <td>1.391209</td>
+      <td>1.332720</td>
+      <td>1.395844</td>
+      <td>1.372951</td>
+      <td>1.290566</td>
+      <td>1.0</td>
+      <td>0.864860</td>
+      <td>1.0</td>
+      <td>1.060929</td>
+      <td>1.100682</td>
+      <td>1.020495</td>
+      <td>0.993269</td>
+      <td>0.984050</td>
+      <td>1.051997</td>
+      <td>1.043824</td>
+      <td>0.903493</td>
+      <td>0.885350</td>
+      <td>1.012269</td>
+      <td>1.021460</td>
+      <td>1.000794</td>
+      <td>1.133467</td>
+      <td>1.053766</td>
+      <td>0.798151</td>
+      <td>1.460415</td>
+      <td>1.216378</td>
+      <td>0.909559</td>
+      <td>0.944348</td>
+      <td>1.095275</td>
+      <td>1.017118</td>
+      <td>1.0</td>
+      <td>1.102289</td>
+      <td>1.154239</td>
+      <td>1.180856</td>
+      <td>1.292750</td>
+      <td>1.409086</td>
+      <td>1.0</td>
+      <td>1.386177</td>
+      <td>2.076569</td>
+      <td>2.462101</td>
+      <td>2.345536</td>
+      <td>2.502208</td>
+      <td>3.515986</td>
+      <td>6.747522</td>
+      <td>9.793645</td>
+      <td>1.0</td>
+      <td>0.908697</td>
+      <td>1.084834</td>
+      <td>1.061240</td>
+      <td>1.048120</td>
+      <td>1.212717</td>
+      <td>1.260273</td>
+      <td>1.186812</td>
+      <td>1.185594</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 92 columns</p>
+
 
 ### Generalisierte Lineare Modelle
 
@@ -1748,8 +2367,6 @@ score_glm_poisson_multiplicative
 
 Alternativ kann man auch ein Poisson GLM trainieren, ohne dass die Koeffizienten in MMT-Faktoren umgewandelt werden müssen. Neben `scikit-learn` gibt es in der Bibliothek `statsmodels` eine eher nach klassischer Statistik orientierte Implementierung. Beide Implementierungen bieten uns die Möglichkeit numerische Merkmale und Regularisierung zu verwenden. Wir trainieren das `scikit-learn` Modell mit einer Ridge Regularisierung und das `statsmodel` Modell gänzlich ohne Regularisierung, um es später als Beispiel für die statistische Inferenz in der Modellerklärbarkeit verwenden zu können.
 
-Beachte: Binder stellt nur 2GB Arbeitsspeicher zur Verfügung. Für `scikit-learn` Modelle ist das ausreichend. Für `statsmodels` Modelle kann es zu Problemen kommen. Im Code gibt es die Möglich das `statsmodels` Modell auf 20000 Samples zu limitieren. Hierzu einfach `samples = df_train.index` als Kommentar setzen und  `samples = df_train.sample(int(2E4), random_state=0).index` entkommentieren. Die Ergebnisse für das `statsmodels` Modell werden dadurch deutlich schlechter. Wir benötigen das Modell jedoch später zur Demonstration der Modellerklärbarkeit.
-
 
 ```python
 import statsmodels.api as sm
@@ -1760,15 +2377,11 @@ glm_poisson_freq_sk.fit(
     X_train_glm, df_train["Frequency"], sample_weight=df_train["Exposure"]
 )
 
-# statsmodels is resource hungry and Binder is resource poor
-# samples = df_train.sample(int(2E4), random_state=0).index
-samples = df_train.index
-
 glm_poisson_freq_sm = sm.GLM(
-    df_train.loc[samples, "Frequency"].values,
-    sm.add_constant(X_train_glm.loc[samples, :]),
+    df_train["Frequency"],
+    sm.add_constant(X_train_glm),
     family=sm.families.Poisson(sm.families.links.Log()),
-    var_weights=df_train.loc[samples, "Exposure"],
+    var_weights=df_train["Exposure"],
 ).fit()
 
 scores_glm_poisson_freq_sk = score_estimator(
@@ -1936,7 +2549,7 @@ scores_xgb_poisson_freq = score_estimator(
 scores_xgb_poisson_freq
 ```
 
-    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [08:05:21] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
+    /home/fabian/miniforge3/envs/fremtpl/lib/python3.10/site-packages/xgboost/core.py:160: UserWarning: [13:40:21] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/common/error_msg.cc:58: Falling back to prediction using DMatrix due to mismatched devices. This might lead to higher memory usage and slower performance. XGBoost is running on: cuda:0, while the input data is on: cpu.
     Potential solutions:
     - Use a data structure that matches the device ordinal in the booster.
     - Set the device for booster before call to inplace_predict.
@@ -4576,7 +5189,7 @@ summary
 <table class="simpletable">
 <caption>Generalized Linear Model Regression Results</caption>
 <tr>
-  <th>Dep. Variable:</th>           <td>y</td>        <th>  No. Observations:  </th>   <td>508509</td>  
+  <th>Dep. Variable:</th>       <td>Frequency</td>    <th>  No. Observations:  </th>   <td>508509</td>  
 </tr>
 <tr>
   <th>Model:</th>                  <td>GLM</td>       <th>  Df Residuals:      </th>   <td>508440</td>  
@@ -4594,7 +5207,7 @@ summary
   <th>Date:</th>            <td>Fri, 17 May 2024</td> <th>  Deviance:          </th> <td>1.2278e+05</td>
 </tr>
 <tr>
-  <th>Time:</th>                <td>08:06:17</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
+  <th>Time:</th>                <td>13:41:18</td>     <th>  Pearson chi2:      </th>  <td>8.79e+05</td> 
 </tr>
 <tr>
   <th>No. Iterations:</th>          <td>7</td>        <th>  Pseudo R-squ. (CS):</th>   <td>0.01125</td> 
@@ -4923,7 +5536,7 @@ print(summary_table)
              Model: PoissonRegressor     Df Residuals:     508433
             Method:  newton-cholesky         Df Model:         76
               Date:       05/17/2024   Log-Likelihood:     -68551
-              Time:         08:06:18         Deviance: 1.3710E+05
+              Time:         13:41:18         Deviance: 1.3710E+05
     No. Iterations:                5    Pseudo R-squ.:    0.07672
     -------------------------------------------------------------
 
@@ -5161,9 +5774,9 @@ Wir verifizieren die Funktionen anhand des `statsmodels` Poisson GLMs.
 
 ```python
 summary = regression_summary(
-    X=sm.add_constant(X_train_glm.loc[samples, :]),
+    X=sm.add_constant(X_train_glm),
     params=glm_poisson_freq_sm.params.values,
-    weights=df_train.loc[samples, "Exposure"],
+    weights=df_train["Exposure"],
     feature_names=glm_poisson_freq_sm.params.index,
 )
 
@@ -6615,11 +7228,9 @@ np.random.seed(42)
 
 Wir betrachten zunächst die Generalisierten Linearen Modelle. Hierfür gibt es im SHAP-Paket eine spezielle Implementierung, die die spezielle Struktur der GLMs ausnutzt. Wir starten mit der globalen Ebene, also dem mittleren Einfluss auf das Modellergebnis.
 
-Beachte: Binder stellt nur eine begrenzte Menge an Resourcen zur Verfügung. Daher wird die Anzahl der betrachteten Samples hier limitiert. Stehen auf einer anderen Maschine mehr Resourcen zur Verfügung, dann kann die n_samples Variable erhöht werden.
-
 
 ```python
-n_samples = 1000
+n_samples = 10**3
 X_train_glm_sample = X_train_glm.sample(n_samples, random_state=42)
 
 glm_tweedie_pure_exp = shap.Explainer(
@@ -6854,7 +7465,7 @@ glm_tweedie_pure_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:32, 22.49it/s]                         
+    PermutationExplainer explainer: 1001it [00:33, 22.94it/s]                          
 
 
 
@@ -6965,7 +7576,7 @@ glm_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:30, 22.12it/s]                          
+    PermutationExplainer explainer: 1001it [00:31, 21.85it/s]                         
 
 
 Transformation der binären SHAP-Werte.
@@ -7038,7 +7649,7 @@ glm_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    PermutationExplainer explainer: 1001it [00:30, 22.57it/s]                         
+    PermutationExplainer explainer: 1001it [00:32, 21.68it/s]                         
 
 
 Transformation der binären SHAP-Werte.
@@ -7168,7 +7779,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    [08:08:01] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
+    [13:43:04] WARNING: /home/conda/feedstock_root/build_artifacts/xgboost-split_1705650282415/work/src/c_api/c_api.cc:1240: Saving into deprecated binary model format, please consider using `json` or `ubj`. Model format will default to JSON in XGBoost 2.2 if not specified.
 
 
 
@@ -7214,7 +7825,7 @@ xgb_poisson_freq_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:58, 14.34it/s]                         
+    ExactExplainer explainer: 1001it [00:59, 14.20it/s]                         
 
 
 
@@ -7272,7 +7883,7 @@ xgb_gamma_sev_exp = shap.Explanation(
 )
 ```
 
-    ExactExplainer explainer: 1001it [00:15, 24.32it/s]                          
+    ExactExplainer explainer: 1001it [00:14, 23.35it/s]                         
 
 
 
